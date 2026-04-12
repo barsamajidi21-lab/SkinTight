@@ -1,0 +1,5 @@
+{
+  "name": "Skin Tight",
+  "description": "A professional skin health and skin cancer screening tool using AI vision analysis.",
+  "requestFramePermissions": ["camera", "geolocation"]
+}
