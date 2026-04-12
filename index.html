@@ -1,140 +1,38 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Skin Tight</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Skin Tight - Advanced Dermatology Screening</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-  <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0b0f1a" />
 
-  <!-- Theme color -->
-  <meta name="theme-color" content="#0b0f1a">
-
-  <!-- iOS PWA support -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
-
-  <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: #0b0f1a;
-      color: #ffffff;
-      min-height: 100vh;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .title {
-      font-size: 24px;
-      font-weight: bold;
-    }
-
-    .install-button {
-      background-color: #007bff;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
-      display: none;
-    }
-
-    .install-button:hover {
-      background-color: #0056b3;
-    }
-
-    .content {
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
-    .welcome {
-      text-align: center;
-      margin: 50px 0;
-    }
-  </style>
-</head>
-<body>
-  <div class="content">
-    <header class="header">
-      <h1 class="title">Skin Tight</h1>
-      <button id="installButton" class="install-button">Install App</button>
-    </header>
-
-    <main class="welcome">
-      <h2>Welcome to Skin Tight</h2>
-      <p>Your app content will go here.</p>
-    </main>
-  </div>
-
-  <script>
-    let deferredPrompt;
-
-    // Listen for the beforeinstallprompt event
-    window.addEventListener('beforeinstallprompt', (e) => {
-      // Prevent the mini-infobar from appearing on mobile
-      e.preventDefault();
-      // Stash the event so it can be triggered later
-      deferredPrompt = e;
-      // Show the install button
-      const installButton = document.getElementById('installButton');
-      installButton.style.display = 'block';
-    });
-
-    // Handle the install button click
-    document.getElementById('installButton').addEventListener('click', async () => {
-      if (deferredPrompt) {
-        // Show the install prompt
-        deferredPrompt.prompt();
-        // Wait for the user to respond to the prompt
-        const { outcome } = await deferredPrompt.userChoice;
-        // Hide the install button
-        document.getElementById('installButton').style.display = 'none';
-        // Clear the deferred prompt
-        deferredPrompt = null;
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('Service worker registered.', reg))
+            .catch(err => console.log('Service worker registration failed.', err));
+        });
       }
-    });
+    </script>
 
-    // Check if already installed
-    window.addEventListener('appinstalled', () => {
-      // Hide the install button
-      document.getElementById('installButton').style.display = 'none';
-      console.log('PWA was installed');
-    });
-
-    // Register service worker
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then((registration) => {
-            console.log('Service Worker registered successfully:', registration);
-          })
-          .catch((error) => {
-            console.log('Service Worker registration failed:', error);
-          });
-      });
-    }
-  </script>
-</body>
+    <link rel="stylesheet" href="/style.css">
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
 </html>
-
-
-
-
-
-
-
-
-
-
 
