@@ -1614,10 +1614,17 @@ function App() {
       setShowInstallPrompt(true);
     };
 
+    const installedHandler = () => {
+      setShowInstallPrompt(false);
+      setDeferredPrompt(null);
+    };
+
     window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener('appinstalled', installedHandler);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('appinstalled', installedHandler);
     };
   }, []);
 
@@ -4992,51 +4999,43 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
         </div>
       </header>
 
-      {showInstallPrompt && (
-        <div style={{
-          background: 'rgba(45, 212, 191, 0.1)',
-          borderBottom: '1px solid rgba(45, 212, 191, 0.2)',
-          padding: '12px 20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{ fontSize: '13px', color: '#f8fafc', fontWeight: '500' }}>
-            Install Skin Tight for faster access and weekly reminders
-          </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button 
-              onClick={() => setShowInstallPrompt(false)}
-              style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '12px', cursor: 'pointer' }}
-            >
-              Later
-            </button>
-            <button 
-              onClick={handleInstallClick}
-              style={{ 
-                background: '#2dd4bf', 
-                color: '#060818', 
-                border: 'none', 
-                borderRadius: '8px', 
-                padding: '6px 12px', 
-                fontSize: '12px', 
-                fontWeight: '700', 
-                cursor: 'pointer' 
-              }}
-            >
-              Add to Home Screen
-            </button>
-          </div>
-        </div>
-      )}
-
       <SideMenu />
 
       <div style={styles.wrapper}>
         <OverdueBanner />
         {activeTab === 'home' && (
           <div style={styles.tabContent}>
+            {showInstallPrompt && (
+              <div style={{
+                marginBottom: '20px',
+                padding: '16px',
+                background: 'rgba(45, 212, 191, 0.1)',
+                border: '1px solid rgba(45, 212, 191, 0.2)',
+                borderRadius: '20px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div style={{ fontSize: '13px', color: '#f8fafc', fontWeight: '600' }}>
+                  Install Skin Tight
+                </div>
+                <button 
+                  onClick={handleInstallClick}
+                  style={{ 
+                    background: '#2dd4bf', 
+                    color: '#060818', 
+                    border: 'none', 
+                    borderRadius: '10px', 
+                    padding: '8px 16px', 
+                    fontSize: '12px', 
+                    fontWeight: '800', 
+                    cursor: 'pointer' 
+                  }}
+                >
+                  Install App
+                </button>
+              </div>
+            )}
             <div style={{ 
               marginBottom: '24px', 
               position: 'relative', 
