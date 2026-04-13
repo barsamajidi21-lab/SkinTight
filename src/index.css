@@ -39,11 +39,20 @@ body {
 }
 
 /* Fix progress bar overflow */
+.cycle-progress-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
 .progress-bar-container {
-  width: 100%;
-  max-width: 100%;
-  overflow: hidden;
-  box-sizing: border-box;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
 }
 
 /* Fix any flex rows that might overflow */

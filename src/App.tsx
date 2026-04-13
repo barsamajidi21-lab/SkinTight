@@ -809,7 +809,7 @@ const HolographicMaterial = {
             </h3>
             <span className="text-sm font-black text-white">{cycleProgress % 4} / 4 zones completed</span>
           </div>
-          <div className="w-100 bg-white/5 h-3 rounded-full overflow-hidden flex gap-1 p-0.5 progress-bar-container">
+          <div className="w-full bg-white/5 h-3 rounded-full overflow-hidden flex gap-1 p-0.5 progress-bar-container">
             {[1, 2, 3, 4].map(step => (
               <div 
                 key={step} 
@@ -4809,6 +4809,8 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
       boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
       transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
       borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+      overflowY: 'auto' as const,
+      WebkitOverflowScrolling: 'touch' as const,
     },
     menuItem: (active: boolean) => ({
       display: 'flex',
