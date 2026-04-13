@@ -9,13 +9,13 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://images.unsplash.com/photo-1675557009875-436f595b189d?q=80&w=192&h=192&auto=format&fit=crop",
+      "src": "https://images.unsplash.com/photo-1589254065878-42c9da997008?q=80&w=192&h=192&auto=format&fit=crop",
       "sizes": "192x192",
       "type": "image/jpeg",
       "purpose": "any maskable"
     },
     {
-      "src": "https://images.unsplash.com/photo-1675557009875-436f595b189d?q=80&w=512&h=512&auto=format&fit=crop",
+      "src": "https://images.unsplash.com/photo-1589254065878-42c9da997008?q=80&w=512&h=512&auto=format&fit=crop",
       "sizes": "512x512",
       "type": "image/jpeg",
       "purpose": "any maskable"
