@@ -1124,7 +1124,7 @@ const AuthPage = () => {
   const [ageRange, setAgeRange] = useState('');
   const [sex, setSex] = useState('');
   const [fitzpatrick, setFitzpatrick] = useState(0);
-  const [profileColor, setProfileColor] = useState('#2dd4bf');
+  const [profileColor, setProfileColor] = useState('#00B4D8');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showForgotPin, setShowForgotPin] = useState(false);
@@ -1413,7 +1413,7 @@ const AuthPage = () => {
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '10px', fontWeight: '600' }}>PROFILE COLOR</label>
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
-                  {['#2dd4bf', '#a855f7', '#f59e0b', '#ef4444', '#3b82f6', '#10b981'].map(c => (
+                  {['#00B4D8', '#7B2FBE', '#185FA5', '#D85A30', '#3B6D11', '#BA7517', '#993556', '#A32D2D'].map(c => (
                     <button
                       key={c}
                       type="button"
@@ -1590,7 +1590,7 @@ function App() {
   const [highUvDays, setHighUvDays] = useState<number>(0);
 
   // --- Feature 4: SkinScore State ---
-  const [skinScore, setSkinScore] = useState<number>(80);
+  const [skinScore, setSkinScore] = useState<number>(100);
   const [scoreHistory, setScoreHistory] = useState<{ date: string; score: number }[]>([]);
 
   // --- Feature 5: Skincare Routine State ---
@@ -1599,7 +1599,7 @@ function App() {
   const [protocolError, setProtocolError] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState({
     fullName: '',
-    profileColor: '#2dd4bf',
+    profileColor: '#00B4D8',
     age: 25,
     fitzpatrick: 2,
     conditions: '',
@@ -1618,6 +1618,72 @@ function App() {
     phone: '',
     notes: [] as { date: string; note: string }[]
   });
+
+  const updateMenuAvatar = () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    db.collection("users").doc(user.uid).get().then(function(doc: any) {
+      if (!doc.exists) return;
+      
+      const data = doc.data();
+      const username = data.username || data.fullName || "U";
+      const firstLetter = username.charAt(0).toUpperCase();
+      const profileColor = data.profileColor || "#00B4D8";
+      
+      const menuAvatar = document.getElementById("menuAvatarCircle");
+      if (menuAvatar) {
+        (menuAvatar as HTMLElement).style.background = profileColor;
+        menuAvatar.textContent = firstLetter;
+      }
+      
+      const menuName = document.getElementById("menuUserName");
+      if (menuName) {
+        menuName.textContent = data.fullName || data.username || "User";
+      }
+      
+      const menuEmail = document.getElementById("menuUserEmail");
+      if (menuEmail) {
+        menuEmail.textContent = data.email || "";
+      }
+    });
+  };
+
+  const updateAllAvatars = () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    db.collection("users").doc(user.uid).get().then(function(doc: any) {
+      if (!doc.exists) return;
+      
+      const data = doc.data();
+      const username = data.username || data.fullName || "U";
+      const firstLetter = username.charAt(0).toUpperCase();
+      const profileColor = data.profileColor || "#00B4D8";
+      
+      const allAvatars = document.querySelectorAll(
+        "#headerAvatar, #menuAvatarCircle, .userAvatarCircle"
+      );
+      allAvatars.forEach(function(avatar) {
+        (avatar as HTMLElement).style.background = profileColor;
+        avatar.textContent = firstLetter;
+      });
+      
+      const allNames = document.querySelectorAll(
+        "#menuUserName, #headerUserName, .displayUserName"
+      );
+      allNames.forEach(function(el) {
+        el.textContent = data.fullName || data.username || "";
+      });
+      
+      const allEmails = document.querySelectorAll(
+        "#menuUserEmail, .displayUserEmail"
+      );
+      allEmails.forEach(function(el) {
+        el.textContent = data.email || "";
+      });
+    });
+  };
 
   // --- Feature 8: Settings State ---
   const [skinOfColorMode, setSkinOfColorMode] = useState(false);
@@ -1754,6 +1820,7 @@ function App() {
       console.log("Auth state changed:", user ? user.uid : "null");
       if (user) {
         initializeNewSession(user);
+        updateAllAvatars();
       } else {
         clearAllSessionData();
       }
@@ -2497,6 +2564,7 @@ Respond ONLY with valid JSON with these fields:
         profileColor: tempProfile.profileColor
       }));
       setIsEditingProfile(false);
+      updateAllAvatars();
     } catch (err) {
       console.error("Error saving profile:", err);
     }
@@ -3031,7 +3099,9 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
 
           {currentUser && (
             <div style={{ marginBottom: '32px', padding: '0 20px' }}>
-              <div style={{ 
+              <div 
+                id="menuAvatarCircle"
+                style={{ 
                 width: '64px', 
                 height: '64px', 
                 borderRadius: '20px', 
@@ -3047,8 +3117,8 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               }}>
                 {currentUser.displayName?.charAt(0) || 'U'}
               </div>
-              <div style={{ fontWeight: '800', fontSize: '20px', color: '#f8fafc' }}>{currentUser.displayName}</div>
-              <div style={{ fontSize: '14px', color: '#94a3b8' }}>{currentUser.email}</div>
+              <div id="menuUserName" style={{ fontWeight: '800', fontSize: '20px', color: '#f8fafc' }}>{currentUser.displayName}</div>
+              <div id="menuUserEmail" style={{ fontSize: '14px', color: '#94a3b8' }}>{currentUser.email}</div>
             </div>
           )}
 
@@ -5000,7 +5070,10 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
       <header style={styles.topHeader}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <button 
-            onClick={() => setIsMenuOpen(true)}
+            onClick={() => {
+              setIsMenuOpen(true);
+              updateAllAvatars();
+            }}
             style={{ background: 'none', border: 'none', color: '#f8fafc', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
           >
             <Menu size={24} />
@@ -5012,6 +5085,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
           {/* Profile icon moved next to the name with space as requested */}
           {fullUserData && (
             <div 
+              id="headerAvatar"
               onClick={() => setActiveTab('profile')}
               style={{ 
                 width: '32px', height: '32px', borderRadius: '50%', 
@@ -5334,7 +5408,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                     <div>
                       <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Profile Color</label>
                       <div className="flex flex-wrap gap-3">
-                        {['#2dd4bf', '#a855f7', '#f43f5e', '#f59e0b', '#3b82f6', '#ec4899', '#8b5cf6', '#10b981'].map(color => (
+                        {['#00B4D8', '#7B2FBE', '#185FA5', '#D85A30', '#3B6D11', '#BA7517', '#993556', '#A32D2D'].map(color => (
                           <button 
                             key={color}
                             onClick={() => setTempProfile({...tempProfile, profileColor: color})}
