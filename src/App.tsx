@@ -719,15 +719,15 @@ const HolographicMaterial = {
     const nextWeek = WEEK_DEFINITIONS[nextWeekIndex];
 
     return (
-      <div style={styles.tabContent}>
+      <div className="page-container" style={styles.tabContent}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h2 style={{ fontSize: '24px', fontWeight: '800', margin: 0 }}>Timeline & Schedule</h2>
         </div>
 
         {/* Weekly Rotation Status Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 zone-cards-grid">
           {/* Current Status Card */}
-          <div className={`glass-card p-6 rounded-3xl border ${isWeekFullyComplete ? 'border-teal-500/30 bg-teal-500/5' : 'border-white/5'} relative overflow-hidden`}>
+          <div className={`glass-card p-6 rounded-3xl border ${isWeekFullyComplete ? 'border-teal-500/30 bg-teal-500/5' : 'border-white/5'} relative overflow-hidden zone-card`}>
             <div className="absolute -right-4 -top-4 opacity-10">
               <Activity size={120} color={isWeekFullyComplete ? '#2dd4bf' : '#94a3b8'} />
             </div>
@@ -777,7 +777,7 @@ const HolographicMaterial = {
           </div>
 
           {/* Next Scan Card */}
-          <div className={`glass-card p-6 rounded-3xl border ${isOverdue ? 'border-red-500/30 bg-red-500/5' : 'border-white/5'} relative overflow-hidden`}>
+          <div className={`glass-card p-6 rounded-3xl border ${isOverdue ? 'border-red-500/30 bg-red-500/5' : 'border-white/5'} relative overflow-hidden zone-card`}>
             <div className="absolute -right-4 -top-4 opacity-10">
               <Calendar size={120} color={isOverdue ? '#ef4444' : '#2dd4bf'} />
             </div>
@@ -802,14 +802,14 @@ const HolographicMaterial = {
         </div>
 
         {/* Progress Indicator */}
-        <div className="glass-card p-6 rounded-3xl border border-white/5 mb-6">
+        <div id="cycleProgress" className="glass-card p-6 rounded-3xl border border-white/5 mb-6 cycle-progress-container">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
               <RotateCw size={18} className="text-blue-400" /> Cycle Progress
             </h3>
             <span className="text-sm font-black text-white">{cycleProgress % 4} / 4 zones completed</span>
           </div>
-          <div className="w-100 bg-white/5 h-3 rounded-full overflow-hidden flex gap-1 p-0.5">
+          <div className="w-100 bg-white/5 h-3 rounded-full overflow-hidden flex gap-1 p-0.5 progress-bar-container">
             {[1, 2, 3, 4].map(step => (
               <div 
                 key={step} 
@@ -1495,6 +1495,23 @@ const Footer = ({ onShowLegal }: { onShowLegal: (type: 'terms' | 'privacy' | 'di
   </footer>
 );
 
+// --- OneSignal Helpers ---
+const OneSignalDeferred = (window as any).OneSignalDeferred || [];
+
+function requestNotificationPermission() {
+  if ((window as any).OneSignal) {
+    OneSignalDeferred.push(function(OneSignal: any) {
+      OneSignal.Notifications.requestPermission();
+    });
+  }
+}
+
+function setOneSignalExternalId(userId: string) {
+  OneSignalDeferred.push(function(OneSignal: any) {
+    OneSignal.login(userId);
+  });
+}
+
 function App() {
   // --- Navigation State ---
   const [activeTab, setActiveTab] = useState<'home' | 'scan' | 'timeline' | 'routine' | 'plans' | 'profile' | 'clinic' | 'welcome'>('home');
@@ -1708,6 +1725,12 @@ function App() {
   const initializeNewSession = (user: any) => {
     clearAllSessionData();
     setCurrentUser(user);
+    
+    // OneSignal Integration
+    setOneSignalExternalId(user.uid);
+    setTimeout(() => {
+      requestNotificationPermission();
+    }, 3000);
     
     db.collection("users").doc(user.uid).get().then((doc: any) => {
       if (doc.exists) {
@@ -2731,7 +2754,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     }, []);
 
     return (
-      <div style={styles.tabContent}>
+      <div className="page-container" style={styles.tabContent}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h2 style={{ fontSize: '24px', fontWeight: '800', margin: 0 }}>Clinic Finder</h2>
           <button 
@@ -3134,7 +3157,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     };
 
     return (
-      <div className="p-6 pb-32">
+      <div className="page-container" style={styles.tabContent}>
         {result ? (
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
@@ -3805,7 +3828,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     };
 
     return (
-      <div style={styles.tabContent}>
+      <div className="page-container" style={styles.tabContent}>
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -3943,7 +3966,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     }, []);
 
     return (
-      <div style={styles.tabContent}>
+      <div className="page-container" style={styles.tabContent}>
         <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '20px' }}>Daily UV Protection</h2>
         
         <div className="glass-card p-6 rounded-3xl mb-6">
@@ -4107,7 +4130,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     ];
 
     return (
-      <div style={styles.tabContent}>
+      <div className="page-container" style={styles.tabContent}>
         <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '10px' }}>Upgrade Your Health</h2>
         <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '24px' }}>Choose the plan that fits your family's needs.</p>
         
@@ -4949,7 +4972,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
   };
 
   return (
-    <div style={{ ...styles.container, background: '#060818', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <div className="app-wrapper" style={{ ...styles.container, background: '#060818', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       {isOffline && (
         <div style={{ 
           background: '#ef4444', 
@@ -5001,10 +5024,10 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
 
       <SideMenu />
 
-      <div style={styles.wrapper}>
+      <div className="main-content" style={styles.wrapper}>
         <OverdueBanner />
         {activeTab === 'home' && (
-          <div style={styles.tabContent}>
+          <div className="page-container" style={styles.tabContent}>
             {showInstallPrompt && (
               <div style={{
                 marginBottom: '20px',
@@ -5194,7 +5217,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
         </AnimatePresence>
 
         {activeTab === 'profile' && (
-          <div style={styles.tabContent}>
+          <div className="page-container" style={styles.tabContent}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '24px', fontWeight: '800', margin: 0 }}>My Profile</h2>
               {!isEditingProfile && (

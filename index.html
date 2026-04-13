@@ -10,7 +10,28 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#0b0f1a" />
+    <meta name="theme-color" content="#060818" />
+    <meta name="application-name" content="Skin Tight">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Skin Tight">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="theone.jpg">
+    <link rel="icon" type="image/jpeg" href="theone.jpg">
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "9960c3dd-03ff-4220-8a73-77ff77838dad",
+          notifyButton: { enable: false },
+          welcomeNotification: {
+            title: "Skin Tight",
+            message: "Thanks for subscribing! We'll remind you when it's time to scan."
+          }
+        });
+      });
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
