@@ -802,14 +802,14 @@ const HolographicMaterial = {
         </div>
 
         {/* Progress Indicator */}
-        <div id="cycleProgress" className="glass-card p-4 rounded-2xl border border-white/5 mb-4 cycle-progress-container">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-              <RotateCw size={14} className="text-blue-400" /> Cycle Progress
+        <div id="cycleProgress" className="glass-card p-3 rounded-xl border border-white/5 mb-3 cycle-progress-container">
+          <div className="flex justify-between items-center mb-1.5">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+              <RotateCw size={12} className="text-blue-400" /> Cycle Progress
             </h3>
-            <span className="text-xs font-black text-white">{cycleProgress % 4} / 4 zones completed</span>
+            <span className="text-[10px] font-black text-white">{cycleProgress % 4} / 4 zones</span>
           </div>
-          <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden flex gap-1 p-0.5 progress-bar-container">
+          <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden flex gap-0.5 p-0.5 progress-bar-container">
             {[1, 2, 3, 4].map(step => (
               <div 
                 key={step} 
@@ -3052,7 +3052,14 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
             </div>
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '8px',
+            overflowY: 'auto',
+            flex: 1,
+            paddingBottom: '40px' // Extra space for iOS home bar
+          }}>
             {menuItems.map(item => (
               <div 
                 key={item.id} 
