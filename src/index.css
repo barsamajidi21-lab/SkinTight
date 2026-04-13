@@ -53,6 +53,7 @@ body {
   box-sizing: border-box !important;
   display: flex !important;
   flex-wrap: nowrap !important;
+  min-width: 0 !important;
 }
 
 /* Fix any flex rows that might overflow */

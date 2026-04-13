@@ -802,14 +802,14 @@ const HolographicMaterial = {
         </div>
 
         {/* Progress Indicator */}
-        <div id="cycleProgress" className="glass-card p-6 rounded-3xl border border-white/5 mb-6 cycle-progress-container">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-              <RotateCw size={18} className="text-blue-400" /> Cycle Progress
+        <div id="cycleProgress" className="glass-card p-4 rounded-2xl border border-white/5 mb-4 cycle-progress-container">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+              <RotateCw size={14} className="text-blue-400" /> Cycle Progress
             </h3>
-            <span className="text-sm font-black text-white">{cycleProgress % 4} / 4 zones completed</span>
+            <span className="text-xs font-black text-white">{cycleProgress % 4} / 4 zones completed</span>
           </div>
-          <div className="w-full bg-white/5 h-3 rounded-full overflow-hidden flex gap-1 p-0.5 progress-bar-container">
+          <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden flex gap-1 p-0.5 progress-bar-container">
             {[1, 2, 3, 4].map(step => (
               <div 
                 key={step} 
