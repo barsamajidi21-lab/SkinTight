@@ -1,4 +1,4 @@
-const CACHE_NAME = 'skin-tight-v1';
+const CACHE_NAME = 'skin-tight-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

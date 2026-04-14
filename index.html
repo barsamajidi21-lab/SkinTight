@@ -22,14 +22,19 @@
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-          appId: "9960c3dd-03ff-4220-8a73-77ff77838dad",
-          notifyButton: { enable: false },
-          welcomeNotification: {
-            title: "Skin Tight",
-            message: "Thanks for subscribing! We'll remind you when it's time to scan."
-          }
-        });
+        try {
+          await OneSignal.init({
+            appId: "9960c3dd-03ff-4220-8a73-77ff77838dad",
+            notifyButton: { enable: false },
+            allowLocalhostAsSecureOrigin: true,
+            welcomeNotification: {
+              title: "Skin Tight",
+              message: "Thanks for subscribing! We'll remind you when it's time to scan."
+            }
+          });
+        } catch (error) {
+          console.warn("OneSignal initialization failed (likely due to domain restriction):", error);
+        }
       });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -48,7 +53,7 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/main.tsx?v=3"></script>
   </body>
 </html>
 

@@ -12,6 +12,9 @@ import {
   Download, 
   AlertCircle, 
   CheckCircle2, 
+  XCircle,
+  ArrowLeft,
+  Loader2,
   ArrowRightCircle, 
   RotateCcw,
   RotateCw,
@@ -83,6 +86,80 @@ const firebaseConfig = {
   storageBucket: "skintight-fefe4.firebasestorage.app",
   messagingSenderId: "392837262380",
   appId: "1:392837262380:web:907c312220168dd800f589"
+};
+
+const ONESIGNAL_APP_ID = "9960c3dd-03ff-4220-8a73-77ff77838dad";
+
+// Helper to get current week cycle key (e.g., "2024-W15")
+const getCurrentCycleKey = () => {
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const pastDaysOfYear = (now.getTime() - startOfYear.getTime()) / 86400000;
+  const weekNum = Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
+  return `${now.getFullYear()}-W${weekNum}`;
+};
+
+const tagUserScanPending = () => {
+  if (window.location.hostname !== 'skintight.vercel.app' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    console.log("OneSignal: Skipping tagUserScanPending due to domain restriction");
+    return;
+  }
+  const OneSignalDeferred = (window as any).OneSignalDeferred || [];
+  OneSignalDeferred.push(function(OneSignal: any) {
+    try {
+      OneSignal.User.addTags({
+        "is_scan_completed": "false",
+        "user_id": auth.currentUser ? auth.currentUser.uid : ""
+      });
+      console.log("OneSignal: user tagged as scan pending");
+    } catch (e) {
+      console.warn("OneSignal: Failed to add tags", e);
+    }
+  });
+};
+
+const tagUserScanCompleted = () => {
+  if (window.location.hostname !== 'skintight.vercel.app' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    console.log("OneSignal: Skipping tagUserScanCompleted due to domain restriction");
+  } else {
+    const OneSignalDeferred = (window as any).OneSignalDeferred || [];
+    OneSignalDeferred.push(function(OneSignal: any) {
+      try {
+        OneSignal.User.addTags({
+          "is_scan_completed": "true"
+        });
+        console.log("OneSignal: user tagged as scan completed");
+      } catch (e) {
+        console.warn("OneSignal: Failed to add tags", e);
+      }
+    });
+  }
+  
+  if (auth.currentUser) {
+    db.collection("users").doc(auth.currentUser.uid).update({
+      lastScanCompletedAt: (window as any).firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+};
+
+const checkAndShowScanReminder = () => {
+  const user = auth.currentUser;
+  if (!user) return;
+  
+  const cycleKey = getCurrentCycleKey();
+  
+  db.collection("users").doc(user.uid)
+    .collection("cycles").doc(cycleKey)
+    .get()
+    .then(function(doc: any) {
+      const data = doc.exists ? doc.data() : {};
+      const hasCompletedAny = data.zone1 || data.zone2 || data.zone3 || data.zone4;
+      
+      const reminderBanner = document.getElementById("scanReminderBanner");
+      if (!hasCompletedAny && reminderBanner) {
+        reminderBanner.style.display = "flex";
+      }
+    });
 };
 
 // Initialize Firebase (using compat mode as requested)
@@ -1115,63 +1192,74 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
   );
 };
 
-const AuthPage = () => {
-  const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
+const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => {
+  const [authView, setAuthView] = useState<'signin' | 'signup' | 'forgot'>('signin');
   const [email, setEmail] = useState('');
-  const [pin, setPin] = useState(['', '', '', '']);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [ageRange, setAgeRange] = useState('');
-  const [sex, setSex] = useState('');
   const [fitzpatrick, setFitzpatrick] = useState(0);
   const [profileColor, setProfileColor] = useState('#00B4D8');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showForgotPin, setShowForgotPin] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const pinRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
-
-  const handlePinChange = (index: number, value: string) => {
-    if (value.length > 1) value = value.slice(-1);
-    if (!/^\d*$/.test(value)) return;
-
-    const newPin = [...pin];
-    newPin[index] = value;
-    setPin(newPin);
-
-    if (value && index < 3) {
-      pinRefs[index + 1].current?.focus();
+  // Real-time username check
+  useEffect(() => {
+    if (!username || username.length < 3 || authView !== 'signup') {
+      setUsernameAvailable(null);
+      return;
     }
+    const checkUsername = async () => {
+      try {
+        const doc = await db.collection("usernames").doc(username.toLowerCase()).get();
+        setUsernameAvailable(!doc.exists);
+      } catch (err) {
+        console.error("Error checking username:", err);
+      }
+    };
+    const timer = setTimeout(checkUsername, 500);
+    return () => clearTimeout(timer);
+  }, [username, authView]);
+
+  const handleAuthError = (error: any) => {
+    const messages: Record<string, string> = {
+      "auth/email-already-in-use": "An account with this email already exists. Please sign in.",
+      "auth/invalid-email": "Please enter a valid email address.",
+      "auth/weak-password": "Password must be at least 6 characters.",
+      "auth/user-not-found": "No account found with that email address.",
+      "auth/wrong-password": "Incorrect password. Please try again or reset your password.",
+      "auth/too-many-requests": "Too many failed attempts. Please wait a few minutes and try again.",
+      "auth/network-request-failed": "Network error. Please check your connection and try again.",
+      "auth/invalid-credential": "Incorrect email or password. Please try again."
+    };
+    
+    const message = messages[error.code] || "Something went wrong. Please try again.";
+    showErrorMessage(message);
   };
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !pin[index] && index > 0) {
-      pinRefs[index - 1].current?.focus();
-    }
+  const showErrorMessage = (message: string) => {
+    setError(message);
+    setTimeout(() => setError(null), 6000);
+  };
+
+  const showSuccessMessage = (message: string) => {
+    setSuccess(message);
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    const fullPin = pin.join('');
-    if (fullPin.length < 4) {
-      setError('Please enter your 4-digit PIN.');
-      return;
-    }
-
     setLoading(true);
     setError(null);
     try {
-      console.log("Attempting sign in for:", email);
-      await auth.signInWithEmailAndPassword(email, fullPin + "@skinscanai.com");
-      console.log("Sign in successful");
+      const userCredential = await auth.signInWithEmailAndPassword(email, password);
+      onAuthSuccess(userCredential.user);
     } catch (err: any) {
-      if (err.code === 'auth/wrong-password') {
-        setError('Incorrect PIN. Please try again.');
-      } else if (err.code === 'auth/user-not-found') {
-        setError('No account found with that email. Please sign up.');
-      } else {
-        setError('Sign in failed. Please check your details and try again.');
-      }
+      handleAuthError(err);
     } finally {
       setLoading(false);
     }
@@ -1179,38 +1267,36 @@ const AuthPage = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const fullPin = pin.join('');
-    if (fullPin.length < 4) {
-      setError('Please choose a 4-digit PIN.');
+    if (!fullName || !username || !email || !password || !ageRange || fitzpatrick === 0) {
+      showErrorMessage('Please fill in all fields.');
       return;
     }
-    if (!fullName || !username || !email || !ageRange || !sex || fitzpatrick === 0) {
-      setError('Please fill in all fields.');
+    if (password !== confirmPassword) {
+      showErrorMessage('Passwords do not match.');
+      return;
+    }
+    if (password.length < 6) {
+      showErrorMessage('Password must be at least 6 characters.');
+      return;
+    }
+    if (usernameAvailable === false) {
+      showErrorMessage('Username is already taken.');
       return;
     }
 
     setLoading(true);
     setError(null);
     try {
-      // Check username uniqueness
-      const usernameDoc = await db.collection("usernames").doc(username.toLowerCase()).get();
-      if (usernameDoc.exists) {
-        setError('Username is already taken. Please choose another.');
-        setLoading(false);
-        return;
-      }
-
-      const userCredential = await auth.createUserWithEmailAndPassword(email, fullPin + "@skinscanai.com");
-      const userId = userCredential.user.uid;
-
-      await db.collection("users").doc(userId).set({
-        fullName,
-        username,
-        email,
-        ageRange,
-        sex,
+      const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+      await userCredential.user.updateProfile({ displayName: fullName });
+      
+      await db.collection("users").doc(userCredential.user.uid).set({
+        fullName: fullName,
+        username: username.toLowerCase(),
+        email: email,
+        ageRange: ageRange,
         fitzpatrickType: fitzpatrick,
-        profileColor,
+        profileColor: profileColor,
         skinScore: 100,
         streakDays: 0,
         createdAt: (window as any).firebase.firestore.FieldValue.serverTimestamp(),
@@ -1218,15 +1304,49 @@ const AuthPage = () => {
       });
 
       await db.collection("usernames").doc(username.toLowerCase()).set({
-        uid: userId
+        uid: userCredential.user.uid
       });
 
+      onAuthSuccess(userCredential.user);
     } catch (err: any) {
-      setError(err.message);
+      handleAuthError(err);
     } finally {
       setLoading(false);
     }
   };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      showErrorMessage("Please enter your email address.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      await auth.sendPasswordResetEmail(email);
+      showSuccessMessage(`✅ Reset email sent to ${email}. Check your inbox. The link expires in 24 hours.`);
+    } catch (err: any) {
+      if (err.code === "auth/user-not-found") {
+        showErrorMessage("No account found with that email address.");
+      } else {
+        showErrorMessage("Could not send reset email. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getPasswordStrength = (pass: string) => {
+    if (!pass) return { score: 0, label: '', color: 'transparent' };
+    if (pass.length < 6) return { score: 1, label: 'Weak', color: '#ef4444' };
+    if (pass.length < 10) return { score: 2, label: 'Medium', color: '#f59e0b' };
+    const hasMixed = /[A-Z]/.test(pass) && /[0-9]/.test(pass) && /[^A-Za-z0-9]/.test(pass);
+    if (pass.length >= 10 && hasMixed) return { score: 3, label: 'Strong', color: '#10b981' };
+    return { score: 2, label: 'Medium', color: '#f59e0b' };
+  };
+
+  const strength = getPasswordStrength(password);
 
   return (
     <div style={{
@@ -1254,223 +1374,301 @@ const AuthPage = () => {
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
         }}
       >
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ 
-            width: '60px', height: '60px', background: 'rgba(45, 212, 191, 0.1)', 
-            borderRadius: '18px', display: 'flex', alignItems: 'center', 
-            justifyContent: 'center', margin: '0 auto 16px',
-            border: '1px solid rgba(45, 212, 191, 0.2)'
-          }}>
-            <Dna size={32} color="#2dd4bf" />
-          </div>
-          <h1 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>Skin Tight</h1>
-          <p style={{ color: '#94a3b8', fontSize: '14px' }}>Secure clinical skin monitoring</p>
-        </div>
-
-        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', marginBottom: '24px' }}>
-          <button 
-            onClick={() => setActiveTab('signin')}
-            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'signin' ? '#2dd4bf' : 'transparent', color: activeTab === 'signin' ? '#020617' : '#94a3b8', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s' }}
-          >
-            Sign In
-          </button>
-          <button 
-            onClick={() => setActiveTab('signup')}
-            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'signup' ? '#2dd4bf' : 'transparent', color: activeTab === 'signup' ? '#020617' : '#94a3b8', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s' }}
-          >
-            Sign Up
-          </button>
-        </div>
-
-        {error && (
-          <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', fontSize: '13px', marginBottom: '20px', textAlign: 'center' }}>
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={activeTab === 'signin' ? handleSignIn : handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {activeTab === 'signup' && (
-            <>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px', fontWeight: '600' }}>FULL NAME</label>
-                  <input 
-                    type="text" 
-                    value={fullName} 
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="John Doe"
-                    style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none' }}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px', fontWeight: '600' }}>USERNAME</label>
-                  <input 
-                    type="text" 
-                    value={username} 
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="johndoe"
-                    style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none' }}
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px', fontWeight: '600' }}>EMAIL ADDRESS</label>
-            <input 
-              type="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@example.com"
-              style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none' }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px', fontWeight: '600' }}>4-DIGIT PIN</label>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              {pin?.map((digit, i) => (
-                <input
-                  key={i}
-                  ref={pinRefs[i]}
-                  type="password"
-                  inputMode="numeric"
-                  value={digit}
-                  onChange={(e) => handlePinChange(i, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(i, e)}
-                  style={{
-                    width: '60px',
-                    height: '70px',
-                    borderRadius: '16px',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: `2px solid ${pin[i] ? '#2dd4bf' : 'rgba(255,255,255,0.1)'}`,
-                    color: 'white',
-                    fontSize: '24px',
-                    fontWeight: '800',
-                    textAlign: 'center',
-                    outline: 'none',
-                    transition: 'all 0.2s'
-                  }}
-                />
-              ))}
-            </div>
-            <p style={{ fontSize: '11px', color: '#64748b', textAlign: 'center', marginTop: '12px' }}>Choose a 4-digit PIN you will remember. Like an ATM code.</p>
-          </div>
-
-          {activeTab === 'signup' && (
-            <>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px', fontWeight: '600' }}>AGE RANGE</label>
-                  <select 
-                    value={ageRange} 
-                    onChange={(e) => setAgeRange(e.target.value)}
-                    style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none' }}
-                  >
-                    <option value="">Select</option>
-                    {ageRanges.map(r => <option key={r} value={r}>{r}</option>)}
-                  </select>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px', fontWeight: '600' }}>SEX</label>
-                  <select 
-                    value={sex} 
-                    onChange={(e) => setSex(e.target.value)}
-                    style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none' }}
-                  >
-                    <option value="">Select</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '10px', fontWeight: '600' }}>FITZPATRICK SKIN TYPE</label>
-                <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
-                  {fitzpatrickTypes.map(t => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => setFitzpatrick(t.id)}
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '10px',
-                        background: t.color,
-                        border: fitzpatrick === t.id ? '3px solid #2dd4bf' : '2px solid transparent',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                      title={t.desc}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '10px', fontWeight: '600' }}>PROFILE COLOR</label>
-                <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
-                  {['#00B4D8', '#7B2FBE', '#185FA5', '#D85A30', '#3B6D11', '#BA7517', '#993556', '#A32D2D'].map(c => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setProfileColor(c)}
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        background: c,
-                        border: profileColor === c ? '3px solid white' : '2px solid transparent',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '16px',
-              borderRadius: '16px',
-              border: 'none',
-              background: '#2dd4bf',
-              color: '#020617',
-              fontWeight: '800',
-              fontSize: '16px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              marginTop: '12px',
-              boxShadow: '0 10px 20px rgba(45, 212, 191, 0.2)'
-            }}
-          >
-            {loading ? 'Processing...' : activeTab === 'signin' ? 'Sign In' : 'Create Account'}
-          </button>
-
-          {activeTab === 'signin' && (
+        {authView === 'forgot' ? (
+          <div style={{ position: 'relative' }}>
             <button 
-              type="button"
-              onClick={() => setShowForgotPin(true)}
-              style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }}
+              onClick={() => { setAuthView('signin'); setSuccess(null); setError(null); }}
+              style={{ position: 'absolute', top: '-20px', left: '-20px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
             >
-              Forgot your PIN?
+              <ArrowLeft size={20} />
             </button>
-          )}
-        </form>
+            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px' }}>Reset your password</h2>
+              <p style={{ color: '#94a3b8', fontSize: '14px' }}>Enter your email address and we will send you a link to reset your password.</p>
+            </div>
 
-        {showForgotPin && (
-          <div style={{ marginTop: '24px', padding: '16px', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '12px' }}>Enter your email address and we will show you a PIN reset option.</p>
-            <p style={{ fontSize: '12px', color: '#2dd4bf', fontWeight: '600' }}>For security, please create a new account with the same email address. Your scan history can be recovered by contacting support.</p>
-            <button onClick={() => setShowForgotPin(false)} style={{ marginTop: '12px', background: 'none', border: 'none', color: '#64748b', fontSize: '12px', cursor: 'pointer' }}>Close</button>
+            {success ? (
+              <div style={{ textAlign: 'center' }}>
+                <div id="authSuccess" style={{ padding: '16px', borderRadius: '16px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', color: '#10b981', fontSize: '14px', marginBottom: '24px' }}>
+                  {success}
+                </div>
+                <button
+                  onClick={() => { setAuthView('signin'); setSuccess(null); }}
+                  style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: '#2dd4bf', color: '#020617', fontWeight: '800', cursor: 'pointer' }}
+                >
+                  Back to Sign In
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px', fontWeight: '600' }}>EMAIL ADDRESS</label>
+                  <input 
+                    type="email" 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    required
+                    style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', transition: 'all 0.3s' }}
+                    onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#2dd4bf'}
+                    onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)'}
+                  />
+                </div>
+                {error && <div id="authError" style={{ padding: '12px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', fontSize: '13px', textAlign: 'center' }}>{error}</div>}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: '#2dd4bf', color: '#020617', fontWeight: '800', cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                >
+                  {loading && <Loader2 className="animate-spin" size={20} />}
+                  Send Reset Email
+                </button>
+              </form>
+            )}
           </div>
+        ) : (
+          <>
+            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+              <div style={{ 
+                width: '60px', height: '60px', background: 'rgba(45, 212, 191, 0.1)', 
+                borderRadius: '18px', display: 'flex', alignItems: 'center', 
+                justifyContent: 'center', margin: '0 auto 16px',
+                border: '1px solid rgba(45, 212, 191, 0.2)'
+              }}>
+                <Dna size={32} color="#2dd4bf" />
+              </div>
+              <h1 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>Skin Tight</h1>
+              <p style={{ color: '#94a3b8', fontSize: '14px' }}>Catch It Early.</p>
+            </div>
+
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', marginBottom: '24px' }}>
+              <button 
+                onClick={() => { setAuthView('signin'); setError(null); setSuccess(null); }}
+                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: authView === 'signin' ? '#2dd4bf' : 'transparent', color: authView === 'signin' ? '#020617' : '#94a3b8', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s' }}
+              >
+                Sign In
+              </button>
+              <button 
+                onClick={() => { setAuthView('signup'); setError(null); setSuccess(null); }}
+                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: authView === 'signup' ? '#2dd4bf' : 'transparent', color: authView === 'signup' ? '#020617' : '#94a3b8', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s' }}
+              >
+                Sign Up
+              </button>
+            </div>
+
+            <div style={{ background: '#ef4444', color: 'white', padding: '12px', borderRadius: '12px', marginBottom: '20px', textAlign: 'center', fontWeight: '800', fontSize: '14px', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
+              ⚠️ EMAIL & PASSWORD AUTH ACTIVE
+            </div>
+
+            <form onSubmit={authView === 'signin' ? handleSignIn : handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {authView === 'signup' && (
+                <>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px', fontWeight: '600' }}>FULL NAME</label>
+                    <input 
+                      type="text" 
+                      value={fullName} 
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Your full name"
+                      required
+                      style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', transition: 'all 0.3s' }}
+                      onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#2dd4bf'}
+                      onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)'}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px', fontWeight: '600' }}>USERNAME</label>
+                    <div style={{ position: 'relative' }}>
+                      <input 
+                        type="text" 
+                        value={username} 
+                        onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                        placeholder="Choose a username"
+                        required
+                        style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', transition: 'all 0.3s' }}
+                        onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#2dd4bf'}
+                        onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)'}
+                      />
+                      <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+                        {usernameAvailable === true && <CheckCircle2 size={18} color="#10b981" />}
+                        {usernameAvailable === false && <XCircle size={18} color="#ef4444" />}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px', fontWeight: '600' }}>EMAIL ADDRESS</label>
+                <input 
+                  type="email" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  required
+                  style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', transition: 'all 0.3s' }}
+                  onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#2dd4bf'}
+                  onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)'}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px', fontWeight: '600' }}>PASSWORD</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={authView === 'signup' ? "Create a password" : "ENTER YOUR PASSWORD (NOT PIN)"}
+                    required
+                    style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', transition: 'all 0.3s' }}
+                    onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#2dd4bf'}
+                    onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)'}
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                {authView === 'signup' && password && (
+                  <div style={{ marginTop: '8px' }}>
+                    <div style={{ height: '4px', width: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${(strength.score / 3) * 100}%`, background: strength.color, transition: 'all 0.3s' }} />
+                    </div>
+                    <p style={{ fontSize: '10px', color: strength.color, marginTop: '4px', fontWeight: '600' }}>{strength.label}</p>
+                  </div>
+                )}
+              </div>
+
+              {authView === 'signup' && (
+                <>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px', fontWeight: '600' }}>CONFIRM PASSWORD</label>
+                    <div style={{ position: 'relative' }}>
+                      <input 
+                        type="password" 
+                        value={confirmPassword} 
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Confirm your password"
+                        required
+                        style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', transition: 'all 0.3s' }}
+                        onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#2dd4bf'}
+                        onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)'}
+                      />
+                      <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+                        {confirmPassword && password === confirmPassword && <CheckCircle2 size={18} color="#10b981" />}
+                        {confirmPassword && password !== confirmPassword && <XCircle size={18} color="#ef4444" />}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px', fontWeight: '600' }}>AGE RANGE</label>
+                      <select 
+                        value={ageRange} 
+                        onChange={(e) => setAgeRange(e.target.value)}
+                        required
+                        style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none' }}
+                      >
+                        <option value="">Select</option>
+                        {ageRanges.map(r => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '10px', fontWeight: '600' }}>FITZPATRICK SKIN TYPE</label>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
+                      {fitzpatrickTypes.map(t => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setFitzpatrick(t.id)}
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '10px',
+                            background: t.color,
+                            border: fitzpatrick === t.id ? '3px solid #2dd4bf' : '2px solid transparent',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                          title={t.desc}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '10px', fontWeight: '600' }}>PROFILE COLOR</label>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
+                      {['#00B4D8', '#7B2FBE', '#185FA5', '#D85A30', '#3B6D11', '#BA7517', '#993556', '#A32D2D'].map(c => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => setProfileColor(c)}
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            background: c,
+                            border: profileColor === c ? '3px solid white' : '2px solid transparent',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {error && <div id="authError" style={{ padding: '12px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', fontSize: '13px', textAlign: 'center' }}>{error}</div>}
+              {success && <div id="authSuccess" style={{ padding: '12px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', color: '#10b981', fontSize: '13px', textAlign: 'center' }}>{success}</div>}
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  borderRadius: '16px',
+                  border: 'none',
+                  background: '#2dd4bf',
+                  color: '#020617',
+                  fontWeight: '800',
+                  fontSize: '16px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  marginTop: '12px',
+                  boxShadow: '0 10px 20px rgba(45, 212, 191, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+              >
+                {loading && <Loader2 className="animate-spin" size={20} />}
+                {loading ? 'Processing...' : authView === 'signin' ? 'Sign In' : 'Create Account'}
+              </button>
+
+              {authView === 'signin' && (
+                <button 
+                  type="button"
+                  onClick={() => setAuthView('forgot')}
+                  style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', marginTop: '8px' }}
+                >
+                  Forgot your password?
+                </button>
+              )}
+            </form>
+            <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '10px', color: '#475569', opacity: 0.5 }}>
+              v2.1.0 - Email Auth Active (PIN Removed)
+            </div>
+          </>
         )}
       </motion.div>
     </div>
@@ -1862,6 +2060,8 @@ function App() {
         if (data.skinScore) setSkinScore(data.skinScore);
         if (data.nextScanDate) setNextScanDate(data.nextScanDate);
         if (data.cycleProgress !== undefined) setCycleProgress(data.cycleProgress);
+      tagUserScanPending();
+      checkAndShowScanReminder();
         if (data.lastFullWeekCompletionDate) setLastFullWeekCompletionDate(data.lastFullWeekCompletionDate);
         if (data.protocol) setProtocol(data.protocol);
         if (data.education) setEducation(data.education);
@@ -2112,6 +2312,7 @@ function App() {
       result: scanData.result
     }).then(function(docRef: any) {
       console.log("Scan saved to Firestore with ID:", docRef.id);
+      tagUserScanCompleted();
       updateSkinScoreInFirestore(user.uid, scanData.skinScore);
       setSaveStatus('success');
       loadScanHistory();
@@ -3105,7 +3306,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 width: '64px', 
                 height: '64px', 
                 borderRadius: '20px', 
-                background: 'linear-gradient(135deg, #2dd4bf 0%, #0ea5e9 100%)',
+                background: fullUserData?.profileColor || 'linear-gradient(135deg, #2dd4bf 0%, #0ea5e9 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -3115,10 +3316,10 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 color: 'white',
                 boxShadow: '0 8px 16px rgba(45, 212, 191, 0.2)'
               }}>
-                {currentUser.displayName?.charAt(0) || 'U'}
+                {fullUserData?.username?.charAt(0).toUpperCase() || currentUser.displayName?.charAt(0) || 'U'}
               </div>
-              <div id="menuUserName" style={{ fontWeight: '800', fontSize: '20px', color: '#f8fafc' }}>{currentUser.displayName}</div>
-              <div id="menuUserEmail" style={{ fontSize: '14px', color: '#94a3b8' }}>{currentUser.email}</div>
+              <div id="menuUserName" style={{ fontWeight: '800', fontSize: '20px', color: '#f8fafc' }}>{fullUserData?.fullName || currentUser.displayName}</div>
+              <div id="menuUserEmail" style={{ fontSize: '14px', color: '#94a3b8' }}>{fullUserData?.email || currentUser.email}</div>
             </div>
           )}
 
@@ -4985,7 +5186,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
   }
 
   if (!currentUser) {
-    return <AuthPage />;
+    return <AuthPage onAuthSuccess={initializeNewSession} />;
   }
 
   if (!onboardingComplete) {
@@ -5202,6 +5403,23 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'rgba(45, 212, 191, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <User size={24} color="#2dd4bf" />
               </div>
+            </div>
+
+            <div id="scanReminderBanner" style={{ display: 'none', background: 'rgba(239, 159, 39, 0.1)', border: '1px solid rgba(239, 159, 39, 0.3)', borderRadius: '12px', padding: '12px 16px', marginBottom: '14px', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '20px' }}>🔔</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ color: '#EF9F27', fontSize: '13px', fontWeight: '600', marginBottom: '2px' }}>Weekly scan not started</div>
+                <div style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>Complete at least one body area scan this week to stay on track.</div>
+              </div>
+              <button 
+                onClick={() => {
+                  const banner = document.getElementById('scanReminderBanner');
+                  if (banner) banner.style.display = 'none';
+                }} 
+                style={{ background: 'none', border: 'none', color: 'rgba(255, 255, 255, 0.4)', fontSize: '18px', cursor: 'pointer', padding: 0 }}
+              >
+                ×
+              </button>
             </div>
 
             <UVCard />
