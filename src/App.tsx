@@ -2194,7 +2194,7 @@ function App() {
     try {
       const ai = getAI();
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-3.1-flash-lite-preview",
         contents: [
           {
             parts: [
@@ -2229,17 +2229,27 @@ function App() {
       const remainingSlots = 6 - photos.length;
       const filesToProcess = Array.from(files).slice(0, remainingSlots);
       
+      let processedCount = 0;
+      const newPhotos: string[] = [];
+      
       filesToProcess.forEach(file => {
         const reader = new FileReader();
         reader.onloadend = () => {
           const photoData = reader.result as string;
-          setPhotos(prev => [...prev, photoData].slice(0, 6));
-          setError(null);
-          setResult(null);
+          newPhotos.push(photoData);
+          processedCount++;
           
-          // Trigger quality check for the first photo uploaded in this batch
-          if (photos.length === 0) {
-            checkImageQuality(photoData);
+          if (processedCount === filesToProcess.length) {
+            setPhotos(prev => {
+              const updated = [...prev, ...newPhotos].slice(0, 6);
+              // Trigger quality check only if it's the first photo(s) being added to an empty list
+              if (prev.length === 0 && updated.length > 0) {
+                checkImageQuality(updated[0]);
+              }
+              return updated;
+            });
+            setError(null);
+            setResult(null);
           }
         };
         reader.readAsDataURL(file as File);
@@ -2528,7 +2538,7 @@ Respond ONLY with valid JSON with these fields:
 - disclaimer: always include.`;
       
       const response = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-3-flash-preview",
         contents: [
           {
             parts: [
@@ -3605,7 +3615,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 >
                   <div className="flex items-center gap-3 mb-2 text-red-500">
                     <AlertCircle size={24} />
-                    <h3 className="font-bold">Insufficient information</h3>
+                    <h3 className="font-bold">{confidenceScore < 50 ? "Insufficient information" : "Analysis Error"}</h3>
                   </div>
                   <p className="text-sm text-red-200/80">
                     {confidenceScore < 50 
