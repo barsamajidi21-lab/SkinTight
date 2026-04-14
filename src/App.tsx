@@ -1193,7 +1193,7 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
 };
 
 const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => {
-  const [authView, setAuthView] = useState<'signin' | 'signup' | 'forgot'>('signin');
+  const [authView, setAuthView] = useState<'signin' | 'signup' | 'forgot'>('signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -1456,10 +1456,6 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
               </button>
             </div>
 
-            <div style={{ background: '#ef4444', color: 'white', padding: '12px', borderRadius: '12px', marginBottom: '20px', textAlign: 'center', fontWeight: '800', fontSize: '14px', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
-              ⚠️ EMAIL & PASSWORD AUTH ACTIVE
-            </div>
-
             <form onSubmit={authView === 'signin' ? handleSignIn : handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {authView === 'signup' && (
                 <>
@@ -1519,7 +1515,7 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
                     type={showPassword ? "text" : "password"} 
                     value={password} 
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder={authView === 'signup' ? "Create a password" : "ENTER YOUR PASSWORD (NOT PIN)"}
+                    placeholder={authView === 'signup' ? "Create a password" : "Your password"}
                     required
                     style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', transition: 'all 0.3s' }}
                     onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#2dd4bf'}
