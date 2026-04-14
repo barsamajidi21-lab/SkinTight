@@ -1929,7 +1929,14 @@ function App() {
   const [showEduCard, setShowEduCard] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+  
+  const getAI = () => {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key || key === "undefined" || key === "") {
+      throw new Error("Gemini API key is missing. Please ensure GEMINI_API_KEY is set in your environment variables.");
+    }
+    return new GoogleGenAI({ apiKey: key });
+  };
 
   const clearAllSessionData = () => {
     const keysToKeep = ["skinScanAccounts", "appLanguage", "welcomeSeen", "termsAccepted"];
@@ -2185,6 +2192,7 @@ function App() {
   const checkImageQuality = async (photo: string) => {
     setCheckingQuality(true);
     try {
+      const ai = getAI();
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: [
@@ -2471,6 +2479,7 @@ function App() {
     setError(null);
     setShowConfidenceWarning(false);
     try {
+      const ai = getAI();
       const imageParts = photos.map(p => ({
         inlineData: {
           mimeType: "image/jpeg",
@@ -2781,6 +2790,7 @@ Respond ONLY with valid JSON with these fields:
     setLoadingProtocol(true);
     setProtocolError(null);
     try {
+      const ai = getAI();
       const prompt = `${AI_SYSTEM_PROMPT}
 Generate a personalized "Skin Cancer Prevention Protocol" for a ${userProfile.age} year old with Fitzpatrick type ${userProfile.fitzpatrick} skin. 
 The output must ONLY contain cancer prevention and monitoring content, nothing cosmetic.
