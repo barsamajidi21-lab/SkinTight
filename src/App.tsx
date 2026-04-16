@@ -75,7 +75,8 @@ import {
   Flame,
   Maximize2,
   Minimize2,
-  LogOut
+  LogOut,
+  Heart
 } from 'lucide-react';
 
 // --- Constants ---
@@ -98,6 +99,2272 @@ const getCurrentCycleKey = () => {
   const weekNum = Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
   return `${now.getFullYear()}-W${weekNum}`;
 };
+
+const styles = {
+    container: {
+      minHeight: '100vh',
+      width: '100%',
+      maxWidth: '100%',
+      display: 'flex',
+      flexDirection: 'column' as const,
+      alignItems: 'stretch',
+      paddingLeft: '16px',
+      paddingRight: '16px',
+      paddingBottom: '100px',
+      color: '#f8fafc',
+      fontFamily: "'Inter', sans-serif",
+      overflowX: 'hidden' as const,
+      margin: 0,
+      boxSizing: 'border-box' as const,
+    },
+    navBar: {
+      position: 'fixed' as const,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: '70px',
+      background: 'rgba(6, 8, 24, 0.8)',
+      backdropFilter: 'blur(16px)',
+      borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+      display: 'flex',
+      justifyContent: 'space-around',
+      alignItems: 'center',
+      padding: '0 16px',
+      zIndex: 1000,
+    },
+    navItem: (active: boolean) => ({
+      display: 'flex',
+      flexDirection: 'column' as const,
+      alignItems: 'center',
+      gap: '4px',
+      color: active ? '#2dd4bf' : '#64748b',
+      cursor: 'pointer',
+      transition: 'all 0.3s ease',
+      position: 'relative' as const,
+    }),
+    navLabel: {
+      fontSize: '10px',
+      fontWeight: '600',
+    },
+    badge: {
+      position: 'absolute' as const,
+      top: '-4px',
+      right: '-4px',
+      width: '8px',
+      height: '8px',
+      borderRadius: '50%',
+      background: '#ef4444',
+      border: '1px solid #060818',
+    },
+    topHeader: {
+      position: 'sticky' as const,
+      top: 0,
+      left: 0,
+      right: 0,
+      height: '60px',
+      padding: '0 16px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      background: 'rgba(6, 8, 24, 0.8)',
+      backdropFilter: 'blur(12px)',
+      zIndex: 900,
+      borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+    },
+    uvCard: {
+      width: '100%',
+      padding: '16px',
+      borderRadius: '20px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      background: 'rgba(30, 41, 59, 0.3)',
+      border: '1px solid rgba(255, 255, 255, 0.05)',
+      marginBottom: '16px',
+    },
+    scoreGauge: {
+      width: '180px',
+      height: '180px',
+      margin: '20px 0',
+      position: 'relative' as const,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    scoreValue: (color: string) => ({
+      fontSize: '48px',
+      fontWeight: '800',
+      color: color,
+      textShadow: `0 0 20px ${color}44`,
+    }),
+    timelineItem: {
+      display: 'flex',
+      gap: '16px',
+      padding: '16px',
+      borderRadius: '20px',
+      background: 'rgba(30, 41, 59, 0.2)',
+      border: '1px solid rgba(255, 255, 255, 0.05)',
+      marginBottom: '12px',
+      cursor: 'pointer',
+    },
+    bodyMapContainer: {
+      width: '100%',
+      height: '400px',
+      background: 'rgba(15, 23, 42, 0.5)',
+      borderRadius: '24px',
+      overflow: 'hidden',
+      position: 'relative' as const,
+    },
+    familyCard: {
+      padding: '16px',
+      borderRadius: '20px',
+      background: 'rgba(30, 41, 59, 0.3)',
+      border: '1px solid rgba(255, 255, 255, 0.05)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      marginBottom: '12px',
+      cursor: 'pointer',
+    },
+    routineStep: {
+      padding: '16px',
+      borderRadius: '16px',
+      background: 'rgba(30, 41, 59, 0.2)',
+      borderLeft: '4px solid #2dd4bf',
+      marginBottom: '12px',
+    },
+    eduCard: {
+      padding: '16px',
+      borderRadius: '24px',
+      background: 'linear-gradient(135deg, rgba(45, 212, 191, 0.1), rgba(168, 85, 247, 0.1))',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      marginTop: '20px',
+    },
+    chartContainer: {
+      width: '100%',
+      height: '200px',
+      marginTop: '16px',
+    },
+    notificationBell: {
+      position: 'relative' as const,
+      cursor: 'pointer',
+    },
+    notificationDot: {
+      position: 'absolute' as const,
+      top: '-2px',
+      right: '-2px',
+      width: '10px',
+      height: '10px',
+      borderRadius: '50%',
+      background: '#ef4444',
+      border: '2px solid #060818',
+    },
+    tabContent: {
+      flex: 1,
+      width: '100%',
+      paddingBottom: '90px', // Space for nav bar
+    },
+    regionBadge: {
+      padding: '4px 12px',
+      borderRadius: '999px',
+      fontSize: '12px',
+      fontWeight: '600',
+      background: 'rgba(45, 212, 191, 0.2)',
+      color: '#2dd4bf',
+      display: 'inline-block',
+      marginBottom: '8px',
+    },
+    comparisonView: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '12px',
+      marginTop: '12px',
+    },
+    comparisonLabel: {
+      fontSize: '10px',
+      color: '#94a3b8',
+      textTransform: 'uppercase' as const,
+      marginBottom: '4px',
+      textAlign: 'center' as const,
+    },
+    wrapper: {
+      width: '100%',
+      maxWidth: '100%',
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '16px',
+      animation: 'fade-in 0.8s ease-out',
+      margin: 0,
+      padding: 0,
+    },
+    header: {
+      textAlign: 'center' as const,
+      marginBottom: '10px',
+      position: 'relative' as const,
+    },
+    logoContainer: {
+      width: '80px',
+      height: '80px',
+      margin: '0 0 16px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: '50%',
+      background: 'rgba(45, 212, 191, 0.1)',
+      border: '1px solid rgba(45, 212, 191, 0.2)',
+      position: 'relative' as const,
+    },
+    logoGlow: {
+      position: 'absolute' as const,
+      width: '100%',
+      height: '100%',
+      borderRadius: '50%',
+      background: 'radial-gradient(circle, rgba(45, 212, 191, 0.4) 0%, transparent 70%)',
+      animation: 'pulse-glow 3s infinite',
+    },
+    title: {
+      fontSize: '36px',
+      fontWeight: '900',
+      margin: '0',
+      letterSpacing: '-0.03em',
+      lineHeight: '1.1',
+    },
+    subtitle: {
+      fontSize: '16px',
+      color: '#94a3b8',
+      marginTop: '6px',
+      letterSpacing: '0.05em',
+      textTransform: 'uppercase' as const,
+      fontWeight: '700',
+    },
+    disclaimerBanner: {
+      padding: '12px 16px',
+      borderRadius: '12px',
+      fontSize: '12px',
+      borderLeft: '4px solid #f59e0b',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      lineHeight: '1.4',
+    },
+    uploadZone: {
+      width: '100%',
+      height: '160px',
+      borderRadius: '24px',
+      overflow: 'hidden',
+      position: 'relative' as const,
+      display: 'flex',
+      flexDirection: 'column' as const,
+      justifyContent: 'center',
+      alignItems: 'center',
+      border: '2px dashed rgba(45, 212, 191, 0.3)',
+      cursor: 'pointer',
+      transition: 'all 0.3s ease',
+      background: 'rgba(30, 41, 59, 0.2)',
+    },
+    photoGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, 1fr)',
+      gap: '12px',
+      width: '100%',
+      maxHeight: '340px',
+      overflowY: 'auto' as const,
+      padding: '4px',
+    },
+    photoThumbnail: {
+      width: '100%',
+      aspectRatio: '1/1',
+      borderRadius: '16px',
+      objectFit: 'cover' as const,
+      border: '1px solid rgba(45, 212, 191, 0.4)',
+      boxShadow: '0 0 10px rgba(45, 212, 191, 0.2)',
+      animation: 'fade-in 0.5s ease',
+    },
+    removeBtn: {
+      position: 'absolute' as const,
+      top: '8px',
+      right: '8px',
+      width: '24px',
+      height: '24px',
+      borderRadius: '50%',
+      background: 'rgba(239, 68, 68, 0.8)',
+      color: 'white',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      border: 'none',
+      cursor: 'pointer',
+      boxShadow: '0 0 10px rgba(239, 68, 68, 0.4)',
+      zIndex: 10,
+    },
+    counterBadge: {
+      position: 'absolute' as const,
+      top: '12px',
+      right: '16px',
+      padding: '4px 10px',
+      borderRadius: '999px',
+      fontSize: '11px',
+      fontWeight: '700',
+      background: 'rgba(45, 212, 191, 0.2)',
+      color: '#2dd4bf',
+      border: '1px solid rgba(45, 212, 191, 0.3)',
+    },
+    inputGroup: {
+      position: 'relative' as const,
+      width: '100%',
+    },
+    label: (active: boolean) => ({
+      position: 'absolute' as const,
+      left: '16px',
+      top: active ? '-10px' : '16px',
+      fontSize: active ? '12px' : '14px',
+      color: active ? '#2dd4bf' : '#94a3b8',
+      background: active ? '#060818' : 'transparent',
+      padding: active ? '0 4px' : '0',
+      transition: 'all 0.2s ease',
+      pointerEvents: 'none' as const,
+      fontWeight: active ? '600' : '400',
+    }),
+    textarea: {
+      width: '100%',
+      backgroundColor: 'rgba(30, 41, 59, 0.4)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: '16px',
+      padding: '18px',
+      color: '#f8fafc',
+      fontSize: '16px',
+      minHeight: '140px',
+      resize: 'none' as const,
+      outline: 'none',
+      transition: 'all 0.3s ease',
+      backdropFilter: 'blur(8px)',
+      lineHeight: '1.6',
+    },
+    analyzeButton: {
+      width: '100%',
+      padding: '16px',
+      borderRadius: '16px',
+      border: 'none',
+      fontWeight: '700',
+      fontSize: '16px',
+      cursor: 'pointer',
+      color: '#060818',
+      background: 'linear-gradient(45deg, #2dd4bf, #a855f7, #38bdf8)',
+      backgroundSize: '200% 200%',
+      animation: 'button-gradient 5s infinite ease, pulse-soft 2s infinite',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: '10px',
+      transition: 'transform 0.2s',
+    },
+    loadingOverlay: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      alignItems: 'center',
+      gap: '16px',
+      padding: '40px 0',
+    },
+    dnaHelix: {
+      fontSize: '48px',
+      color: '#2dd4bf',
+      animation: 'dna-spin 2s linear infinite',
+    },
+    resultCard: {
+      marginTop: '8px',
+      animation: 'slide-up 0.6s ease-out',
+    },
+    riskBadge: (level: string) => ({
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      padding: '8px 20px',
+      borderRadius: '999px',
+      fontSize: '14px',
+      fontWeight: '800',
+      textTransform: 'uppercase' as const,
+      background: 
+      level === 'high' ? 'rgba(239, 68, 68, 0.2)' : 
+      level === 'moderate' ? 'rgba(245, 158, 11, 0.2)' : 
+      level === 'low' ? 'rgba(16, 185, 129, 0.2)' : 
+      'rgba(148, 163, 184, 0.2)',
+      color: 
+      level === 'high' ? '#ef4444' : 
+      level === 'moderate' ? '#f59e0b' : 
+      level === 'low' ? '#10b981' : 
+      '#94a3b8',
+      border: `1px solid ${
+      level === 'high' ? '#ef4444' : 
+      level === 'moderate' ? '#f59e0b' : 
+      level === 'low' ? '#10b981' : 
+      '#94a3b8'
+      }`,
+      boxShadow: `0 0 20px ${
+      level === 'high' ? 'rgba(239, 68, 68, 0.3)' : 
+      level === 'moderate' ? 'rgba(245, 158, 11, 0.3)' : 
+      level === 'low' ? 'rgba(16, 185, 129, 0.3)' : 
+      'rgba(148, 163, 184, 0.3)'
+      }`,
+      marginBottom: '24px',
+    }),
+    sectionTitle: {
+      fontSize: '18px',
+      fontWeight: '700',
+      margin: '24px 0 12px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      color: '#f8fafc',
+    },
+    listItem: {
+      display: 'flex',
+      gap: '12px',
+      marginBottom: '12px',
+      fontSize: '16px',
+      color: '#cbd5e1',
+      lineHeight: '1.5',
+      animation: 'fade-in 0.5s ease forwards',
+    },
+    pillBadge: {
+      display: 'inline-block',
+      padding: '4px 12px',
+      borderRadius: '999px',
+      fontSize: '12px',
+      fontWeight: '600',
+      background: 'rgba(168, 85, 247, 0.2)',
+      color: '#a855f7',
+      border: '1px solid rgba(168, 85, 247, 0.3)',
+    },
+    inputLabel: {
+      display: 'block',
+      fontSize: '12px',
+      fontWeight: '600',
+      color: '#94a3b8',
+      marginBottom: '6px',
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.05em',
+    },
+    input: {
+      width: '100%',
+      padding: '14px 18px',
+      borderRadius: '12px',
+      backgroundColor: 'rgba(255,255,255,0.05)',
+      border: '1px solid rgba(255,255,255,0.1)',
+      color: '#f8fafc',
+      fontSize: '16px',
+      outline: 'none',
+      transition: 'border-color 0.2s ease',
+    },
+    footer: {
+      marginTop: '40px',
+      textAlign: 'center' as const,
+      padding: '20px',
+      borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+    },
+    sideMenu: {
+      position: 'fixed' as const,
+      top: 0,
+      right: 0,
+      bottom: 0,
+      width: '100%',
+      maxWidth: '100%',
+      background: 'rgba(6, 8, 24, 0.98)',
+      backdropFilter: 'blur(24px)',
+      zIndex: 2000,
+      padding: '80px 20px 40px',
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '8px',
+      boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
+      transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+      borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+      overflowY: 'auto' as const,
+      WebkitOverflowScrolling: 'touch' as const,
+    },
+    menuItem: (active: boolean) => ({
+      display: 'flex',
+      alignItems: 'center',
+      gap: '16px',
+      padding: '16px 20px',
+      borderRadius: '16px',
+      color: active ? '#2dd4bf' : '#cbd5e1',
+      background: active ? 'rgba(45, 212, 191, 0.1)' : 'transparent',
+      borderLeft: active ? '4px solid #2dd4bf' : '4px solid transparent',
+      fontSize: '18px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease',
+    }),
+    planCard: (active: boolean, color: string) => ({
+      padding: '24px',
+      borderRadius: '24px',
+      background: 'rgba(30, 41, 59, 0.3)',
+      border: `2px solid ${active ? color : 'rgba(255, 255, 255, 0.05)'}`,
+      boxShadow: active ? `0 0 30px ${color}33` : 'none',
+      position: 'relative' as const,
+      transition: 'all 0.3s ease',
+      transform: active ? 'scale(1.02)' : 'scale(1)',
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '16px',
+    }),
+    shopCard: {
+      background: 'rgba(30, 41, 59, 0.3)',
+      borderRadius: '20px',
+      border: '1px solid rgba(255, 255, 255, 0.05)',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column' as const,
+    }
+  };
+
+  const UVCard = ({ uvData }: { uvData: any }) => {
+    if (!uvData) return null;
+    return (
+      <div style={styles.uvCard} className="glass-card">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: `${uvData.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Sun size={24} color={uvData.color} />
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>UV INDEX</div>
+            <div style={{ fontSize: '20px', fontWeight: '800', color: '#f8fafc' }}>{uvData.index} - {uvData.risk}</div>
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: '10px', color: '#94a3b8' }}>REAPPLY SPF IN</div>
+          <div style={{ fontSize: '16px', fontWeight: '700', color: '#2dd4bf' }}>2h 00m</div>
+        </div>
+      </div>
+    );
+  };
+
+  const SkinScoreGauge = ({ score }: { score: number }) => {
+    const getColor = (s: number) => {
+      if (s >= 80) return '#2dd4bf';
+      if (s >= 60) return '#f59e0b';
+      return '#ef4444';
+    };
+    
+    const color = getColor(score);
+    const radius = 70;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (score / 100) * circumference;
+
+    return (
+      <div style={styles.scoreGauge}>
+        <svg width="180" height="180" viewBox="0 0 180 180" style={{ transform: 'rotate(-90deg)' }}>
+          <circle
+            cx="90"
+            cy="90"
+            r={radius}
+            fill="transparent"
+            stroke="rgba(255,255,255,0.05)"
+            strokeWidth="12"
+          />
+          <motion.circle
+            cx="90"
+            cy="90"
+            r={radius}
+            fill="transparent"
+            stroke={color}
+            strokeWidth="12"
+            strokeDasharray={circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset: offset }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            strokeLinecap="round"
+            style={{ filter: `drop-shadow(0 0 8px ${color}66)` }}
+          />
+        </svg>
+        <div style={{ position: 'absolute', textAlign: 'center' }}>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={styles.scoreValue(color)}
+          >
+            {score}
+          </motion.div>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>Skin Health</div>
+        </div>
+      </div>
+    );
+  };
+
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const ClinicFinder = () => {
+    const mapRef = React.useRef<HTMLDivElement>(null);
+    const mapInstance = React.useRef<any>(null);
+    const [clinics, setClinics] = React.useState<any[]>([]);
+    const [loadingClinics, setLoadingClinics] = React.useState(false);
+    const [userLocation, setUserLocation] = React.useState<[number, number] | null>(null);
+    const [statusMessage, setStatusMessage] = React.useState<string | null>(null);
+
+    const findClinics = (radius = 10000) => {
+      if (!navigator.geolocation) {
+        setStatusMessage("Geolocation is not supported by your browser");
+        return;
+      }
+
+      setLoadingClinics(true);
+      setStatusMessage("Detecting your location...");
+      
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation([latitude, longitude]);
+        setStatusMessage("Finding nearest clinics...");
+
+        if (!(window as any).L) return;
+        const L = (window as any).L;
+
+        if (!mapInstance.current && mapRef.current) {
+          mapInstance.current = L.map(mapRef.current).setView([latitude, longitude], 13);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+          }).addTo(mapInstance.current);
+        } else if (mapInstance.current) {
+          mapInstance.current.setView([latitude, longitude], radius > 10000 ? 10 : 13);
+        }
+
+        // User Marker
+        L.circle([latitude, longitude], {
+          color: '#00B4D8',
+          fillColor: '#00B4D8',
+          fillOpacity: 0.1,
+          radius: 500, // 500 meters
+          weight: 2,
+          dashArray: '5, 5'
+        }).addTo(mapInstance.current);
+
+        L.marker([latitude, longitude], {
+          icon: L.divIcon({
+            className: 'user-location-marker',
+            html: '<div style="width: 20px; height: 20px; background: #00B4D8; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 10px #00B4D8;"></div>',
+            iconSize: [20, 20]
+          })
+        }).addTo(mapInstance.current).bindPopup("You are here");
+
+        try {
+          const query = `
+            [out:json];
+            (
+              node["amenity"="doctors"]["healthcare:speciality"="dermatology"](around:${radius}, ${latitude}, ${longitude});
+              way["amenity"="doctors"]["healthcare:speciality"="dermatology"](around:${radius}, ${latitude}, ${longitude});
+              node["healthcare"="clinic"](around:${radius}, ${latitude}, ${longitude});
+              node["amenity"="clinic"](around:${radius}, ${latitude}, ${longitude});
+              node["amenity"="hospital"](around:${radius}, ${latitude}, ${longitude});
+            );
+            out body;
+            >;
+            out skel qt;
+          `;
+          const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+          const data = await response.json();
+          
+          let foundClinics = data.elements
+            .filter((e: any) => e.tags && (e.tags.name || e.tags['addr:street']))
+            .map((e: any) => ({
+              id: e.id,
+              name: e.tags.name || "Dermatology Clinic",
+              address: e.tags['addr:street'] ? `${e.tags['addr:housenumber'] || ''} ${e.tags['addr:street']}, ${e.tags['addr:city'] || ''}` : "Address not available",
+              lat: e.lat || (e.center ? e.center.lat : latitude),
+              lon: e.lon || (e.center ? e.center.lon : longitude),
+              distance: calculateDistance(latitude, longitude, e.lat || (e.center ? e.center.lat : latitude), e.lon || (e.center ? e.center.lon : longitude))
+            }))
+            .sort((a: any, b: any) => a.distance - b.distance);
+
+          if (foundClinics.length === 0 && radius === 10000) {
+            setStatusMessage("No specialized clinics found nearby. Expanding search to 50km...");
+            findClinics(50000);
+            return;
+          }
+
+          if (foundClinics.length === 0 && radius === 50000) {
+            setStatusMessage("No specialized clinics found within 50km. Showing general medical centers.");
+            const generalQuery = `
+              [out:json];
+              (
+                node["amenity"="doctors"](around:20000, ${latitude}, ${longitude});
+                node["healthcare"="clinic"](around:20000, ${latitude}, ${longitude});
+              );
+              out body 5;
+            `;
+            const genResponse = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(generalQuery)}`);
+            const genData = await genResponse.json();
+            foundClinics = genData.elements?.map((e: any) => ({
+              id: e.id,
+              name: e.tags.name || "Medical Center",
+              address: e.tags['addr:street'] ? `${e.tags['addr:housenumber'] || ''} ${e.tags['addr:street']}` : "Address not available",
+              lat: e.lat,
+              lon: e.lon,
+              distance: calculateDistance(latitude, longitude, e.lat, e.lon)
+            })).sort((a: any, b: any) => a.distance - b.distance);
+          }
+
+          setClinics(foundClinics);
+          setStatusMessage(null);
+
+          foundClinics.forEach((clinic: any) => {
+            const isSpecialized = clinic.name.toLowerCase().includes('derm') || clinic.name.toLowerCase().includes('skin');
+            const isHospital = clinic.name.toLowerCase().includes('hospital');
+            
+            // Add a sonar-style circle around the clinic
+            const circle = L.circle([clinic.lat, clinic.lon], {
+              color: isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8',
+              fillColor: isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8',
+              fillOpacity: 0.1,
+              radius: 200, // 200 meters
+              weight: 1,
+              className: 'sonar-circle'
+            }).addTo(mapInstance.current);
+
+            const marker = L.marker([clinic.lat, clinic.lon], {
+              icon: L.divIcon({
+                className: 'clinic-marker',
+                html: `
+                  <div style="position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                    <div style="position: absolute; inset: 0; background: ${isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8'}; border-radius: 50%; opacity: 0.3; animation: pulse 2s infinite;"></div>
+                    <div style="width: 12px; height: 12px; background: ${isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8'}; border: 2px solid white; border-radius: 50%; z-index: 1;"></div>
+                  </div>
+                `,
+                iconSize: [24, 24]
+              })
+            }).addTo(mapInstance.current);
+
+            marker.bindPopup(`
+              <div style="padding: 12px; min-width: 180px; font-family: 'Inter', sans-serif;">
+                <div style="font-size: 10px; color: ${isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8'}; font-weight: 800; text-transform: uppercase; margin-bottom: 4px;">${isSpecialized ? 'Specialized Care' : isHospital ? 'Hospital' : 'Medical Center'}</div>
+                <div style="font-weight: 800; color: #0f172a; margin-bottom: 4px; font-size: 14px;">${clinic.name}</div>
+                <div style="font-size: 11px; color: #64748b; margin-bottom: 12px;">${clinic.address}</div>
+                <div style="display: flex; gap: 8px;">
+                  <button onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${clinic.lat},${clinic.lon}')" style="flex: 1; background: #0f172a; color: white; border: none; padding: 8px; border-radius: 8px; font-weight: 700; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                    DIRECTIONS
+                  </button>
+                  <button style="flex: 1; background: #2dd4bf; color: #060818; border: none; padding: 8px; border-radius: 8px; font-weight: 700; font-size: 10px; cursor: pointer;">
+                    BOOK
+                  </button>
+                </div>
+              </div>
+            `);
+          });
+
+        } catch (error) {
+          console.error("Error fetching clinics:", error);
+          setStatusMessage("Error fetching clinics. Please try again.");
+        } finally {
+          setLoadingClinics(false);
+        }
+      }, (error) => {
+        console.error("Geolocation error:", error);
+        setStatusMessage("Please enable location access to find clinics.");
+        setLoadingClinics(false);
+      });
+    };
+
+    useEffect(() => {
+      findClinics();
+      return () => {
+        if (mapInstance.current) {
+          mapInstance.current.remove();
+          mapInstance.current = null;
+        }
+      };
+    }, []);
+
+    return (
+      <div className="page-container" style={styles.tabContent}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: '800', margin: 0 }}>Clinic Finder</h2>
+          <button 
+            onClick={() => findClinics()}
+            style={{ padding: '8px 16px', borderRadius: '12px', background: '#00B4D8', border: 'none', color: 'white', fontSize: '14px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <MapPin size={16} />
+            Refresh
+          </button>
+        </div>
+
+        {statusMessage && (
+          <div style={{ padding: '12px 16px', background: 'rgba(0, 180, 216, 0.1)', border: '1px solid rgba(0, 180, 216, 0.2)', borderRadius: '12px', color: '#00B4D8', fontSize: '14px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Activity size={16} className="animate-pulse" />
+            {statusMessage}
+          </div>
+        )}
+
+        <div style={{ position: 'relative', marginBottom: '20px' }}>
+          <div 
+            ref={mapRef} 
+            style={{ 
+              height: '350px', 
+              width: '100%', 
+              borderRadius: '24px', 
+              overflow: 'hidden',
+              border: '1px solid rgba(255,255,255,0.1)',
+              backgroundColor: 'rgba(15, 23, 42, 0.5)'
+            }} 
+          />
+          {loadingClinics && (
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(6, 8, 24, 0.7)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 1000, borderRadius: '24px' }}>
+              <RotateCcw className="animate-spin" size={32} color="#00B4D8" />
+              <p style={{ marginTop: '12px', fontSize: '14px', fontWeight: '600' }}>Locating nearby clinics...</p>
+            </div>
+          )}
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px' }}>Closest Clinics</h3>
+          {clinics.length === 0 && !loadingClinics ? (
+            <div style={{ padding: '20px', textAlign: 'center', background: 'rgba(255,255,255,0.03)', borderRadius: '20px' }}>
+              <p style={{ color: '#64748b', fontSize: '14px' }}>No clinics found in your area.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {clinics?.slice(0, 3).map(clinic => (
+                <div key={clinic.id} className="glass-card" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: '700', fontSize: '15px' }}>{clinic.name}</div>
+                    <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>{clinic.address}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '14px', fontWeight: '800', color: '#00B4D8' }}>{clinic.distance.toFixed(1)} km</div>
+                    <button style={{ background: 'transparent', border: 'none', color: '#2dd4bf', fontSize: '12px', fontWeight: '700', padding: 0, marginTop: '4px' }}>DETAILS</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const ConfidenceMeter = ({ score, currentSection }: { score: number; currentSection: number }) => {
+  const getColor = () => {
+    if (score < 50) return '#ef4444';
+    if (score < 80) return '#f59e0b';
+    return '#2dd4bf';
+  };
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass-card p-4 rounded-2xl mb-6 border border-white/5"
+    >
+      <div className="flex justify-between items-center mb-2">
+        <div className="flex flex-col">
+          <span className="text-[10px] font-bold text-teal-400 uppercase tracking-widest mb-1">Section {currentSection} of 4</span>
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Form Completeness</span>
+        </div>
+        <span className="text-sm font-black" style={{ color: getColor() }}>{score}%</span>
+      </div>
+      <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+        <motion.div 
+          initial={{ width: 0 }}
+          animate={{ width: `${score}%` }}
+          transition={{ duration: 0.5 }}
+          className="h-full"
+          style={{ backgroundColor: getColor() }}
+        />
+      </div>
+    </motion.div>
+  );
+};
+
+const ScanPage = ({
+  result,
+  saveStatus,
+  photos,
+  note,
+  intakeForm,
+  skinScore,
+  scans,
+  confidenceScore,
+  showConfidenceWarning,
+  error,
+  checkingQuality,
+  imageQuality,
+  fileInputRef,
+  triggerFileInput,
+  handleFileChange,
+  removePhoto,
+  analyzeSkin,
+  retakePhoto,
+  downloadPDF,
+  setCompareScanId,
+  setSelectedScanId,
+  setIsComparing,
+  setActiveTab,
+  setShowEduCard,
+  setShowConfidenceWarning,
+  updateIntake,
+  updateQualityCheck,
+  fullUserData,
+  loading
+}: any) => {
+  const [currentSection, setCurrentSection] = React.useState(1);
+  const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({
+    'Sun Exposure History': true,
+    'Medical History': true
+  });
+
+  const toggleSection = (title: string, sectionNum: number) => {
+    setOpenSections(prev => ({ ...prev, [title]: !prev[title] }));
+    if (sectionNum) setCurrentSection(sectionNum);
+  };
+
+  const allQualityChecked = intakeForm.qualityCheck.clear && 
+                           intakeForm.qualityCheck.lighting && 
+                           intakeForm.qualityCheck.fillsFrame && 
+                           intakeForm.qualityCheck.uploaded &&
+                           photos.length > 0;
+
+  return (
+    <div className="page-container" style={styles.tabContent}>
+      {result ? (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          style={styles.resultCard}
+        >
+          <div className="flex items-center gap-2 mb-4 text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+            <Info size={12} className="text-slate-400" />
+            Skin cancer screening assessment — Not a medical diagnosis
+          </div>
+          
+          <div className="mb-6">
+            <div style={styles.riskBadge(result.risk_level)}>
+              {result.risk_level === 'high' ? <AlertTriangle size={20} /> : <CheckCircle2 size={20} />}
+              <span>
+                {result.risk_level === 'high' ? 'HIGH RISK' : result.risk_level === 'moderate' ? 'MODERATE RISK' : 'LOW RISK'}
+              </span>
+            </div>
+            <p className="text-sm font-bold text-white mt-3 px-1">{result.summary}</p>
+          </div>
+
+          <div className="glass-card p-6 rounded-3xl mb-6 border border-cyan-500/20">
+            <h3 style={styles.sectionTitle} className="text-cyan-400"><Activity size={20} /> <span>What the AI noticed</span></h3>
+            <div className="space-y-3">
+              {result.findings?.slice(0, 3).map((f: any, i: number) => (
+                <div key={i} className="flex gap-3 text-sm text-slate-200 leading-relaxed">
+                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 shrink-0 mt-1.5" />
+                  {f}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className={`p-6 rounded-3xl mb-6 border ${
+            result.risk_level === 'high' ? 'bg-red-500/10 border-red-500/30' :
+            result.risk_level === 'moderate' ? 'bg-amber-500/10 border-amber-500/30' :
+            'bg-emerald-500/10 border-emerald-500/30'
+          }`}>
+            <h3 className={`text-sm font-black uppercase tracking-widest mb-3 flex items-center gap-2 ${
+              result.risk_level === 'high' ? 'text-red-400' :
+              result.risk_level === 'moderate' ? 'text-amber-400' :
+              'text-emerald-400'
+            }`}>
+              <AlertCircle size={18} /> <span>Do you need to act?</span>
+            </h3>
+            <p className="text-sm font-bold text-white leading-relaxed">{result.action_card}</p>
+          </div>
+
+          <div className="glass-card p-6 rounded-3xl mb-6 border border-purple-500/20">
+            <h3 style={styles.sectionTitle} className="text-purple-400"><ShieldCheck size={20} /> <span>Your personal risk factors</span></h3>
+            <div className="space-y-3">
+              {result.risk_factors_identified?.slice(0, 2).map((rf: any, i: number) => (
+                <div key={i} className="flex gap-3 text-sm text-slate-200 leading-relaxed">
+                  <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0 mt-1.5" />
+                  {rf}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {saveStatus === 'success' && (
+            <div className="p-4 bg-emerald-500/20 border border-emerald-500/50 rounded-2xl flex items-center gap-3 mb-6 animate-bounce">
+              <CheckCircle2 size={20} className="text-emerald-400" />
+              <span className="text-sm font-bold text-emerald-300">Scan saved to your account</span>
+            </div>
+          )}
+
+          {saveStatus === 'error' && (
+            <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-2xl flex items-center gap-3 mb-6">
+              <AlertTriangle size={20} className="text-red-400" />
+              <span className="text-sm font-bold text-red-300">Error saving scan. Please try again.</span>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-3">
+            <button style={styles.analyzeButton} onClick={() => downloadPDF()}>
+              <Download size={20} /> Download PDF Report
+            </button>
+            {scans.filter((s: any) => s.bodyRegion === intakeForm.bodyLocation).length > 0 && (
+              <button 
+                onClick={() => {
+                  const otherScans = scans.filter((s: any) => s.bodyRegion === intakeForm.bodyLocation);
+                  if (otherScans.length > 0) {
+                    setCompareScanId(otherScans[0].id);
+                    setSelectedScanId(scans[0].id);
+                    setIsComparing(true);
+                  }
+                }}
+                className="w-full py-4 bg-teal-500/10 border border-teal-500/30 text-teal-400 font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-teal-500/20 transition-all"
+              >
+                <History size={20} /> Compare with Previous
+              </button>
+            )}
+            <button 
+              onClick={retakePhoto}
+              className="w-full py-4 bg-white/5 border border-white/10 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-white/10 transition-all"
+            >
+              <RotateCcw size={20} /> Retake Assessment
+            </button>
+          </div>
+        </motion.div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <ConfidenceMeter score={confidenceScore} currentSection={currentSection} />
+          
+          <AnimatePresence>
+            {showConfidenceWarning && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-amber-500/20 border border-amber-500/50 p-6 rounded-3xl mb-2"
+              >
+                <div className="flex items-center gap-3 mb-2 text-amber-500">
+                  <AlertTriangle size={24} />
+                  <h3 className="font-bold">Limited data provided</h3>
+                </div>
+                <p className="text-sm text-amber-200/80 mb-4">
+                  The AI will attempt analysis but accuracy may be reduced. We strongly recommend completing more sections for a reliable result.
+                </p>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setShowConfidenceWarning(false)}
+                    className="flex-1 py-3 bg-amber-500 text-white font-bold rounded-xl text-sm"
+                  >
+                    Complete More Info
+                  </button>
+                  <button 
+                    onClick={() => analyzeSkin(true)}
+                    className="flex-1 py-3 bg-white/10 text-white font-bold rounded-xl text-sm"
+                  >
+                    Continue Anyway
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {(error || confidenceScore < 50) && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-red-500/20 border border-red-500/50 p-6 rounded-3xl mb-2"
+              >
+                <div className="flex items-center gap-3 mb-2 text-red-500">
+                  <AlertCircle size={24} />
+                  <h3 className="font-bold">{confidenceScore < 50 ? "Insufficient information" : "Analysis Error"}</h3>
+                </div>
+                <p className="text-sm text-red-200/80">
+                  {confidenceScore < 50 
+                    ? "More data is needed for a safe and accurate assessment. Please complete more sections of the intake form and upload clear photos to reach at least 50% completeness."
+                    : error}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div 
+            style={styles.uploadZone}
+            onClick={triggerFileInput}
+          >
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              multiple 
+              accept="image/*" 
+              style={{ display: 'none' }} 
+            />
+            {photos.length === 0 ? (
+              <>
+                <Camera size={48} color="#2dd4bf" style={{ marginBottom: '12px' }} />
+                <p style={{ fontWeight: '700' }}>Capture or Upload Photos</p>
+                <p style={{ fontSize: '12px', color: '#94a3b8' }}>Up to 6 clear photos</p>
+              </>
+            ) : (
+              <div style={styles.photoGrid}>
+                {photos?.map((p: string, i: number) => (
+                  <div key={i} style={{ position: 'relative' }}>
+                    <img src={p} style={styles.photoThumbnail} />
+                    <button style={styles.removeBtn} onClick={(e) => { e.stopPropagation(); removePhoto(i); }}><X size={14} /></button>
+                  </div>
+                ))}
+                {photos.length < 6 && (
+                  <div style={{ ...styles.photoThumbnail, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', border: '1px dashed #2dd4bf' }}>
+                    <Plus size={24} color="#2dd4bf" />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {checkingQuality && (
+            <div className="flex items-center gap-2 text-sm text-cyan-400 animate-pulse px-2">
+              <RefreshCw size={16} className="animate-spin" />
+              AI checking image quality...
+            </div>
+          )}
+          {imageQuality === 'POOR' && (
+            <div className="bg-amber-500/20 border border-amber-500/50 p-4 rounded-2xl text-sm text-amber-200">
+              This photo appears blurry or poorly lit. For accurate analysis please retake the photo in good natural lighting with the camera close to the skin.
+            </div>
+          )}
+          {imageQuality === 'NOT_SKIN' && (
+            <div className="bg-red-500/20 border border-red-500/50 p-4 rounded-2xl text-sm text-red-200">
+              This does not appear to be a photo of skin. Please upload a clear photo of the skin area you want analyzed.
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <div className="glass-card rounded-3xl overflow-hidden">
+              <div className="p-6 flex justify-between items-center bg-white/5">
+                <h3 className="text-lg font-bold flex items-center gap-2"><User size={20} color="#2dd4bf" /> SECTION 1 — Your Profile</h3>
+                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Auto-filled</span>
+              </div>
+              <div className="p-6">
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold text-slate-300">
+                    Age: {fullUserData?.ageRange || 'Not set'}
+                  </div>
+                  <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold text-slate-300 flex items-center gap-2">
+                    Skin Type: {fullUserData?.fitzpatrickType ? `Type ${fullUserData.fitzpatrickType}` : 'Not set'}
+                    {fullUserData?.fitzpatrickType && (
+                      <div 
+                        style={{ 
+                          width: '12px', 
+                          height: '12px', 
+                          borderRadius: '3px', 
+                          background: fitzpatrickTypes.find(t => t.id === fullUserData.fitzpatrickType)?.color 
+                        }} 
+                      />
+                    )}
+                  </div>
+                  <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold text-slate-300">
+                    {fullUserData?.ethnicity || 'Ethnicity not set'}
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  From your profile · <button onClick={() => setActiveTab('profile')} className="text-cyan-400 hover:underline font-bold">Edit</button>
+                </p>
+              </div>
+            </div>
+
+            <div className="glass-card rounded-3xl overflow-hidden">
+              <div className="p-6 flex justify-between items-center bg-white/5">
+                <h3 className="text-lg font-bold flex items-center gap-2"><MapPin size={20} color="#a855f7" /> SECTION 2 — About This Skin Spot</h3>
+                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Required</span>
+              </div>
+              <div className="p-6 bg-amber-500/10 border-b border-amber-500/20">
+                <p className="text-xs text-amber-200/80 leading-relaxed italic">
+                  <span className="font-bold text-amber-400">Note:</span> These questions help our AI provide a more accurate assessment based on clinical risk factors.
+                </p>
+              </div>
+              <div className="p-6 space-y-6">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Where exactly on your body is it? <span className="text-red-500">*</span></label>
+                  <select 
+                    className={`w-full bg-white/5 border rounded-xl p-4 text-white outline-none transition-all ${!intakeForm.bodyLocation ? 'border-red-500/30' : 'border-white/10 focus:border-cyan-500'}`}
+                    value={intakeForm.bodyLocation}
+                    onChange={(e) => updateIntake('bodyLocation', e.target.value)}
+                  >
+                    <option value="" disabled>Select Location</option>
+                    {bodyLocations.map(l => <option key={l} value={l} className="bg-slate-900">{l}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">How long have you had this spot?</label>
+                  <select 
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-cyan-500 transition-all"
+                    value={intakeForm.duration}
+                    onChange={(e) => updateIntake('duration', e.target.value)}
+                  >
+                    <option value="" disabled>Select Duration</option>
+                    {durations.map(d => <option key={d} value={d} className="bg-slate-900">{d}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Has it changed recently?</label>
+                  <div className="flex gap-2">
+                    {['Yes', 'No', "Not sure"].map(o => (
+                      <button 
+                        key={o}
+                        onClick={() => updateIntake('changedRecently', o)}
+                        className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all ${intakeForm.changedRecently === o ? 'bg-purple-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+                      >
+                        {o}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="glass-card rounded-3xl overflow-hidden">
+              <div className="p-6 flex justify-between items-center bg-white/5">
+                <h3 className="text-lg font-bold flex items-center gap-2"><Sun size={20} color="#f59e0b" /> SECTION 3 — Sun History</h3>
+                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Required</span>
+              </div>
+              <div className="p-6 space-y-6">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">How much sun exposure do you get daily?</label>
+                  <select 
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-cyan-500 transition-all"
+                    value={intakeForm.dailySunExposure}
+                    onChange={(e) => updateIntake('dailySunExposure', e.target.value)}
+                  >
+                    <option value="" disabled>Select Exposure</option>
+                    <option value="Mostly indoors" className="bg-slate-900">Mostly indoors</option>
+                    <option value="Moderate (30 min to 2 hours)" className="bg-slate-900">Moderate (30 min to 2 hours)</option>
+                    <option value="High (more than 2 hours outdoors)" className="bg-slate-900">High (more than 2 hours outdoors)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Have you ever had severe blistering sunburns?</label>
+                  <div className="flex gap-2">
+                    {['Never', 'Once or twice', 'Many times'].map(o => (
+                      <button 
+                        key={o}
+                        onClick={() => updateIntake('severeSunburns', o)}
+                        className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.severeSunburns === o ? 'bg-amber-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+                      >
+                        {o}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Do you regularly use sun protection?</label>
+                  <div className="flex gap-2">
+                    {['Never', 'Sometimes', 'Always'].map(o => (
+                      <button 
+                        key={o}
+                        onClick={() => updateIntake('useSunProtection', o)}
+                        className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.useSunProtection === o ? 'bg-amber-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+                      >
+                        {o}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="glass-card rounded-3xl overflow-hidden">
+              <div className="p-6 flex justify-between items-center bg-white/5">
+                <h3 className="text-lg font-bold flex items-center gap-2"><Activity size={20} color="#ef4444" /> SECTION 4 — Medical History</h3>
+                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Required</span>
+              </div>
+              <div className="p-6 space-y-6">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Have you or a blood relative had skin cancer?</label>
+                  <div className="flex flex-wrap gap-2">
+                    {['Yes (me)', 'Yes (family member)', 'Yes (both)', 'No'].map(o => (
+                      <button 
+                        key={o}
+                        onClick={() => updateIntake('cancerHistory', o)}
+                        className={`flex-1 min-w-[120px] py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.cancerHistory === o ? 'bg-red-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+                      >
+                        {o}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {intakeForm.cancerHistory !== 'No' && intakeForm.cancerHistory !== '' && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Which type?</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['Melanoma', 'Basal Cell Carcinoma', 'Squamous Cell Carcinoma', 'Not sure'].map(type => (
+                        <button 
+                          key={type}
+                          onClick={() => {
+                            const current = intakeForm.cancerTypes;
+                            if (current.includes(type)) {
+                              updateIntake('cancerTypes', current.filter((t: string) => t !== type));
+                            } else {
+                              updateIntake('cancerTypes', [...current, type]);
+                            }
+                          }}
+                          className={`py-3 px-4 rounded-xl font-bold text-[10px] transition-all ${intakeForm.cancerTypes.includes(type) ? 'bg-red-500/20 text-red-400 border border-red-500' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Do you have many unusual or atypical moles?</label>
+                  <div className="flex gap-2">
+                    {['Yes', 'No', 'Not sure'].map(o => (
+                      <button 
+                        key={o}
+                        onClick={() => updateIntake('atypicalMoles', o)}
+                        className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.atypicalMoles === o ? 'bg-red-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+                      >
+                        {o}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Are you immunocompromised or on immunosuppressant medications?</label>
+                  <div className="flex gap-2">
+                    {['Yes', 'No', 'Not sure'].map(o => (
+                      <button 
+                        key={o}
+                        onClick={() => updateIntake('isImmunocompromised', o)}
+                        className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.isImmunocompromised === o ? 'bg-red-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+                      >
+                        {o}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="glass-card rounded-3xl overflow-hidden border-2 border-cyan-500/30">
+              <div className="p-6 flex justify-between items-center bg-cyan-500/10">
+                <h3 className="text-lg font-bold flex items-center gap-2"><ShieldCheck size={20} color="#2dd4bf" /> SECTION 5 — Image Quality Confirmation</h3>
+                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Required</span>
+              </div>
+              <div className="p-6 space-y-4">
+                {[
+                  { id: 'clear', label: "The photo is clear and in focus" },
+                  { id: 'lighting', label: "The lighting is good — no shadows" },
+                  { id: 'fillsFrame', label: "The spot fills most of the frame" },
+                  { id: 'uploaded', label: "I have uploaded at least one photo" }
+                ].map(item => (
+                  <button 
+                    key={item.id}
+                    onClick={() => updateQualityCheck(item.id as any, !intakeForm.qualityCheck[item.id as keyof IntakeForm['qualityCheck']])}
+                    className={`w-full flex items-center gap-3 p-4 rounded-2xl text-sm font-medium transition-all ${intakeForm.qualityCheck[item.id as keyof IntakeForm['qualityCheck']] ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+                  >
+                    <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${intakeForm.qualityCheck[item.id as keyof IntakeForm['qualityCheck']] ? 'bg-cyan-500 border-cyan-500' : 'border-slate-600'}`}>
+                      {intakeForm.qualityCheck[item.id as keyof IntakeForm['qualityCheck']] && <Check size={14} color="white" />}
+                    </div>
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 mb-2">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Data Sufficiency</span>
+              <span className={`text-xs font-black ${confidenceScore >= 70 ? 'text-emerald-400' : 'text-cyan-400'}`}>{confidenceScore}%</span>
+            </div>
+            <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/10">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${confidenceScore}%` }}
+                className={`h-full ${confidenceScore >= 70 ? 'bg-emerald-500' : 'bg-cyan-500'}`}
+              />
+            </div>
+            {confidenceScore < 70 && (
+              <p className="text-[10px] text-slate-500 mt-2 italic">
+                Complete more sections to reach 70% sufficiency for AI analysis.
+              </p>
+            )}
+          </div>
+
+          <button 
+            style={{ ...styles.analyzeButton, opacity: confidenceScore < 70 || !intakeForm.bodyLocation || loading ? 0.5 : 1 }}
+            disabled={confidenceScore < 70 || !intakeForm.bodyLocation || loading}
+            onClick={() => analyzeSkin()}
+          >
+            {loading ? (
+              <>
+                <RefreshCw className="animate-spin" size={20} />
+                Analyzing with AI...
+              </>
+            ) : (
+              <>
+                <SparklesIcon size={20} />
+                Analyze Now
+              </>
+            )}
+          </button>
+          {confidenceScore < 70 && (
+            <p className="text-center text-xs text-red-400 font-bold animate-pulse">
+              Please complete the intake form and confirm image quality to reach 70% sufficiency.
+            </p>
+          )}
+          {!intakeForm.bodyLocation && confidenceScore >= 70 && (
+            <p className="text-center text-xs text-red-400 font-bold animate-pulse">
+              Please select body location to continue
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const WelcomePage = ({ onComplete }: { onComplete: () => void }) => {
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.2 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: '#060818',
+      color: '#f8fafc',
+      padding: '40px 16px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'stretch'
+    }}>
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        style={{ width: '100%' }}
+      >
+        <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
+          <div style={{
+            width: '80px', height: '80px', borderRadius: '24px',
+            background: 'rgba(45, 212, 191, 0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: '16px', border: '1px solid rgba(45, 212, 191, 0.2)',
+            boxShadow: '0 0 20px rgba(45, 212, 191, 0.2)'
+          }}>
+            <Dna size={40} color="#2dd4bf" className="animate-pulse" />
+          </div>
+          <h1 style={{ fontSize: '16px', fontWeight: '900', color: '#2dd4bf', letterSpacing: '4px', textTransform: 'uppercase' }}>Skin Tight</h1>
+        </motion.div>
+
+        <motion.div variants={itemVariants} style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <h2 style={{ fontSize: '40px', fontWeight: '900', marginBottom: '12px', lineHeight: 1.1 }}>Catch It Early.</h2>
+          <p style={{ fontSize: '18px', color: '#94a3b8', lineHeight: 1.5 }}>AI-powered skin cancer monitoring for everyone.</p>
+        </motion.div>
+
+        <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '40px' }}>
+          {[
+            { icon: '🌍', number: '1 in 5', text: 'Americans will develop skin cancer in their lifetime.' },
+            { icon: '📈', number: '98%+', text: 'Detected early, skin cancer survival rates exceed 98%.' },
+            { icon: '⏱️', number: '60s', text: 'Early detection starts with a 60-second scan.' }
+          ].map((card, i) => (
+            <div key={i} className="glass-card" style={{ padding: '20px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <span style={{ fontSize: '24px' }}>{card.icon}</span>
+              <div>
+                <span style={{ fontWeight: '900', fontSize: '18px', color: '#f8fafc', display: 'block' }}>{card.number}</span>
+                <span style={{ fontSize: '14px', color: '#94a3b8' }}>{card.text}</span>
+              </div>
+            </div>
+          ))}
+        </motion.div>
+
+        <motion.div variants={itemVariants} style={{ marginBottom: '32px' }}>
+          <h3 style={{ fontSize: '14px', fontWeight: '900', color: '#2dd4bf', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>What Skin Tight does:</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {[
+              'Analyzes photos of suspicious moles, spots and lesions',
+              'Assesses skin cancer risk using clinical ABCDE criteria',
+              'Tracks changes over time and alerts you when to see a doctor'
+            ].map((point, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', fontSize: '14px', color: '#cbd5e1' }}>
+                <CheckCircle2 size={18} color="#2dd4bf" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <span>{point}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div variants={itemVariants} style={{ marginBottom: '40px' }}>
+          <h3 style={{ fontSize: '14px', fontWeight: '900', color: '#ef4444', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>What Skin Tight does NOT do:</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {[
+              'Diagnose skin cancer — only a doctor can do that',
+              'Replace professional dermatology care',
+              'Provide general skincare or beauty advice'
+            ].map((point, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', fontSize: '14px', color: '#94a3b8' }}>
+                <X size={18} color="#ef4444" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <span>{point}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.p variants={itemVariants} style={{ fontSize: '12px', color: '#64748b', textAlign: 'center', lineHeight: 1.6, marginBottom: '40px' }}>
+          Skin Tight is a wellness monitoring tool currently in beta testing. It uses AI vision trained on clinical dermatology guidelines to help you identify suspicious spots earlier. It is not a medical device and does not provide medical diagnoses. Always consult a licensed board-certified dermatologist for any skin concerns.
+        </motion.p>
+
+        <motion.button
+          variants={itemVariants}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={onComplete}
+          style={{
+            width: '100%',
+            padding: '20px',
+            borderRadius: '24px',
+            border: 'none',
+            background: 'linear-gradient(135deg, #2dd4bf 0%, #0d9488 100%)',
+            color: '#020617',
+            fontWeight: '900',
+            fontSize: '18px',
+            cursor: 'pointer',
+            boxShadow: '0 10px 30px rgba(45, 212, 191, 0.3)'
+          }}
+        >
+          Get Started
+        </motion.button>
+      </motion.div>
+    </div>
+  );
+};
+
+const AboutPage = () => {
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
+  return (
+    <div className="page-container" style={styles.tabContent}>
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="w-full space-y-12 pb-20"
+      >
+        {/* HEADER */}
+        <motion.div variants={itemVariants} className="flex flex-col items-center text-center pt-8">
+          <div style={{
+            width: '100px', height: '100px', borderRadius: '30px',
+            background: 'rgba(45, 212, 191, 0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: '24px', border: '1px solid rgba(45, 212, 191, 0.2)',
+            boxShadow: '0 0 30px rgba(45, 212, 191, 0.3)'
+          }}>
+            <Dna size={50} color="#2dd4bf" className="animate-pulse" />
+          </div>
+          <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#f8fafc', marginBottom: '8px' }}>Skin Tight</h1>
+          <p style={{ fontSize: '18px', color: '#2dd4bf', fontWeight: '600' }}>AI-powered skin cancer monitoring for everyone.</p>
+        </motion.div>
+
+        {/* MISSION SECTION */}
+        <motion.div variants={itemVariants} className="glass-card p-8 rounded-3xl">
+          <h2 className="text-xl font-black text-white mb-4 flex items-center gap-2">
+            <SparklesIcon size={20} className="text-teal-400" /> Our Mission
+          </h2>
+          <p className="text-slate-300 leading-relaxed text-sm">
+            Skin cancer is the most common cancer in the world. One in five Americans will develop it in their lifetime — yet when caught early, survival rates exceed 98%. Skin Tight exists for one reason: to help people catch it early. We built an AI screening tool trained on clinical dermatology guidelines from the American Academy of Dermatology, the Skin Cancer Foundation, and Yale and Brown University research — so that anyone with a smartphone can monitor suspicious spots on their skin and know when to see a doctor before it is too late.
+          </p>
+        </motion.div>
+
+        {/* IMPACT STATS */}
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            { label: '1 in 5', sub: 'Americans develop skin cancer' },
+            { label: '98%', sub: 'survival rate when caught early' },
+            { label: '60 sec', sub: 'to complete a scan' }
+          ].map((stat, i) => (
+            <div key={i} className="glass-card p-6 rounded-2xl text-center">
+              <div className="text-2xl font-black text-teal-400 mb-1">{stat.label}</div>
+              <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">{stat.sub}</div>
+            </div>
+          ))}
+        </motion.div>
+
+        {/* WHAT WE DO SECTION */}
+        <motion.div variants={itemVariants} className="space-y-4">
+          <h2 className="text-lg font-black text-white px-2">What Skin Tight does</h2>
+          <div className="space-y-3">
+            {[
+              'Analyzes photos of suspicious moles, spots and skin lesions using AI vision',
+              'Assesses skin cancer risk using the clinical ABCDE criteria used by dermatologists',
+              'Tracks changes in your skin over time and tells you when to see a doctor'
+            ].map((point, i) => (
+              <div key={i} className="glass-card p-4 rounded-2xl flex items-start gap-4">
+                <CheckCircle2 size={20} className="text-teal-400 shrink-0 mt-0.5" />
+                <span className="text-sm text-slate-300">{point}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* WHAT WE DO NOT DO SECTION */}
+        <motion.div variants={itemVariants} className="space-y-4">
+          <h2 className="text-lg font-black text-white px-2">What Skin Tight does NOT do</h2>
+          <div className="space-y-3">
+            {[
+              'Diagnose skin cancer — only a licensed dermatologist can do that',
+              'Replace professional medical care or dermatology appointments',
+              'Provide general skincare, beauty or cosmetic advice'
+            ].map((point, i) => (
+              <div key={i} className="glass-card p-4 rounded-2xl flex items-start gap-4 border-red-500/10">
+                <X size={20} className="text-red-400 shrink-0 mt-0.5" />
+                <span className="text-sm text-slate-400">{point}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* IMPORTANT DISCLAIMER SECTION */}
+        <motion.div variants={itemVariants} className="p-8 rounded-3xl bg-amber-500/10 border border-amber-500/20">
+          <h2 className="text-lg font-black text-amber-500 mb-4 flex items-center gap-2">
+            <AlertTriangle size={24} /> Important Notice
+          </h2>
+          <p className="text-sm text-amber-200/80 leading-relaxed">
+            Skin Tight is a wellness monitoring tool currently in beta testing. It uses AI vision to help identify potentially suspicious skin changes earlier. It is NOT a medical device, does NOT provide medical diagnoses, and should NEVER be used as a substitute for professional medical advice. Always consult a licensed board-certified dermatologist for any skin concern. If you notice a rapidly changing, bleeding or painful lesion seek medical attention immediately regardless of what this app says.
+          </p>
+        </motion.div>
+
+        {/* CLINICAL SOURCES SECTION */}
+        <motion.div variants={itemVariants} className="space-y-4">
+          <h2 className="text-lg font-black text-white px-2">Built on Clinical Research</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              'American Academy of Dermatology — Clinical Practice Guidelines',
+              'The Skin Cancer Foundation — ABCDE Detection Framework',
+              'Yale School of Medicine — Melanoma in Situ Research',
+              'Brown University — Dermatology and Cutaneous Oncology'
+            ].map((source, i) => (
+              <div key={i} className="glass-card p-4 rounded-2xl flex items-center gap-4">
+                <FileText size={20} className="text-slate-400 shrink-0" />
+                <span className="text-xs text-slate-300">{source}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* CONTACT SECTION */}
+        <motion.div variants={itemVariants} className="glass-card p-8 rounded-3xl text-center">
+          <h2 className="text-lg font-black text-white mb-4">Questions or Feedback</h2>
+          <p className="text-sm text-slate-400 mb-6">
+            Skin Tight is actively being developed. If you have feedback, encounter an issue, or want to partner with us reach out at:
+          </p>
+          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 font-bold mb-6">
+            <Mail size={18} /> contact@skinscanai.com
+          </div>
+          <p className="text-[10px] text-red-400/70 font-bold uppercase tracking-widest">
+            For medical emergencies always call 911 or visit your nearest emergency room.
+          </p>
+        </motion.div>
+
+        {/* VERSION INFO */}
+        <motion.div variants={itemVariants} className="text-center space-y-1">
+          <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">Skin Tight — Beta Version 1.0 — Built with Gemini AI</p>
+          <p className="text-[10px] text-slate-700">© 2025 Skin Tight. All rights reserved.</p>
+        </motion.div>
+      </motion.div>
+    </div>
+  );
+};
+
+const RoutinePage = ({ 
+  protocol, 
+  loadingProtocol, 
+  protocolError, 
+  generateProtocol,
+  loadProtocolFromFirestore,
+  currentUser
+}: any) => {
+  useEffect(() => {
+    if (currentUser) {
+      loadProtocolFromFirestore();
+    }
+  }, [currentUser]);
+
+  return (
+    <div className="page-container" style={styles.tabContent}>
+      <div className="flex justify-between items-center mb-6">
+        <h2 style={styles.sectionTitle}><ShieldCheck size={24} color="#2dd4bf" /> <span>Prevention Protocol</span></h2>
+        <button 
+          onClick={generateProtocol}
+          disabled={loadingProtocol}
+          className="p-2 bg-white/5 border border-white/10 rounded-xl text-cyan-400 hover:bg-white/10 transition-all"
+        >
+          <RefreshCw size={20} className={loadingProtocol ? 'animate-spin' : ''} />
+        </button>
+      </div>
+
+      {loadingProtocol ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <div className="w-16 h-16 rounded-full border-4 border-cyan-500/20 border-t-cyan-500 animate-spin" />
+          <p className="text-slate-400 font-bold animate-pulse">AI generating your prevention plan...</p>
+        </div>
+      ) : protocolError ? (
+        <div className="glass-card p-8 rounded-3xl text-center border-red-500/20">
+          <AlertTriangle size={48} className="text-red-400 mx-auto mb-4" />
+          <h3 className="text-lg font-bold text-white mb-2">Protocol Unavailable</h3>
+          <p className="text-sm text-slate-400 mb-6">{protocolError}</p>
+          <button onClick={generateProtocol} style={styles.analyzeButton}>Try Again</button>
+        </div>
+      ) : protocol ? (
+        <div className="space-y-6">
+          <div className="glass-card p-6 rounded-3xl border-teal-500/20">
+            <h3 className="text-sm font-black text-teal-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <Sun size={18} /> Daily Protection
+            </h3>
+            <div className="space-y-4">
+              {protocol.daily_protection?.map((item: any, i: number) => (
+                <div key={i} className="flex gap-4">
+                  <div className="w-8 h-8 rounded-full bg-teal-500/10 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-black text-teal-400">{i + 1}</span>
+                  </div>
+                  <p className="text-sm text-slate-200 leading-relaxed">{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="glass-card p-6 rounded-3xl border-purple-500/20">
+            <h3 className="text-sm font-black text-purple-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <Eye size={18} /> Monitoring Schedule
+            </h3>
+            <div className="space-y-4">
+              {protocol.monitoring_schedule?.map((item: any, i: number) => (
+                <div key={i} className="flex gap-4">
+                  <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-black text-purple-400">{i + 1}</span>
+                  </div>
+                  <p className="text-sm text-slate-200 leading-relaxed">{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="glass-card p-6 rounded-3xl border-amber-500/20">
+            <h3 className="text-sm font-black text-amber-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <Heart size={18} /> Lifestyle Recommendations
+            </h3>
+            <div className="space-y-4">
+              {protocol.lifestyle_recommendations?.map((item: any, i: number) => (
+                <div key={i} className="flex gap-4">
+                  <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-black text-amber-400">{i + 1}</span>
+                  </div>
+                  <p className="text-sm text-slate-200 leading-relaxed">{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="p-6 rounded-3xl bg-cyan-500/10 border border-cyan-500/20">
+            <h3 className="text-sm font-black text-cyan-400 uppercase tracking-widest mb-2">AI Summary</h3>
+            <p className="text-sm text-white font-medium leading-relaxed italic">"{protocol.summary}"</p>
+          </div>
+        </div>
+      ) : (
+        <div className="glass-card p-8 rounded-3xl text-center">
+          <SparklesIcon size={48} className="text-cyan-400 mx-auto mb-4" />
+          <h3 className="text-lg font-bold text-white mb-2">No Protocol Yet</h3>
+          <p className="text-sm text-slate-400 mb-6">Generate a personalized skin cancer prevention plan based on your risk factors.</p>
+          <button onClick={generateProtocol} style={styles.analyzeButton}>Generate Protocol</button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ShopPage = () => {
+  const products = [
+    { id: 1, name: 'Mineral Shield SPF 50', price: '$24.00', category: 'Sunscreen', rating: 4.8, image: 'https://picsum.photos/seed/spf/400/400' },
+    { id: 2, name: 'Derm-Grade UV Patch', price: '$18.00', category: 'Monitoring', rating: 4.9, image: 'https://picsum.photos/seed/uvpatch/400/400' },
+    { id: 3, name: 'After-Sun Recovery Gel', price: '$15.00', category: 'Care', rating: 4.7, image: 'https://picsum.photos/seed/gel/400/400' },
+    { id: 4, name: 'UPF 50+ Sun Hoodie', price: '$45.00', category: 'Apparel', rating: 4.9, image: 'https://picsum.photos/seed/hoodie/400/400' }
+  ];
+
+  return (
+    <div className="page-container" style={styles.tabContent}>
+      <h2 style={styles.sectionTitle} className="mb-6"><ShoppingBag size={24} color="#2dd4bf" /> <span>Prevention Shop</span></h2>
+      
+      <div className="grid grid-cols-2 gap-4">
+        {products.map(p => (
+          <div key={p.id} className="glass-card overflow-hidden rounded-3xl flex flex-col">
+            <img src={p.image} alt={p.name} className="w-full aspect-square object-cover" referrerPolicy="no-referrer" />
+            <div className="p-4 flex-1 flex flex-col">
+              <span className="text-[10px] font-bold text-teal-400 uppercase tracking-widest mb-1">{p.category}</span>
+              <h3 className="text-sm font-bold text-white mb-2 line-clamp-1">{p.name}</h3>
+              <div className="flex justify-between items-center mt-auto">
+                <span className="text-sm font-black text-white">{p.price}</span>
+                <button className="p-2 bg-teal-500/10 text-teal-400 rounded-xl hover:bg-teal-500/20 transition-all">
+                  <Plus size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-8 p-6 glass-card rounded-3xl border-cyan-500/20 text-center">
+        <p className="text-xs text-slate-400 mb-4 italic">"All products are vetted by our clinical team for maximum UV protection."</p>
+        <button className="w-full py-4 bg-white/5 border border-white/10 text-white font-bold rounded-2xl">View Full Catalog</button>
+      </div>
+    </div>
+  );
+};
+
+const PlansPage = () => {
+  const plans = [
+    { id: 'free', name: 'Basic', price: '$0', features: ['Unlimited Scans', 'Basic UV Alerts', 'Clinic Finder'], current: true },
+    { id: 'pro', name: 'Pro', price: '$9.99/mo', features: ['AI Prevention Protocol', 'Change Tracking', 'PDF Reports', 'Priority Support'], current: false },
+    { id: 'family', name: 'Family', price: '$19.99/mo', features: ['Up to 5 Profiles', 'Shared History', 'Early Access Features'], current: false }
+  ];
+
+  return (
+    <div className="page-container" style={styles.tabContent}>
+      <h2 style={styles.sectionTitle} className="mb-6"><CreditCard size={24} color="#2dd4bf" /> <span>Subscription Plans</span></h2>
+      
+      <div className="space-y-4">
+        {plans.map(plan => (
+          <div key={plan.id} className={`glass-card p-6 rounded-3xl border-2 transition-all ${plan.current ? 'border-teal-500 bg-teal-500/5' : 'border-white/5'}`}>
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-xl font-black text-white">{plan.name}</h3>
+                <span className="text-2xl font-black text-teal-400">{plan.price}</span>
+              </div>
+              {plan.current && (
+                <span className="px-3 py-1 bg-teal-500 text-slate-900 text-[10px] font-black uppercase rounded-full">Current Plan</span>
+              )}
+            </div>
+            
+            <div className="space-y-3 mb-6">
+              {plan.features.map((f, i) => (
+                <div key={i} className="flex items-center gap-3 text-sm text-slate-300">
+                  <CheckCircle2 size={16} className="text-teal-400" />
+                  {f}
+                </div>
+              ))}
+            </div>
+
+            <button 
+              disabled={plan.current}
+              className={`w-full py-4 rounded-2xl font-black transition-all ${plan.current ? 'bg-white/5 text-slate-500 cursor-default' : 'bg-teal-500 text-slate-900 hover:scale-[1.02]'}`}
+            >
+              {plan.current ? 'Active' : 'Upgrade Now'}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const EducationCard = ({ result, onClose }: { result: any, onClose: () => void }) => {
+  const [showQuiz, setShowQuiz] = React.useState(false);
+  const [quizAnswer, setQuizAnswer] = React.useState<number | null>(null);
+
+  const quiz = {
+    question: "What is the 'E' in the ABCDE rule for skin cancer?",
+    options: ["Elevation", "Evolving", "Edge", "Enlarging"],
+    correct: 1,
+    explanation: "E stands for Evolving. Any change in size, shape, color, or elevation of a spot on your skin, or any new symptom in it, such as bleeding, itching or crusting, may be a warning sign of melanoma."
+  };
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      className="fixed inset-x-4 bottom-24 z-50 glass-card p-6 rounded-3xl border-cyan-500/30 shadow-2xl"
+    >
+      <div className="flex justify-between items-start mb-4">
+        <h3 className="text-lg font-black text-white flex items-center gap-2">
+          <BookOpen size={20} className="text-cyan-400" /> 
+          {showQuiz ? "Quick Quiz" : "Did you know?"}
+        </h3>
+        <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-lg"><X size={20} /></button>
+      </div>
+
+      {!showQuiz ? (
+        <>
+          <p className="text-sm text-slate-300 leading-relaxed mb-6">
+            Based on your scan, you should know that {result.risk_level === 'high' ? 'melanoma can often look like a normal mole but changes rapidly.' : 'regular self-exams are the best way to catch skin cancer early.'}
+          </p>
+          <button 
+            onClick={() => setShowQuiz(true)}
+            className="w-full py-3 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-bold rounded-xl text-sm"
+          >
+            Test your knowledge
+          </button>
+        </>
+      ) : (
+        <div className="space-y-4">
+          <p className="text-sm font-bold text-white">{quiz.question}</p>
+          <div className="grid grid-cols-2 gap-2">
+            {quiz.options.map((opt, i) => (
+              <button 
+                key={i}
+                onClick={() => setQuizAnswer(i)}
+                className={`p-3 rounded-xl text-xs font-bold transition-all ${
+                  quizAnswer === i 
+                    ? (i === quiz.correct ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white')
+                    : 'bg-white/5 text-slate-400 border border-white/10'
+                }`}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+          {quizAnswer !== null && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[11px] text-slate-400 italic leading-relaxed">
+              {quiz.explanation}
+            </motion.p>
+          )}
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
+const OverdueBanner = ({ nextScanDate, onDismiss }: { nextScanDate: Date, onDismiss: () => void }) => {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-red-500 p-4 flex items-center justify-between gap-4 z-50 w-full"
+      style={{ borderRadius: '12px', marginBottom: '16px' }}
+    >
+      <div className="flex items-center gap-3">
+        <AlertTriangle size={20} color="white" className="shrink-0" />
+        <span className="text-sm font-black text-white uppercase tracking-wider leading-tight">
+          Scan Overdue — Scheduled for {nextScanDate.toLocaleDateString()}
+        </span>
+      </div>
+      <button onClick={onDismiss} className="p-2 hover:bg-white/20 rounded-lg shrink-0"><X size={20} color="white" /></button>
+    </motion.div>
+  );
+};
+
+const LegalModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl" onClick={onClose} />
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative w-full max-w-full glass-card rounded-3xl overflow-hidden flex flex-col max-h-[80vh]"
+      >
+        <div className="p-6 border-b border-white/10 flex justify-between items-center">
+          <h2 className="text-xl font-black text-white">Legal Information</h2>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl"><X size={24} /></button>
+        </div>
+        <div className="p-6 overflow-y-auto space-y-8 text-sm text-slate-300 leading-relaxed">
+          <section>
+            <h3 className="text-teal-400 font-black uppercase tracking-widest mb-3">Medical Disclaimer</h3>
+            <p>Skin Tight is NOT a medical device. It does NOT provide medical diagnoses. The AI assessments are for educational and monitoring purposes only. Always consult a licensed board-certified dermatologist for any skin concerns. Never delay seeking medical advice because of something you read in this app.</p>
+          </section>
+          <section>
+            <h3 className="text-teal-400 font-black uppercase tracking-widest mb-3">Terms of Service</h3>
+            <p>By using Skin Tight, you agree that you are at least 18 years old and understand that this app is in beta testing. You agree that the creators of Skin Tight are not liable for any health outcomes related to the use of this software.</p>
+          </section>
+          <section>
+            <h3 className="text-teal-400 font-black uppercase tracking-widest mb-3">Privacy Policy</h3>
+            <p>Your privacy is critical. We use Firebase for secure authentication and data storage. Your skin photos are processed by Google Gemini AI for analysis. We do not sell your personal health data to third parties.</p>
+          </section>
+        </div>
+        <div className="p-6 border-t border-white/10">
+          <button onClick={onClose} className="w-full py-4 bg-teal-500 text-slate-900 font-black rounded-2xl">I Understand</button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+const SideMenu = ({ 
+  isMenuOpen, 
+  setIsMenuOpen, 
+  currentUser, 
+  fullUserData, 
+  activeTab, 
+  setActiveTab, 
+  handleLogout 
+}: {
+  isMenuOpen: boolean;
+  setIsMenuOpen: (open: boolean) => void;
+  currentUser: any;
+  fullUserData: any;
+  activeTab: string;
+  setActiveTab: (tab: any) => void;
+  handleLogout: () => void;
+}) => {
+  const menuItems = [
+    { id: 'home', label: 'Home', icon: Home },
+    { id: 'timeline', label: 'Timeline and Schedule', icon: Calendar },
+    { id: 'profile', label: 'My Profile', icon: UserCircle },
+    { id: 'clinic', label: 'Find Dermatologists', icon: MapPinned },
+    { id: 'welcome', label: 'About Skin Tight', icon: Info },
+  ];
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div 
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 1999,
+          opacity: isMenuOpen ? 1 : 0,
+          pointerEvents: isMenuOpen ? 'auto' : 'none',
+          transition: 'opacity 0.4s ease'
+        }}
+        onClick={() => setIsMenuOpen(false)}
+      />
+      
+      {/* Menu Panel */}
+      <div style={{
+        ...styles.sideMenu,
+        transform: isMenuOpen ? 'translateX(0)' : 'translateX(100%)'
+      }}>
+        <button 
+          style={{ 
+            position: 'absolute', 
+            top: '20px', 
+            right: '20px', 
+            background: 'transparent', 
+            border: 'none', 
+            cursor: 'pointer',
+            color: '#94a3b8'
+          }}
+          onClick={() => setIsMenuOpen(false)}
+        >
+          <X size={32} />
+        </button>
+
+        {currentUser && (
+          <div style={{ marginBottom: '32px', padding: '0 20px' }}>
+            <div 
+              id="menuAvatarCircle"
+              style={{ 
+              width: '64px', 
+              height: '64px', 
+              borderRadius: '20px', 
+              background: fullUserData?.profileColor || 'linear-gradient(135deg, #2dd4bf 0%, #0ea5e9 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '16px',
+              boxShadow: '0 10px 20px rgba(0,0,0,0.2)'
+            }}>
+              <User size={32} color="white" />
+            </div>
+            <div style={{ fontWeight: '800', fontSize: '20px', color: '#f8fafc' }}>{fullUserData?.displayName || 'Skin Tight User'}</div>
+            <div style={{ fontSize: '14px', color: '#94a3b8' }}>{currentUser.email}</div>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {menuItems.map(item => (
+            <button 
+              key={item.id}
+              onClick={() => {
+                setActiveTab(item.id);
+                setIsMenuOpen(false);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                padding: '16px 20px',
+                borderRadius: '16px',
+                background: activeTab === item.id ? 'rgba(45, 212, 191, 0.1)' : 'transparent',
+                border: 'none',
+                color: activeTab === item.id ? '#2dd4bf' : '#94a3b8',
+                fontSize: '16px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                textAlign: 'left'
+              }}
+            >
+              <item.icon size={24} />
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 'auto', padding: '20px' }}>
+          <button 
+            onClick={handleLogout}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              padding: '16px 20px',
+              borderRadius: '16px',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: 'none',
+              color: '#ef4444',
+              fontSize: '16px',
+              fontWeight: '700',
+              cursor: 'pointer'
+            }}
+          >
+            <LogOut size={24} />
+            Logout
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
+
+const DoctorBridge = ({ 
+    doctorInfo, 
+    tempDoctor, 
+    setTempDoctor, 
+    isEditingDoctor, 
+    setIsEditingDoctor, 
+    saveDoctor 
+  }: { 
+    doctorInfo: any, 
+    tempDoctor: any, 
+    setTempDoctor: (d: any) => void, 
+    isEditingDoctor: boolean, 
+    setIsEditingDoctor: (b: boolean) => void, 
+    saveDoctor: () => void 
+  }) => (
+    <div style={styles.tabContent}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h2 style={{ fontSize: '24px', fontWeight: '800', margin: 0 }}>My Dermatologist</h2>
+        <button 
+          onClick={() => {
+            setTempDoctor(doctorInfo);
+            setIsEditingDoctor(!isEditingDoctor);
+          }}
+          style={{ background: 'none', border: 'none', color: '#2dd4bf', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}
+        >
+          {isEditingDoctor ? 'Cancel' : 'Edit'}
+        </button>
+      </div>
+
+      {isEditingDoctor ? (
+        <div className="glass-card p-6 rounded-3xl mb-6">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '700', display: 'block', marginBottom: '4px' }}>DOCTOR NAME</label>
+              <input 
+                type="text" 
+                style={styles.input} 
+                value={tempDoctor.name} 
+                onChange={e => setTempDoctor({...tempDoctor, name: e.target.value})}
+                placeholder="Dr. Smith"
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '700', display: 'block', marginBottom: '4px' }}>CLINIC NAME</label>
+              <input 
+                type="text" 
+                style={styles.input} 
+                value={tempDoctor.clinic} 
+                onChange={e => setTempDoctor({...tempDoctor, clinic: e.target.value})}
+                placeholder="City Dermatology"
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '700', display: 'block', marginBottom: '4px' }}>EMAIL</label>
+              <input 
+                type="email" 
+                style={styles.input} 
+                value={tempDoctor.email} 
+                onChange={e => setTempDoctor({...tempDoctor, email: e.target.value})}
+                placeholder="doctor@example.com"
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '700', display: 'block', marginBottom: '4px' }}>PHONE</label>
+              <input 
+                type="tel" 
+                style={styles.input} 
+                value={tempDoctor.phone} 
+                onChange={e => setTempDoctor({...tempDoctor, phone: e.target.value})}
+                placeholder="+1 234 567 890"
+              />
+            </div>
+            <button style={styles.analyzeButton} onClick={saveDoctor}>Save Doctor Info</button>
+          </div>
+        </div>
+      ) : (
+        <div className="glass-card p-6 rounded-3xl mb-6">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+            <div style={{ width: '60px', height: '60px', borderRadius: '16px', background: 'rgba(45, 212, 191, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <User size={32} color="#2dd4bf" />
+            </div>
+            <div>
+              <div style={{ fontWeight: '700', fontSize: '18px' }}>{doctorInfo.name || "Add Doctor Info"}</div>
+              <div style={{ fontSize: '14px', color: '#94a3b8' }}>{doctorInfo.clinic || "No clinic specified"}</div>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <button style={{ padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#f8fafc', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <Phone size={16} /> Call
+            </button>
+            <button style={{ padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#f8fafc', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <Mail size={16} /> Email
+            </button>
+          </div>
+        </div>
+      )}
+      <button 
+        style={styles.analyzeButton}
+        onClick={() => alert("Full Medical Report Generated. Ready to share.")}
+      >
+        <FileText size={20} /> Generate Doctor Report
+      </button>
+    </div>
+  );
 
 const tagUserScanPending = () => {
   if (window.location.hostname !== 'skintight.vercel.app' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
@@ -321,7 +2588,7 @@ class ModelErrorBoundary extends React.Component<{ children: React.ReactNode }, 
       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#ef4444', padding: '20px', textAlign: 'center' }}>
         <AlertTriangle size={48} style={{ marginBottom: '16px' }} />
         <div style={{ fontWeight: '900', letterSpacing: '2px' }}>LOAD ERROR</div>
-        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '8px', marginBottom: '20px', maxWidth: '240px' }}>
+        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '8px', marginBottom: '20px', maxWidth: '100%' }}>
           UNABLE TO LOAD 3D ASSETS. THIS MAY BE DUE TO NETWORK RESTRICTIONS OR TEMPORARY SERVICE OUTAGE. PLEASE TRY RETRYING OR REFRESHING THE PAGE.
         </div>
         <button 
@@ -396,6 +2663,261 @@ const HolographicMaterial = {
   `
 };
 
+// --- How to Improve & Skin Type Card Functions ---
+const fitzpatrickDescriptions: Record<number, any> = {
+  1: {
+    label: "Type 1 — Very Fair",
+    description: "Always burns, never tans. Pale white skin, often with red or blonde hair and blue eyes.",
+    riskNote: "Highest UV sensitivity. Highest risk of sunburn and skin cancer.",
+    color: "#FDE8D8",
+    textColor: "#7B3F00"
+  },
+  2: {
+    label: "Type 2 — Fair",
+    description: "Usually burns, rarely tans. Fair white skin, often with light hair and light eyes.",
+    riskNote: "Very high UV sensitivity. Requires daily SPF 30 or higher.",
+    color: "#F5D5B8",
+    textColor: "#6B3A2A"
+  },
+  3: {
+    label: "Type 3 — Medium",
+    description: "Sometimes burns, gradually tans. Cream white to light brown skin.",
+    riskNote: "Moderate UV sensitivity. Daily sun protection still essential.",
+    color: "#D4A574",
+    textColor: "#5C3317"
+  },
+  4: {
+    label: "Type 4 — Olive",
+    description: "Rarely burns, tans easily. Light brown to olive skin.",
+    riskNote: "Lower burn risk but skin cancer can still develop and may be harder to detect.",
+    color: "#B8864E",
+    textColor: "#3D1F0A"
+  },
+  5: {
+    label: "Type 5 — Brown",
+    description: "Very rarely burns, always tans. Brown skin.",
+    riskNote: "Skin cancers less common but often detected later. Monthly self-checks are important.",
+    color: "#8B5E3C",
+    textColor: "#FDE8D8"
+  },
+  6: {
+    label: "Type 6 — Deep Brown/Black",
+    description: "Never burns. Dark brown to black skin.",
+    riskNote: "Lowest burn risk but acral melanoma (on palms and soles) is more common. Do not skip self-exams.",
+    color: "#4A2C1A",
+    textColor: "#FDE8D8"
+  }
+};
+
+function renderSkinTypeCard(fitzpatrickType: any) {
+  const type = parseInt(fitzpatrickType) || 2;
+  const info = fitzpatrickDescriptions[type];
+ 
+  const container = document.getElementById("skinTypeDisplay");
+  if (!container) return;
+ 
+  container.innerHTML = `
+    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;">
+      <div style="color:rgba(255,255,255,0.5);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Your Skin Type</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div style="width:44px;height:44px;border-radius:50%;background:${info.color};border:2px solid rgba(255,255,255,0.15);flex-shrink:0;"></div>
+        <div>
+          <div style="color:#fff;font-size:15px;font-weight:600;">${info.label}</div>
+          <div style="color:rgba(255,255,255,0.5);font-size:12px;margin-top:2px;">${info.description}</div>
+        </div>
+      </div>
+      <div style="background:rgba(0,180,216,0.08);border:1px solid rgba(0,180,216,0.2);border-radius:8px;padding:10px;">
+        <div style="color:#00B4D8;font-size:12px;font-weight:500;">⚠️ What this means for you</div>
+        <div style="color:rgba(255,255,255,0.6);font-size:12px;margin-top:4px;line-height:1.5;">${info.riskNote}</div>
+      </div>
+    </div>
+  `;
+}
+
+function shouldRegenerateProtocol(userData: any) {
+  if (!userData.howToImproveGeneratedAt) return true;
+  if (!userData.lastScanCompletedAt) return false;
+  
+  const lastScan = userData.lastScanCompletedAt.toMillis ? userData.lastScanCompletedAt.toMillis() : new Date(userData.lastScanCompletedAt).getTime();
+  const generatedAt = userData.howToImproveGeneratedAt.toMillis ? userData.howToImproveGeneratedAt.toMillis() : new Date(userData.howToImproveGeneratedAt).getTime();
+  
+  return lastScan > generatedAt;
+}
+
+function renderHowToImprove(data: any, currentScore: number) {
+  const contentEl = document.getElementById("howToImproveContent");
+  if (!contentEl) return;
+ 
+  const impactColors: Record<string, string> = {
+    high: "#E24B4A",
+    medium: "#EF9F27",
+    low: "#5DCAA5"
+  };
+ 
+  let stepsHTML = data.steps.map(function(step: any) {
+    return `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start;">
+      <div style="font-size:24px;flex-shrink:0;">${step.icon}</div>
+      <div style="flex:1;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <div style="color:#fff;font-size:14px;font-weight:600;">${step.title}</div>
+          <div style="background:${impactColors[step.impact]};color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;text-transform:uppercase;">${step.impact} impact</div>
+        </div>
+        <div style="color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5;">${step.description}</div>
+      </div>
+    </div>`;
+  }).join("");
+ 
+  contentEl.innerHTML = `
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="color:rgba(255,255,255,0.5);font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Your Action Plan</div>
+      <div style="color:#fff;font-size:15px;line-height:1.5;">${data.headline}</div>
+    </div>
+    ${stepsHTML}
+    <div style="text-align:center;margin-top:16px;color:rgba(255,255,255,0.3);font-size:11px;">Personalized based on your skin profile and scan history</div>
+  `;
+}
+
+async function loadHowToImprove() {
+  const auth = (window as any).firebase.auth();
+  const db = (window as any).firebase.firestore();
+  const user = auth.currentUser;
+  if (!user) return;
+ 
+  const panel = document.getElementById("howToImprovePanel");
+  if (panel) panel.style.display = "flex";
+ 
+  const contentEl = document.getElementById("howToImproveContent");
+  if (contentEl) contentEl.innerHTML = '<div style="text-align:center;padding:40px;color:#00B4D8;">Generating your personal action plan...</div>';
+ 
+  try {
+    const userDoc = await db.collection("users").doc(user.uid).get();
+    const profile = userDoc.data();
+    
+    if (!profile) throw new Error("User profile not found.");
+
+    // Check cache
+    if (profile.howToImproveCache && !shouldRegenerateProtocol(profile)) {
+      renderHowToImprove(profile.howToImproveCache, profile.skinScore || 100);
+      return;
+    }
+
+    const snapshot = await db.collection("users").doc(user.uid).collection("scans")
+      .orderBy("date", "desc").limit(3).get();
+       
+    const recentScans: any[] = [];
+    snapshot.forEach(function(d: any) { recentScans.push(d.data()); });
+       
+    const latestRisk = recentScans.length > 0 ? (recentScans[0].result?.risk_level || "none") : "none";
+    const currentScore = profile.skinScore || 100;
+       
+    const prompt = `You are a skin cancer prevention specialist. Based on this user profile give them a personalized action plan to improve their skin health score and minimize skin cancer risk.
+
+User profile:
+- Current SkinScore: ${currentScore} out of 100
+- Fitzpatrick skin type: ${profile.fitzpatrickType || "unknown"}
+- Age range: ${profile.ageRange || "unknown"}
+- Ethnicity: ${profile.ethnicity || "unknown"}
+- Most recent scan risk level: ${latestRisk}
+- Total scans completed: ${profile.scansCompleted || 0}
+
+Generate exactly 5 specific actionable steps this person can take RIGHT NOW to improve their score and reduce skin cancer risk. Each step must be directly relevant to their skin type and risk level.
+ 
+Format your response as JSON only with this structure:
+{
+  "headline": "one motivating sentence for this specific person",
+  "steps": [
+    {
+      "icon": "emoji",
+      "title": "short action title max 5 words",
+      "description": "specific instruction max 20 words",
+      "impact": "low" or "medium" or "high"
+    }
+  ]
+}
+
+Focus only on skin cancer prevention. No general beauty or cosmetic advice. No filler content. Be direct and specific.`;
+
+    const key = process.env.GEMINI_API_KEY;
+    if (!key || key === "undefined" || key === "") {
+      throw new Error("Gemini API key is missing. Please check your settings.");
+    }
+
+    const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    });
+    
+    if (!apiResponse.ok) {
+      const errorData = await apiResponse.json().catch(() => ({}));
+      throw new Error(`Gemini API Error: ${apiResponse.status} ${errorData.error?.message || "Unknown error"}`);
+    }
+
+    const apiData = await apiResponse.json();
+    
+    if (!apiData || typeof apiData !== 'object') {
+      throw new Error("Invalid response from Gemini AI.");
+    }
+
+    if (apiData.error) {
+      throw new Error(`Gemini API Error: ${apiData.error.message || JSON.stringify(apiData.error)}`);
+    }
+
+    // Extremely safe extraction of text
+    let aiText = "";
+    if (apiData.candidates && Array.isArray(apiData.candidates) && apiData.candidates.length > 0) {
+      const firstCand = apiData.candidates[0];
+      if (firstCand.content && firstCand.content.parts && Array.isArray(firstCand.content.parts) && firstCand.content.parts.length > 0) {
+        aiText = firstCand.content.parts[0].text || "";
+      }
+    }
+
+    if (!aiText) {
+      console.error("Gemini response structure:", JSON.stringify(apiData));
+      throw new Error("AI response was empty or blocked by safety filters.");
+    }
+
+    const clean = aiText.replace(/```json|```/g, "").trim();
+    const result = JSON.parse(clean);
+    
+    if (!result.steps || !Array.isArray(result.steps)) {
+      throw new Error("Invalid action plan format received from AI.");
+    }
+    
+    // Save to cache
+    await db.collection("users").doc(user.uid).update({
+      howToImproveCache: result,
+      howToImproveGeneratedAt: (window as any).firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    renderHowToImprove(result, currentScore);
+  } catch (error: any) {
+    console.error("How to improve error:", error);
+    if (contentEl) {
+      let message = "Could not load your action plan.";
+      if (error.message) {
+        if (error.message.includes("candidates") || error.message.includes("object")) {
+          message = "AI response was blocked or interrupted. Please try again.";
+        } else {
+          message = error.message;
+        }
+      }
+      
+      contentEl.innerHTML = `<div style="color:#E24B4A;text-align:center;padding:20px;">
+        <div style="font-weight:bold;margin-bottom:10px;">Analysis Interrupted</div>
+        <div style="font-size:13px;opacity:0.8;line-height:1.4;">${message}</div>
+        <button onclick="loadHowToImprove()" style="margin-top:20px;background:rgba(226,75,74,0.1);border:1px solid rgba(226,75,74,0.2);color:#E24B4A;padding:8px 20px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s ease;">Try Again</button>
+      </div>`;
+    }
+  }
+}
+
+// Expose to window for HTML onclick handlers
+(window as any).loadHowToImprove = loadHowToImprove;
+(window as any).renderSkinTypeCard = renderSkinTypeCard;
+
 // --- Scan Detail Component ---
   const ScanDetail = ({ scan, onClose, onCompare, onDownload, styles }: { scan: ScanRecord, onClose: () => void, onCompare?: () => void, onDownload: (photos: string[], result: AnalysisResult) => void, styles: any }) => {
     const riskColor = scan.result.risk_level === 'high' ? '#ef4444' : scan.result.risk_level === 'moderate' ? '#f59e0b' : '#10b981';
@@ -411,7 +2933,7 @@ const HolographicMaterial = {
           zIndex: 100, overflowY: 'auto', padding: '20px'
         }}
       >
-        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+        <div style={{ width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
             <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', padding: '8px', color: 'white', cursor: 'pointer' }}>
               <ChevronLeft size={24} />
@@ -534,7 +3056,7 @@ const HolographicMaterial = {
           background: '#060818', zIndex: 110, overflowY: 'auto', padding: '20px'
         }}
       >
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
             <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', padding: '8px', color: 'white', cursor: 'pointer' }}>
               <X size={24} />
@@ -574,7 +3096,7 @@ const HolographicMaterial = {
             <div style={{ 
               width: '64px', height: '64px', borderRadius: '20px', 
               background: stable ? 'rgba(148, 163, 184, 0.1)' : improved ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px'
+              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 0 20px'
             }}>
               {stable ? <Activity size={32} color="#94a3b8" /> : improved ? <TrendingUp size={32} color="#10b981" /> : <TrendingDown size={32} color="#ef4444" />}
             </div>
@@ -664,8 +3186,8 @@ const HolographicMaterial = {
   }
 
   const Timeline = ({ scans, setSelectedScanId, setActiveTab, styles, streakData, nextScanDate, cycleProgress, lastFullWeekCompletionDate }: TimelineProps) => {
-    const chartRef = useRef<HTMLCanvasElement>(null);
-    const chartInstance = useRef<any>(null);
+    const chartRef = React.useRef<HTMLCanvasElement>(null);
+    const chartInstance = React.useRef<any>(null);
 
     useEffect(() => {
       let isMounted = true;
@@ -879,14 +3401,14 @@ const HolographicMaterial = {
         </div>
 
         {/* Progress Indicator */}
-        <div id="cycleProgress" className="glass-card p-3 rounded-xl border border-white/5 mb-3 cycle-progress-container">
-          <div className="flex justify-between items-center mb-1.5">
-            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-              <RotateCw size={12} className="text-blue-400" /> Cycle Progress
+        <div id="cycleProgress" className="glass-card p-4 rounded-2xl border border-white/5 mb-4 cycle-progress-container">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <RotateCw size={14} className="text-blue-400" /> Cycle Progress
             </h3>
-            <span className="text-[10px] font-black text-white">{cycleProgress % 4} / 4 zones</span>
+            <span className="text-xs font-black text-white">{cycleProgress % 4} / 4 zones</span>
           </div>
-          <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden flex gap-0.5 p-0.5 progress-bar-container">
+          <div className="w-full bg-white/5 h-2.5 rounded-full overflow-hidden flex gap-1 p-1 progress-bar-container">
             {[1, 2, 3, 4].map(step => (
               <div 
                 key={step} 
@@ -961,11 +3483,11 @@ const HolographicMaterial = {
         <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Scan History</h3>
         {sortedScans.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '32px', border: '1px dashed rgba(255,255,255,0.1)' }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 0 20px' }}>
               <History size={32} color="#475569" />
             </div>
             <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px' }}>No Scans Found</h3>
-            <p style={{ fontSize: '14px', color: '#94a3b8', maxWidth: '240px', margin: '0 auto' }}>Complete your first scan to start tracking your skin health journey.</p>
+            <p style={{ fontSize: '14px', color: '#94a3b8', width: '100%', margin: '0 0 20px' }}>Complete your first scan to start tracking your skin health journey.</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1058,21 +3580,20 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
       color: '#f8fafc',
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center',
+      alignItems: 'stretch',
       justifyContent: 'center',
-      padding: '24px',
+      padding: '16px',
       fontFamily: 'Inter, sans-serif'
     }}>
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         style={{
-          maxWidth: '500px',
           width: '100%',
           background: 'rgba(15, 23, 42, 0.6)',
           backdropFilter: 'blur(20px)',
           borderRadius: '32px',
-          padding: '40px',
+          padding: '24px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
         }}
@@ -1081,7 +3602,7 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
           <div style={{ 
             width: '80px', height: '80px', background: 'rgba(45, 212, 191, 0.1)', 
             borderRadius: '24px', display: 'flex', alignItems: 'center', 
-            justifyContent: 'center', margin: '0 auto 24px',
+            justifyContent: 'center', margin: '0 0 24px',
             border: '1px solid rgba(45, 212, 191, 0.2)'
           }}>
             <ShieldCheck size={40} color="#2dd4bf" />
@@ -1205,11 +3726,11 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
   const [fitzpatrick, setFitzpatrick] = useState(0);
   const [profileColor, setProfileColor] = useState('#00B4D8');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+  const [success, setSuccess] = React.useState<string | null>(null);
 
   // Real-time username check
-  useEffect(() => {
+  React.useEffect(() => {
     if (!username || username.length < 3 || authView !== 'signup') {
       setUsernameAvailable(null);
       return;
@@ -1355,21 +3876,20 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
       color: '#f8fafc',
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center',
+      alignItems: 'stretch',
       justifyContent: 'center',
-      padding: '24px',
+      padding: '16px',
       fontFamily: 'Inter, sans-serif'
     }}>
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         style={{
-          maxWidth: '500px',
           width: '100%',
           background: 'rgba(15, 23, 42, 0.6)',
           backdropFilter: 'blur(20px)',
           borderRadius: '32px',
-          padding: '40px',
+          padding: '24px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
         }}
@@ -1432,7 +3952,7 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
               <div style={{ 
                 width: '60px', height: '60px', background: 'rgba(45, 212, 191, 0.1)', 
                 borderRadius: '18px', display: 'flex', alignItems: 'center', 
-                justifyContent: 'center', margin: '0 auto 16px',
+                justifyContent: 'center', margin: '0 0 16px',
                 border: '1px solid rgba(45, 212, 191, 0.2)'
               }}>
                 <Dna size={32} color="#2dd4bf" />
@@ -1683,7 +4203,7 @@ const Footer = ({ onShowLegal }: { onShowLegal: (type: 'terms' | 'privacy' | 'di
       <button onClick={() => onShowLegal('privacy')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Privacy</button>
       <button onClick={() => onShowLegal('disclaimer')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Disclaimer</button>
     </div>
-    <p style={{ fontSize: '11px', color: '#64748b', maxWidth: '400px', margin: '0 auto', lineHeight: '1.5' }}>
+    <p style={{ fontSize: '11px', color: '#64748b', width: '100%', margin: '20px 0', lineHeight: '1.5' }}>
       Informational and wellness tool only. Not medical advice. © 2026 AI Skin Analysis.
     </p>
   </footer>
@@ -1713,34 +4233,34 @@ function App() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [notifications, setNotifications] = useState<{ id: string; text: string; type: 'warning' | 'info' | 'alert'; read: boolean; date: string }[]>([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [onboardingComplete, setOnboardingComplete] = useState<boolean>(false);
-  const [welcomeSeen, setWelcomeSeen] = useState<boolean>(false);
-  const [showLegalModal, setShowLegalModal] = useState<'terms' | 'privacy' | 'disclaimer' | null>(null);
-  const [streakData, setStreakData] = useState<StreakData>({ currentStreak: 0, longestStreak: 0, lastScanMonth: '' });
-  const [nextScanDate, setNextScanDate] = useState<string | null>(null);
-  const [cycleProgress, setCycleProgress] = useState<number>(0);
-  const [lastFullWeekCompletionDate, setLastFullWeekCompletionDate] = useState<string | null>(null);
-  const [bannerDismissedDate, setBannerDismissedDate] = useState<string | null>(null);
+  const [onboardingComplete, setOnboardingComplete] = React.useState<boolean>(false);
+  const [welcomeSeen, setWelcomeSeen] = React.useState<boolean>(false);
+  const [showLegalModal, setShowLegalModal] = React.useState<'terms' | 'privacy' | 'disclaimer' | null>(null);
+  const [streakData, setStreakData] = React.useState<StreakData>({ currentStreak: 0, longestStreak: 0, lastScanMonth: '' });
+  const [nextScanDate, setNextScanDate] = React.useState<string | null>(null);
+  const [cycleProgress, setCycleProgress] = React.useState<number>(0);
+  const [lastFullWeekCompletionDate, setLastFullWeekCompletionDate] = React.useState<string | null>(null);
+  const [bannerDismissedDate, setBannerDismissedDate] = React.useState<string | null>(null);
 
-  const [protocolExpanded, setProtocolExpanded] = useState(false);
+  const [protocolExpanded, setProtocolExpanded] = React.useState(false);
 
   // --- Firebase Auth State ---
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [fullUserData, setFullUserData] = useState<any>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [currentUser, setCurrentUser] = React.useState<any>(null);
+  const [fullUserData, setFullUserData] = React.useState<any>(null);
+  const [authLoading, setAuthLoading] = React.useState(true);
+  const [isOffline, setIsOffline] = React.useState(!navigator.onLine);
 
   // --- Existing State ---
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [note, setNote] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isInputFocused, setIsInputFocused] = useState(false);
-  const [imageQuality, setImageQuality] = useState<'GOOD' | 'POOR' | 'NOT_SKIN' | null>(null);
-  const [checkingQuality, setCheckingQuality] = useState(false);
+  const [photos, setPhotos] = React.useState<string[]>([]);
+  const [note, setNote] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [result, setResult] = React.useState<AnalysisResult | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+  const [isInputFocused, setIsInputFocused] = React.useState(false);
+  const [imageQuality, setImageQuality] = React.useState<'GOOD' | 'POOR' | 'NOT_SKIN' | null>(null);
+  const [checkingQuality, setCheckingQuality] = React.useState(false);
   
-  const [intakeForm, setIntakeForm] = useState<IntakeForm>({
+  const [intakeForm, setIntakeForm] = React.useState<IntakeForm>({
     ageRange: '',
     ethnicity: '',
     fitzpatrick: 0,
@@ -1766,6 +4286,23 @@ function App() {
       uploaded: false
     }
   });
+
+  const updateIntake = (field: string, value: any) => {
+    setIntakeForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const updateQualityCheck = (field: keyof IntakeForm['qualityCheck'], value: boolean) => {
+    setIntakeForm(prev => ({
+      ...prev,
+      qualityCheck: {
+        ...prev.qualityCheck,
+        [field]: value
+      }
+    }));
+  };
   
   const [showConfidenceWarning, setShowConfidenceWarning] = useState(false);
   const [confidenceScore, setConfidenceScore] = useState(0);
@@ -1905,6 +4442,17 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (activeTab === 'profile' && userProfile.fitzpatrick) {
+      // Small delay to ensure the DOM element is rendered
+      setTimeout(() => {
+        if (typeof (window as any).renderSkinTypeCard === 'function') {
+          (window as any).renderSkinTypeCard(userProfile.fitzpatrick);
+        }
+      }, 100);
+    }
+  }, [activeTab, userProfile.fitzpatrick]);
+
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
@@ -1925,10 +4473,10 @@ function App() {
   const [tempDoctor, setTempDoctor] = useState(doctorInfo);
 
   // --- Feature 10: Education State ---
-  const [education, setEducation] = useState<EducationProgress>({ completedCards: [], score: 0 });
-  const [showEduCard, setShowEduCard] = useState(false);
+  const [education, setEducation] = React.useState<EducationProgress>({ completedCards: [], score: 0 });
+  const [showEduCard, setShowEduCard] = React.useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   
   const getAI = () => {
     const key = process.env.GEMINI_API_KEY;
@@ -2008,6 +4556,15 @@ function App() {
         console.log("New session initialized for:", userData.username || userData.fullName);
       }
     });
+  };
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      clearAllSessionData();
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
   };
 
   // --- Persistence & Initialization ---
@@ -2841,1692 +5398,23 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
   };
 
 
-  // --- Feature 6: Family Vault Component ---
 
-  // --- Feature 7: Doctor Bridge Component ---
-  const ClinicFinder = () => {
-    const mapRef = useRef<HTMLDivElement>(null);
-    const mapInstance = useRef<any>(null);
-    const [clinics, setClinics] = useState<any[]>([]);
-    const [loadingClinics, setLoadingClinics] = useState(false);
-    const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-    const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-    const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-      const R = 6371; // km
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
-    };
 
-    useEffect(() => {
-      findClinics();
-    }, []);
 
-    const findClinics = (radius = 10000) => {
-      if (!navigator.geolocation) {
-        setStatusMessage("Geolocation is not supported by your browser");
-        return;
-      }
 
-      setLoadingClinics(true);
-      setStatusMessage("Detecting your location...");
-      
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        const { latitude, longitude } = position.coords;
-        setUserLocation([latitude, longitude]);
-        setStatusMessage("Finding nearest clinics...");
-
-        if (!(window as any).L) return;
-        const L = (window as any).L;
-
-        if (!mapInstance.current && mapRef.current) {
-          mapInstance.current = L.map(mapRef.current).setView([latitude, longitude], 13);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-          }).addTo(mapInstance.current);
-        } else if (mapInstance.current) {
-          mapInstance.current.setView([latitude, longitude], radius > 10000 ? 10 : 13);
-        }
-
-        // User Marker
-        L.circle([latitude, longitude], {
-          color: '#00B4D8',
-          fillColor: '#00B4D8',
-          fillOpacity: 0.1,
-          radius: 500, // 500 meters
-          weight: 2,
-          dashArray: '5, 5'
-        }).addTo(mapInstance.current);
-
-        L.marker([latitude, longitude], {
-          icon: L.divIcon({
-            className: 'user-location-marker',
-            html: '<div style="width: 20px; height: 20px; background: #00B4D8; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 10px #00B4D8;"></div>',
-            iconSize: [20, 20]
-          })
-        }).addTo(mapInstance.current).bindPopup("You are here");
-
-        try {
-          const query = `
-            [out:json];
-            (
-              node["amenity"="doctors"]["healthcare:speciality"="dermatology"](around:${radius}, ${latitude}, ${longitude});
-              way["amenity"="doctors"]["healthcare:speciality"="dermatology"](around:${radius}, ${latitude}, ${longitude});
-              node["healthcare"="clinic"](around:${radius}, ${latitude}, ${longitude});
-              node["amenity"="clinic"](around:${radius}, ${latitude}, ${longitude});
-              node["amenity"="hospital"](around:${radius}, ${latitude}, ${longitude});
-            );
-            out body;
-            >;
-            out skel qt;
-          `;
-          const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
-          const data = await response.json();
-          
-          let foundClinics = data.elements
-            .filter((e: any) => e.tags && (e.tags.name || e.tags['addr:street']))
-            .map((e: any) => ({
-              id: e.id,
-              name: e.tags.name || "Dermatology Clinic",
-              address: e.tags['addr:street'] ? `${e.tags['addr:housenumber'] || ''} ${e.tags['addr:street']}, ${e.tags['addr:city'] || ''}` : "Address not available",
-              lat: e.lat || (e.center ? e.center.lat : latitude),
-              lon: e.lon || (e.center ? e.center.lon : longitude),
-              distance: calculateDistance(latitude, longitude, e.lat || (e.center ? e.center.lat : latitude), e.lon || (e.center ? e.center.lon : longitude))
-            }))
-            .sort((a: any, b: any) => a.distance - b.distance);
-
-          if (foundClinics.length === 0 && radius === 10000) {
-            setStatusMessage("No specialized clinics found nearby. Expanding search to 50km...");
-            findClinics(50000);
-            return;
-          }
-
-          if (foundClinics.length === 0 && radius === 50000) {
-            setStatusMessage("No specialized clinics found within 50km. Showing general medical centers.");
-            const generalQuery = `
-              [out:json];
-              (
-                node["amenity"="doctors"](around:20000, ${latitude}, ${longitude});
-                node["healthcare"="clinic"](around:20000, ${latitude}, ${longitude});
-              );
-              out body 5;
-            `;
-            const genResponse = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(generalQuery)}`);
-            const genData = await genResponse.json();
-            foundClinics = genData.elements?.map((e: any) => ({
-              id: e.id,
-              name: e.tags.name || "Medical Center",
-              address: e.tags['addr:street'] ? `${e.tags['addr:housenumber'] || ''} ${e.tags['addr:street']}` : "Address not available",
-              lat: e.lat,
-              lon: e.lon,
-              distance: calculateDistance(latitude, longitude, e.lat, e.lon)
-            })).sort((a: any, b: any) => a.distance - b.distance);
-          }
-
-          setClinics(foundClinics);
-          setStatusMessage(null);
-
-          foundClinics.forEach((clinic: any) => {
-            const isSpecialized = clinic.name.toLowerCase().includes('derm') || clinic.name.toLowerCase().includes('skin');
-            const isHospital = clinic.name.toLowerCase().includes('hospital');
-            
-            // Add a sonar-style circle around the clinic
-            const circle = L.circle([clinic.lat, clinic.lon], {
-              color: isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8',
-              fillColor: isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8',
-              fillOpacity: 0.1,
-              radius: 200, // 200 meters
-              weight: 1,
-              className: 'sonar-circle'
-            }).addTo(mapInstance.current);
-
-            const marker = L.marker([clinic.lat, clinic.lon], {
-              icon: L.divIcon({
-                className: 'clinic-marker',
-                html: `
-                  <div style="position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
-                    <div style="position: absolute; inset: 0; background: ${isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8'}; border-radius: 50%; opacity: 0.3; animation: pulse 2s infinite;"></div>
-                    <div style="width: 12px; height: 12px; background: ${isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8'}; border: 2px solid white; border-radius: 50%; z-index: 1;"></div>
-                  </div>
-                `,
-                iconSize: [24, 24]
-              })
-            }).addTo(mapInstance.current);
-
-            marker.bindPopup(`
-              <div style="padding: 12px; min-width: 180px; font-family: 'Inter', sans-serif;">
-                <div style="font-size: 10px; color: ${isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8'}; font-weight: 800; text-transform: uppercase; margin-bottom: 4px;">${isSpecialized ? 'Specialized Care' : isHospital ? 'Hospital' : 'Medical Center'}</div>
-                <div style="font-weight: 800; color: #0f172a; margin-bottom: 4px; font-size: 14px;">${clinic.name}</div>
-                <div style="font-size: 11px; color: #64748b; margin-bottom: 12px;">${clinic.address}</div>
-                <div style="display: flex; gap: 8px;">
-                  <button onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${clinic.lat},${clinic.lon}')" style="flex: 1; background: #0f172a; color: white; border: none; padding: 8px; border-radius: 8px; font-weight: 700; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                    DIRECTIONS
-                  </button>
-                  <button style="flex: 1; background: #2dd4bf; color: #060818; border: none; padding: 8px; border-radius: 8px; font-weight: 700; font-size: 10px; cursor: pointer;">
-                    BOOK
-                  </button>
-                </div>
-              </div>
-            `);
-          });
-
-        } catch (error) {
-          console.error("Error fetching clinics:", error);
-          setStatusMessage("Error fetching clinics. Please try again.");
-        } finally {
-          setLoadingClinics(false);
-        }
-      }, (error) => {
-        console.error("Geolocation error:", error);
-        setStatusMessage("Please enable location access to find clinics.");
-        setLoadingClinics(false);
-      });
-    };
-
-    useEffect(() => {
-      findClinics();
-      return () => {
-        if (mapInstance.current) {
-          mapInstance.current.remove();
-          mapInstance.current = null;
-        }
-      };
-    }, []);
-
-    return (
-      <div className="page-container" style={styles.tabContent}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '24px', fontWeight: '800', margin: 0 }}>Clinic Finder</h2>
-          <button 
-            onClick={() => findClinics()}
-            style={{ padding: '8px 16px', borderRadius: '12px', background: '#00B4D8', border: 'none', color: 'white', fontSize: '14px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}
-          >
-            <MapPin size={16} />
-            Refresh
-          </button>
-        </div>
-
-        {statusMessage && (
-          <div style={{ padding: '12px 16px', background: 'rgba(0, 180, 216, 0.1)', border: '1px solid rgba(0, 180, 216, 0.2)', borderRadius: '12px', color: '#00B4D8', fontSize: '14px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Activity size={16} className="animate-pulse" />
-            {statusMessage}
-          </div>
-        )}
-
-        <div style={{ position: 'relative', marginBottom: '20px' }}>
-          <div 
-            ref={mapRef} 
-            style={{ 
-              height: '350px', 
-              width: '100%', 
-              borderRadius: '24px', 
-              overflow: 'hidden',
-              border: '1px solid rgba(255,255,255,0.1)',
-              backgroundColor: 'rgba(15, 23, 42, 0.5)'
-            }} 
-          />
-          {loadingClinics && (
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(6, 8, 24, 0.7)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 1000, borderRadius: '24px' }}>
-              <RotateCcw className="animate-spin" size={32} color="#00B4D8" />
-              <p style={{ marginTop: '12px', fontSize: '14px', fontWeight: '600' }}>Locating nearby clinics...</p>
-            </div>
-          )}
-        </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px' }}>Closest Clinics</h3>
-          {clinics.length === 0 && !loadingClinics ? (
-            <div style={{ padding: '20px', textAlign: 'center', background: 'rgba(255,255,255,0.03)', borderRadius: '20px' }}>
-              <p style={{ color: '#64748b', fontSize: '14px' }}>No clinics found in your area.</p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {clinics?.slice(0, 3).map(clinic => (
-                <div key={clinic.id} className="glass-card" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '700', fontSize: '15px' }}>{clinic.name}</div>
-                    <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>{clinic.address}</div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '14px', fontWeight: '800', color: '#00B4D8' }}>{clinic.distance.toFixed(1)} km</div>
-                    <button style={{ background: 'transparent', border: 'none', color: '#2dd4bf', fontSize: '12px', fontWeight: '700', padding: 0, marginTop: '4px' }}>DETAILS</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const DoctorBridge = () => (
-    <div style={styles.tabContent}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '24px', fontWeight: '800', margin: 0 }}>My Dermatologist</h2>
-        <button 
-          onClick={() => {
-            setTempDoctor(doctorInfo);
-            setIsEditingDoctor(!isEditingDoctor);
-          }}
-          style={{ background: 'none', border: 'none', color: '#2dd4bf', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}
-        >
-          {isEditingDoctor ? 'Cancel' : 'Edit'}
-        </button>
-      </div>
-
-      {isEditingDoctor ? (
-        <div className="glass-card p-6 rounded-3xl mb-6">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div>
-              <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '700', display: 'block', marginBottom: '4px' }}>DOCTOR NAME</label>
-              <input 
-                type="text" 
-                style={styles.input} 
-                value={tempDoctor.name} 
-                onChange={e => setTempDoctor({...tempDoctor, name: e.target.value})}
-                placeholder="Dr. Smith"
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '700', display: 'block', marginBottom: '4px' }}>CLINIC NAME</label>
-              <input 
-                type="text" 
-                style={styles.input} 
-                value={tempDoctor.clinic} 
-                onChange={e => setTempDoctor({...tempDoctor, clinic: e.target.value})}
-                placeholder="City Dermatology"
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '700', display: 'block', marginBottom: '4px' }}>EMAIL</label>
-              <input 
-                type="email" 
-                style={styles.input} 
-                value={tempDoctor.email} 
-                onChange={e => setTempDoctor({...tempDoctor, email: e.target.value})}
-                placeholder="doctor@example.com"
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '700', display: 'block', marginBottom: '4px' }}>PHONE</label>
-              <input 
-                type="tel" 
-                style={styles.input} 
-                value={tempDoctor.phone} 
-                onChange={e => setTempDoctor({...tempDoctor, phone: e.target.value})}
-                placeholder="+1 234 567 890"
-              />
-            </div>
-            <button style={styles.analyzeButton} onClick={saveDoctor}>Save Doctor Info</button>
-          </div>
-        </div>
-      ) : (
-        <div className="glass-card p-6 rounded-3xl mb-6">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-            <div style={{ width: '60px', height: '60px', borderRadius: '16px', background: 'rgba(45, 212, 191, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <User size={32} color="#2dd4bf" />
-            </div>
-            <div>
-              <div style={{ fontWeight: '700', fontSize: '18px' }}>{doctorInfo.name || "Add Doctor Info"}</div>
-              <div style={{ fontSize: '14px', color: '#94a3b8' }}>{doctorInfo.clinic || "No clinic specified"}</div>
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <button style={{ padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#f8fafc', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <Phone size={16} /> Call
-            </button>
-            <button style={{ padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#f8fafc', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <Mail size={16} /> Email
-            </button>
-          </div>
-        </div>
-      )}
-      <button 
-        style={styles.analyzeButton}
-        onClick={() => alert("Full Medical Report Generated. Ready to share.")}
-      >
-        <FileText size={20} /> Generate Doctor Report
-      </button>
-    </div>
-  );
-
-  const UVCard = () => {
-    if (!uvData) return null;
-    return (
-      <div style={styles.uvCard} className="glass-card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: `${uvData.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Sun size={24} color={uvData.color} />
-          </div>
-          <div>
-            <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>UV INDEX</div>
-            <div style={{ fontSize: '20px', fontWeight: '800', color: '#f8fafc' }}>{uvData.index} - {uvData.risk}</div>
-          </div>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '10px', color: '#94a3b8' }}>REAPPLY SPF IN</div>
-          <div style={{ fontSize: '16px', fontWeight: '700', color: '#2dd4bf' }}>2h 00m</div>
-        </div>
-      </div>
-    );
-  };
-
-  // --- Feature 4: SkinScore Gauge Component ---
-  const SkinScoreGauge = ({ score }: { score: number }) => {
-    const getColor = (s: number) => {
-      if (s >= 85) return '#2dd4bf';
-      if (s >= 70) return '#fbbf24';
-      if (s >= 50) return '#f87171';
-      return '#ef4444';
-    };
-
-    const getMessage = (s: number) => {
-      if (scans.length === 0) return <span>Perfect score. No known risk detected yet. Complete your first scan to begin tracking.</span>;
-      if (s >= 85) return <span>Excellent — keep monitoring monthly</span>;
-      if (s >= 70) return <span>Good — a few areas to improve</span>;
-      if (s >= 50) return <span>Fair — review your protocol</span>;
-      return <span>Action needed — see a dermatologist</span>;
-    };
-
-    return (
-      <div className="flex flex-col items-center mb-8">
-        <div className="relative w-48 h-48 flex items-center justify-center">
-          <svg className="w-full h-full transform -rotate-90">
-            <circle cx="96" cy="96" r="88" stroke="rgba(255,255,255,0.05)" strokeWidth="12" fill="none" />
-            <motion.circle 
-              cx="96" cy="96" r="88" 
-              stroke={getColor(score)} 
-              strokeWidth="12" 
-              fill="none"
-              strokeDasharray={553}
-              initial={{ strokeDashoffset: 553 }}
-              animate={{ strokeDashoffset: 553 - (553 * score) / 100 }}
-              transition={{ duration: 1.5, ease: "easeOut" }}
-              strokeLinecap="round"
-            />
-          </svg>
-          <div className="absolute flex flex-col items-center">
-            <span className="text-4xl font-black text-white">{score}</span>
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">SkinScore™</span>
-          </div>
-        </div>
-        <p className="text-center text-sm font-bold text-slate-300 mt-4 px-6">{getMessage(score)}</p>
-        <button 
-          onClick={() => setActiveTab('routine')}
-          className="mt-4 px-6 py-2 bg-white/5 border border-white/10 rounded-full text-xs font-bold text-cyan-400 hover:bg-white/10 transition-all flex items-center gap-2"
-        >
-          <ShieldCheck size={14} />
-          <span>How to Improve</span>
-        </button>
-      </div>
-    );
-  };
-
-  const SideMenu = () => {
-    const menuItems = [
-      { id: 'home', label: 'Home', icon: Home },
-      { id: 'timeline', label: 'Timeline and Schedule', icon: Calendar },
-      { id: 'profile', label: 'My Profile', icon: UserCircle },
-      { id: 'clinic', label: 'Find Dermatologists', icon: MapPinned },
-      { id: 'welcome', label: 'About Skin Tight', icon: Info },
-    ];
-
-    return (
-      <>
-        {/* Backdrop */}
-        <div 
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.5)',
-            backdropFilter: 'blur(4px)',
-            zIndex: 1999,
-            opacity: isMenuOpen ? 1 : 0,
-            pointerEvents: isMenuOpen ? 'auto' : 'none',
-            transition: 'opacity 0.4s ease'
-          }}
-          onClick={() => setIsMenuOpen(false)}
-        />
-        
-        {/* Menu Panel */}
-        <div style={{
-          ...styles.sideMenu,
-          transform: isMenuOpen ? 'translateX(0)' : 'translateX(100%)'
-        }}>
-          <button 
-            style={{ 
-              position: 'absolute', 
-              top: '20px', 
-              right: '20px', 
-              background: 'transparent', 
-              border: 'none', 
-              cursor: 'pointer',
-              color: '#94a3b8'
-            }}
-            onClick={() => setIsMenuOpen(false)}
-          >
-            <X size={32} />
-          </button>
-
-          {currentUser && (
-            <div style={{ marginBottom: '32px', padding: '0 20px' }}>
-              <div 
-                id="menuAvatarCircle"
-                style={{ 
-                width: '64px', 
-                height: '64px', 
-                borderRadius: '20px', 
-                background: fullUserData?.profileColor || 'linear-gradient(135deg, #2dd4bf 0%, #0ea5e9 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '16px',
-                fontSize: '24px',
-                fontWeight: '800',
-                color: 'white',
-                boxShadow: '0 8px 16px rgba(45, 212, 191, 0.2)'
-              }}>
-                {fullUserData?.username?.charAt(0).toUpperCase() || currentUser.displayName?.charAt(0) || 'U'}
-              </div>
-              <div id="menuUserName" style={{ fontWeight: '800', fontSize: '20px', color: '#f8fafc' }}>{fullUserData?.fullName || currentUser.displayName}</div>
-              <div id="menuUserEmail" style={{ fontSize: '14px', color: '#94a3b8' }}>{fullUserData?.email || currentUser.email}</div>
-            </div>
-          )}
-
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: '8px',
-            overflowY: 'auto',
-            flex: 1,
-            paddingBottom: '40px' // Extra space for iOS home bar
-          }}>
-            {menuItems.map(item => (
-              <div 
-                key={item.id} 
-                style={styles.menuItem(activeTab === item.id)}
-                onClick={() => {
-                  setActiveTab(item.id as any);
-                  setIsMenuOpen(false);
-                }}
-              >
-                <item.icon size={24} />
-                <span>{item.label}</span>
-              </div>
-            ))}
-            
-            <div 
-              style={{ ...styles.menuItem(false), marginTop: '20px', color: '#ef4444' }}
-              onClick={() => {
-                clearAllSessionData();
-                auth.signOut();
-                setIsMenuOpen(false);
-              }}
-            >
-              <LogOut size={24} />
-              <span>Sign Out</span>
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  };
-
-  const updateIntake = (field: keyof IntakeForm, value: any) => {
-    setIntakeForm(prev => ({ ...prev, [field]: value }));
-  };
-
-  const ScanPage = () => {
-    const [currentSection, setCurrentSection] = useState(1);
-    const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-      'Sun Exposure History': true,
-      'Medical History': true
-    });
-
-    const toggleSection = (title: string, sectionNum: number) => {
-      setOpenSections(prev => ({ ...prev, [title]: !prev[title] }));
-      if (sectionNum) setCurrentSection(sectionNum);
-    };
-
-    const updateQualityCheck = (field: keyof IntakeForm['qualityCheck'], value: boolean) => {
-      setIntakeForm(prev => ({
-        ...prev,
-        qualityCheck: { ...prev.qualityCheck, [field]: value }
-      }));
-    };
-
-    const toggleMultiSelect = (field: 'whatChanged' | 'appearance' | 'cancerTypes' | 'medicalConditions', value: string) => {
-      setIntakeForm(prev => {
-        const current = prev[field] as string[];
-        const updated = current.includes(value) 
-          ? current.filter(v => v !== value) 
-          : [...current, value];
-        return { ...prev, [field]: updated };
-      });
-    };
-
-    const allQualityChecked = intakeForm.qualityCheck.clear && 
-                             intakeForm.qualityCheck.lighting && 
-                             intakeForm.qualityCheck.fillsFrame && 
-                             intakeForm.qualityCheck.uploaded &&
-                             photos.length > 0;
-
-    const ConfidenceMeter = ({ score }: { score: number }) => {
-      const getColor = () => {
-        if (score < 50) return '#ef4444';
-        if (score < 80) return '#f59e0b';
-        return '#2dd4bf';
-      };
-
-      return (
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-4 rounded-2xl mb-6 border border-white/5"
-        >
-          <div className="flex justify-between items-center mb-2">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-teal-400 uppercase tracking-widest mb-1">Section {currentSection} of 4</span>
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Form Completeness</span>
-            </div>
-            <span className="text-sm font-black" style={{ color: getColor() }}>{score}%</span>
-          </div>
-          <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${score}%` }}
-              transition={{ duration: 0.5 }}
-              className="h-full"
-              style={{ backgroundColor: getColor() }}
-            />
-          </div>
-        </motion.div>
-      );
-    };
-
-    return (
-      <div className="page-container" style={styles.tabContent}>
-        {result ? (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            style={styles.resultCard}
-          >
-            <div className="flex items-center gap-2 mb-4 text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-              <Info size={12} className="text-slate-400" />
-              Skin cancer screening assessment — Not a medical diagnosis
-            </div>
-            
-            <div className="mb-6">
-              <div style={styles.riskBadge(result.risk_level)}>
-                {result.risk_level === 'high' ? <AlertTriangle size={20} /> : <CheckCircle2 size={20} />}
-                <span>
-                  {result.risk_level === 'high' ? 'HIGH RISK' : result.risk_level === 'moderate' ? 'MODERATE RISK' : 'LOW RISK'}
-                </span>
-              </div>
-              <p className="text-sm font-bold text-white mt-3 px-1">{result.summary}</p>
-            </div>
-
-            <div className="glass-card p-6 rounded-3xl mb-6 border border-cyan-500/20">
-              <h3 style={styles.sectionTitle} className="text-cyan-400"><Activity size={20} /> <span>What the AI noticed</span></h3>
-              <div className="space-y-3">
-                {result.findings?.slice(0, 3).map((f, i) => (
-                  <div key={i} className="flex gap-3 text-sm text-slate-200 leading-relaxed">
-                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 shrink-0 mt-1.5" />
-                    {f}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className={`p-6 rounded-3xl mb-6 border ${
-              result.risk_level === 'high' ? 'bg-red-500/10 border-red-500/30' :
-              result.risk_level === 'moderate' ? 'bg-amber-500/10 border-amber-500/30' :
-              'bg-emerald-500/10 border-emerald-500/30'
-            }`}>
-              <h3 className={`text-sm font-black uppercase tracking-widest mb-3 flex items-center gap-2 ${
-                result.risk_level === 'high' ? 'text-red-400' :
-                result.risk_level === 'moderate' ? 'text-amber-400' :
-                'text-emerald-400'
-              }`}>
-                <AlertCircle size={18} /> <span>Do you need to act?</span>
-              </h3>
-              <p className="text-sm font-bold text-white leading-relaxed">{result.action_card}</p>
-            </div>
-
-            <div className="glass-card p-6 rounded-3xl mb-6 border border-purple-500/20">
-              <h3 style={styles.sectionTitle} className="text-purple-400"><ShieldCheck size={20} /> <span>Your personal risk factors</span></h3>
-              <div className="space-y-3">
-                {result.risk_factors_identified?.slice(0, 2).map((rf, i) => (
-                  <div key={i} className="flex gap-3 text-sm text-slate-200 leading-relaxed">
-                    <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0 mt-1.5" />
-                    {rf}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {saveStatus === 'success' && (
-              <div className="p-4 bg-emerald-500/20 border border-emerald-500/50 rounded-2xl flex items-center gap-3 mb-6 animate-bounce">
-                <CheckCircle2 size={20} className="text-emerald-400" />
-                <span className="text-sm font-bold text-emerald-300">Scan saved to your account</span>
-              </div>
-            )}
-
-            {saveStatus === 'error' && (
-              <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-2xl flex items-center gap-3 mb-6">
-                <AlertTriangle size={20} className="text-red-400" />
-                <span className="text-sm font-bold text-red-300">Error saving scan. Please try again.</span>
-              </div>
-            )}
-
-            <div className="flex flex-col gap-3">
-              <button style={styles.analyzeButton} onClick={() => downloadPDF()}>
-                <Download size={20} /> Download PDF Report
-              </button>
-              {scans.filter(s => s.bodyRegion === intakeForm.bodyLocation).length > 0 && (
-                <button 
-                  onClick={() => {
-                    const otherScans = scans.filter(s => s.bodyRegion === intakeForm.bodyLocation);
-                    if (otherScans.length > 0) {
-                      setCompareScanId(otherScans[0].id);
-                      // We need a temporary ScanRecord for the current result to compare
-                      const currentScan: ScanRecord = {
-                        id: 'current',
-                        date: new Date().toISOString(),
-                        photos: [...photos],
-                        note: note,
-                        result: result!,
-                        bodyRegion: intakeForm.bodyLocation || 'Unspecified',
-                        skinScore: skinScore,
-                        intake: { ...intakeForm }
-                      };
-                      // Actually, it's better to just use the latest scan from the list if it was just added
-                      // But analyzeSkin adds it to the list, so it should be there.
-                      setSelectedScanId(scans[0].id);
-                      setIsComparing(true);
-                    }
-                  }}
-                  className="w-full py-4 bg-teal-500/10 border border-teal-500/30 text-teal-400 font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-teal-500/20 transition-all"
-                >
-                  <History size={20} /> Compare with Previous
-                </button>
-              )}
-              <button 
-                onClick={retakePhoto}
-                className="w-full py-4 bg-white/5 border border-white/10 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-white/10 transition-all"
-              >
-                <RotateCcw size={20} /> Retake Assessment
-              </button>
-            </div>
-          </motion.div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <ConfidenceMeter score={confidenceScore} />
-            
-            {/* Confidence Warning */}
-            <AnimatePresence>
-              {showConfidenceWarning && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="bg-amber-500/20 border border-amber-500/50 p-6 rounded-3xl mb-2"
-                >
-                  <div className="flex items-center gap-3 mb-2 text-amber-500">
-                    <AlertTriangle size={24} />
-                    <h3 className="font-bold">Limited data provided</h3>
-                  </div>
-                  <p className="text-sm text-amber-200/80 mb-4">
-                    The AI will attempt analysis but accuracy may be reduced. We strongly recommend completing more sections for a reliable result.
-                  </p>
-                  <div className="flex gap-3">
-                    <button 
-                      onClick={() => setShowConfidenceWarning(false)}
-                      className="flex-1 py-3 bg-amber-500 text-white font-bold rounded-xl text-sm"
-                    >
-                      Complete More Info
-                    </button>
-                    <button 
-                      onClick={() => analyzeSkin(true)}
-                      className="flex-1 py-3 bg-white/10 text-white font-bold rounded-xl text-sm"
-                    >
-                      Continue Anyway
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Error Message */}
-            <AnimatePresence>
-              {(error || confidenceScore < 50) && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="bg-red-500/20 border border-red-500/50 p-6 rounded-3xl mb-2"
-                >
-                  <div className="flex items-center gap-3 mb-2 text-red-500">
-                    <AlertCircle size={24} />
-                    <h3 className="font-bold">{confidenceScore < 50 ? "Insufficient information" : "Analysis Error"}</h3>
-                  </div>
-                  <p className="text-sm text-red-200/80">
-                    {confidenceScore < 50 
-                      ? "More data is needed for a safe and accurate assessment. Please complete more sections of the intake form and upload clear photos to reach at least 50% completeness."
-                      : error}
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Photo Upload Section */}
-            <div 
-              style={styles.uploadZone}
-              onClick={triggerFileInput}
-            >
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileChange} 
-                multiple 
-                accept="image/*" 
-                style={{ display: 'none' }} 
-              />
-              {photos.length === 0 ? (
-                <>
-                  <Camera size={48} color="#2dd4bf" style={{ marginBottom: '12px' }} />
-                  <p style={{ fontWeight: '700' }}>Capture or Upload Photos</p>
-                  <p style={{ fontSize: '12px', color: '#94a3b8' }}>Up to 6 clear photos</p>
-                </>
-              ) : (
-                <div style={styles.photoGrid}>
-                  {photos?.map((p, i) => (
-                    <div key={i} style={{ position: 'relative' }}>
-                      <img src={p} style={styles.photoThumbnail} />
-                      <button style={styles.removeBtn} onClick={(e) => { e.stopPropagation(); removePhoto(i); }}><X size={14} /></button>
-                    </div>
-                  ))}
-                  {photos.length < 6 && (
-                    <div style={{ ...styles.photoThumbnail, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', border: '1px dashed #2dd4bf' }}>
-                      <Plus size={24} color="#2dd4bf" />
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Image Quality Feedback */}
-            {checkingQuality && (
-              <div className="flex items-center gap-2 text-sm text-cyan-400 animate-pulse px-2">
-                <RefreshCw size={16} className="animate-spin" />
-                AI checking image quality...
-              </div>
-            )}
-            {imageQuality === 'POOR' && (
-              <div className="bg-amber-500/20 border border-amber-500/50 p-4 rounded-2xl text-sm text-amber-200">
-                This photo appears blurry or poorly lit. For accurate analysis please retake the photo in good natural lighting with the camera close to the skin.
-              </div>
-            )}
-            {imageQuality === 'NOT_SKIN' && (
-              <div className="bg-red-500/20 border border-red-500/50 p-4 rounded-2xl text-sm text-red-200">
-                This does not appear to be a photo of skin. Please upload a clear photo of the skin area you want analyzed.
-              </div>
-            )}
-
-            {/* Intake Form Sections */}
-            <div className="space-y-4">
-              {/* SECTION 1: Your Profile */}
-              <div className="glass-card rounded-3xl overflow-hidden">
-                <div className="p-6 flex justify-between items-center bg-white/5">
-                  <h3 className="text-lg font-bold flex items-center gap-2"><User size={20} color="#2dd4bf" /> SECTION 1 — Your Profile</h3>
-                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Auto-filled</span>
-                </div>
-                <div className="p-6">
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold text-slate-300">
-                      Age: {fullUserData?.ageRange || 'Not set'}
-                    </div>
-                    <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold text-slate-300 flex items-center gap-2">
-                      Skin Type: {fullUserData?.fitzpatrickType ? `Type ${fullUserData.fitzpatrickType}` : 'Not set'}
-                      {fullUserData?.fitzpatrickType && (
-                        <div 
-                          style={{ 
-                            width: '12px', 
-                            height: '12px', 
-                            borderRadius: '3px', 
-                            background: fitzpatrickTypes.find(t => t.id === fullUserData.fitzpatrickType)?.color 
-                          }} 
-                        />
-                      )}
-                    </div>
-                    <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold text-slate-300">
-                      {fullUserData?.ethnicity || 'Ethnicity not set'}
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-slate-500">
-                    From your profile · <button onClick={() => setActiveTab('profile')} className="text-cyan-400 hover:underline font-bold">Edit</button>
-                  </p>
-                </div>
-              </div>
-
-              {/* SECTION 2: About This Skin Spot */}
-              <div className="glass-card rounded-3xl overflow-hidden">
-                <div className="p-6 flex justify-between items-center bg-white/5">
-                  <h3 className="text-lg font-bold flex items-center gap-2"><MapPin size={20} color="#a855f7" /> SECTION 2 — About This Skin Spot</h3>
-                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Required</span>
-                </div>
-                <div className="p-6 bg-amber-500/10 border-b border-amber-500/20">
-                  <p className="text-xs text-amber-200/80 leading-relaxed italic">
-                    <span className="font-bold text-amber-400">Note:</span> These questions help our AI provide a more accurate assessment based on clinical risk factors.
-                  </p>
-                </div>
-                <div className="p-6 space-y-6">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Where exactly on your body is it? <span className="text-red-500">*</span></label>
-                    <select 
-                      className={`w-full bg-white/5 border rounded-xl p-4 text-white outline-none transition-all ${!intakeForm.bodyLocation ? 'border-red-500/30' : 'border-white/10 focus:border-cyan-500'}`}
-                      value={intakeForm.bodyLocation}
-                      onChange={(e) => updateIntake('bodyLocation', e.target.value)}
-                    >
-                      <option value="" disabled>Select Location</option>
-                      {bodyLocations.map(l => <option key={l} value={l} className="bg-slate-900">{l}</option>)}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-3">How long have you had this spot?</label>
-                    <select 
-                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-cyan-500 transition-all"
-                      value={intakeForm.duration}
-                      onChange={(e) => updateIntake('duration', e.target.value)}
-                    >
-                      <option value="" disabled>Select Duration</option>
-                      {durations.map(d => <option key={d} value={d} className="bg-slate-900">{d}</option>)}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Has it changed recently?</label>
-                    <div className="flex gap-2">
-                      {['Yes', 'No', "Not sure"].map(o => (
-                        <button 
-                          key={o}
-                          onClick={() => updateIntake('changedRecently', o)}
-                          className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all ${intakeForm.changedRecently === o ? 'bg-purple-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
-                        >
-                          {o}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* SECTION 3: Sun History */}
-              <div className="glass-card rounded-3xl overflow-hidden">
-                <div className="p-6 flex justify-between items-center bg-white/5">
-                  <h3 className="text-lg font-bold flex items-center gap-2"><Sun size={20} color="#f59e0b" /> SECTION 3 — Sun History</h3>
-                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Required</span>
-                </div>
-                <div className="p-6 space-y-6">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-3">How much sun exposure do you get daily?</label>
-                    <select 
-                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-cyan-500 transition-all"
-                      value={intakeForm.dailySunExposure}
-                      onChange={(e) => updateIntake('dailySunExposure', e.target.value)}
-                    >
-                      <option value="" disabled>Select Exposure</option>
-                      <option value="Mostly indoors" className="bg-slate-900">Mostly indoors</option>
-                      <option value="Moderate (30 min to 2 hours)" className="bg-slate-900">Moderate (30 min to 2 hours)</option>
-                      <option value="High (more than 2 hours outdoors)" className="bg-slate-900">High (more than 2 hours outdoors)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Have you ever had severe blistering sunburns?</label>
-                    <div className="flex gap-2">
-                      {['Never', 'Once or twice', 'Many times'].map(o => (
-                        <button 
-                          key={o}
-                          onClick={() => updateIntake('severeSunburns', o)}
-                          className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.severeSunburns === o ? 'bg-amber-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
-                        >
-                          {o}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Do you regularly use sun protection?</label>
-                    <div className="flex gap-2">
-                      {['Never', 'Sometimes', 'Always'].map(o => (
-                        <button 
-                          key={o}
-                          onClick={() => updateIntake('useSunProtection', o)}
-                          className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.useSunProtection === o ? 'bg-amber-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
-                        >
-                          {o}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* SECTION 4: Medical History */}
-              <div className="glass-card rounded-3xl overflow-hidden">
-                <div className="p-6 flex justify-between items-center bg-white/5">
-                  <h3 className="text-lg font-bold flex items-center gap-2"><Activity size={20} color="#ef4444" /> SECTION 4 — Medical History</h3>
-                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Required</span>
-                </div>
-                <div className="p-6 space-y-6">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Have you or a blood relative had skin cancer?</label>
-                    <div className="flex flex-wrap gap-2">
-                      {['Yes (me)', 'Yes (family member)', 'Yes (both)', 'No'].map(o => (
-                        <button 
-                          key={o}
-                          onClick={() => updateIntake('cancerHistory', o)}
-                          className={`flex-1 min-w-[120px] py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.cancerHistory === o ? 'bg-red-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
-                        >
-                          {o}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {intakeForm.cancerHistory !== 'No' && intakeForm.cancerHistory !== '' && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
-                      <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Which type?</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {['Melanoma', 'Basal Cell Carcinoma', 'Squamous Cell Carcinoma', 'Not sure'].map(type => (
-                          <button 
-                            key={type}
-                            onClick={() => {
-                              const current = intakeForm.cancerTypes;
-                              if (current.includes(type)) {
-                                updateIntake('cancerTypes', current.filter(t => t !== type));
-                              } else {
-                                updateIntake('cancerTypes', [...current, type]);
-                              }
-                            }}
-                            className={`py-3 px-4 rounded-xl font-bold text-[10px] transition-all ${intakeForm.cancerTypes.includes(type) ? 'bg-red-500/20 text-red-400 border border-red-500' : 'bg-white/5 text-slate-400 border border-white/10'}`}
-                          >
-                            {type}
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Do you have many unusual or atypical moles?</label>
-                    <div className="flex gap-2">
-                      {['Yes', 'No', 'Not sure'].map(o => (
-                        <button 
-                          key={o}
-                          onClick={() => updateIntake('atypicalMoles', o)}
-                          className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.atypicalMoles === o ? 'bg-red-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
-                        >
-                          {o}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Are you immunocompromised or on immunosuppressant medications?</label>
-                    <div className="flex gap-2">
-                      {['Yes', 'No', 'Not sure'].map(o => (
-                        <button 
-                          key={o}
-                          onClick={() => updateIntake('isImmunocompromised', o)}
-                          className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.isImmunocompromised === o ? 'bg-red-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
-                        >
-                          {o}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* SECTION 5: Image Quality Confirmation */}
-              <div className="glass-card rounded-3xl overflow-hidden border-2 border-cyan-500/30">
-                <div className="p-6 flex justify-between items-center bg-cyan-500/10">
-                  <h3 className="text-lg font-bold flex items-center gap-2"><ShieldCheck size={20} color="#2dd4bf" /> SECTION 5 — Image Quality Confirmation</h3>
-                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Required</span>
-                </div>
-                <div className="p-6 space-y-4">
-                  {[
-                    { id: 'clear', label: "The photo is clear and in focus" },
-                    { id: 'lighting', label: "The lighting is good — no shadows" },
-                    { id: 'fillsFrame', label: "The spot fills most of the frame" },
-                    { id: 'uploaded', label: "I have uploaded at least one photo" }
-                  ].map(item => (
-                    <button 
-                      key={item.id}
-                      onClick={() => updateQualityCheck(item.id as any, !intakeForm.qualityCheck[item.id as keyof IntakeForm['qualityCheck']])}
-                      className={`w-full flex items-center gap-3 p-4 rounded-2xl text-sm font-medium transition-all ${intakeForm.qualityCheck[item.id as keyof IntakeForm['qualityCheck']] ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50' : 'bg-white/5 text-slate-400 border border-white/10'}`}
-                    >
-                      <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${intakeForm.qualityCheck[item.id as keyof IntakeForm['qualityCheck']] ? 'bg-cyan-500 border-cyan-500' : 'border-slate-600'}`}>
-                        {intakeForm.qualityCheck[item.id as keyof IntakeForm['qualityCheck']] && <Check size={14} color="white" />}
-                      </div>
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 mb-2">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Data Sufficiency</span>
-                <span className={`text-xs font-black ${confidenceScore >= 70 ? 'text-emerald-400' : 'text-cyan-400'}`}>{confidenceScore}%</span>
-              </div>
-              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/10">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${confidenceScore}%` }}
-                  className={`h-full ${confidenceScore >= 70 ? 'bg-emerald-500' : 'bg-cyan-500'}`}
-                />
-              </div>
-              {confidenceScore < 70 && (
-                <p className="text-[10px] text-slate-500 mt-2 italic">
-                  Complete more sections to reach 70% sufficiency for AI analysis.
-                </p>
-              )}
-            </div>
-
-            <button 
-              style={{ ...styles.analyzeButton, opacity: confidenceScore < 70 || !intakeForm.bodyLocation || loading ? 0.5 : 1 }}
-              disabled={confidenceScore < 70 || !intakeForm.bodyLocation || loading}
-              onClick={() => analyzeSkin()}
-            >
-              {loading ? (
-                <>
-                  <RefreshCw className="animate-spin" size={20} />
-                  Analyzing with AI...
-                </>
-              ) : (
-                <>
-                  <SparklesIcon size={20} />
-                  Analyze Now
-                </>
-              )}
-            </button>
-            {confidenceScore < 70 && (
-              <p className="text-center text-xs text-red-400 font-bold animate-pulse">
-                Please complete the intake form and confirm image quality to reach 70% sufficiency.
-              </p>
-            )}
-            {!intakeForm.bodyLocation && confidenceScore >= 70 && (
-              <p className="text-center text-xs text-red-400 font-bold animate-pulse">
-                Please select body location to continue
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const WelcomePage = ({ onComplete }: { onComplete: () => void }) => {
-    const containerVariants = {
-      hidden: { opacity: 0 },
-      visible: {
-        opacity: 1,
-        transition: { staggerChildren: 0.2 }
-      }
-    };
-
-    const itemVariants = {
-      hidden: { opacity: 0, y: 20 },
-      visible: { opacity: 1, y: 0 }
-    };
-
-    return (
-      <div style={{
-        minHeight: '100vh',
-        background: '#060818',
-        color: '#f8fafc',
-        padding: '40px 24px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center'
-      }}>
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          style={{ maxWidth: '500px', width: '100%' }}
-        >
-          <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
-            <div style={{
-              width: '80px', height: '80px', borderRadius: '24px',
-              background: 'rgba(45, 212, 191, 0.1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginBottom: '16px', border: '1px solid rgba(45, 212, 191, 0.2)',
-              boxShadow: '0 0 20px rgba(45, 212, 191, 0.2)'
-            }}>
-              <Dna size={40} color="#2dd4bf" className="animate-pulse" />
-            </div>
-            <h1 style={{ fontSize: '14px', fontWeight: '900', color: '#2dd4bf', letterSpacing: '4px', textTransform: 'uppercase' }}>Skin Tight</h1>
-          </motion.div>
-
-          <motion.div variants={itemVariants} style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <h2 style={{ fontSize: '48px', fontWeight: '900', marginBottom: '12px', lineHeight: 1.1 }}>Catch It Early.</h2>
-            <p style={{ fontSize: '18px', color: '#94a3b8', lineHeight: 1.4 }}>AI-powered skin cancer monitoring for everyone.</p>
-          </motion.div>
-
-          <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '40px' }}>
-            {[
-              { icon: '🌍', number: '1 in 5', text: 'Americans will develop skin cancer in their lifetime.' },
-              { icon: '📈', number: '98%+', text: 'Detected early, skin cancer survival rates exceed 98%.' },
-              { icon: '⏱️', number: '60s', text: 'Early detection starts with a 60-second scan.' }
-            ].map((card, i) => (
-              <div key={i} className="glass-card" style={{ padding: '20px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <span style={{ fontSize: '24px' }}>{card.icon}</span>
-                <div>
-                  <span style={{ fontWeight: '900', fontSize: '18px', color: '#f8fafc', display: 'block' }}>{card.number}</span>
-                  <span style={{ fontSize: '14px', color: '#94a3b8' }}>{card.text}</span>
-                </div>
-              </div>
-            ))}
-          </motion.div>
-
-          <motion.div variants={itemVariants} style={{ marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: '900', color: '#2dd4bf', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>What Skin Tight does:</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[
-                'Analyzes photos of suspicious moles, spots and lesions',
-                'Assesses skin cancer risk using clinical ABCDE criteria',
-                'Tracks changes over time and alerts you when to see a doctor'
-              ].map((point, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', fontSize: '14px', color: '#cbd5e1' }}>
-                  <CheckCircle2 size={18} color="#2dd4bf" style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <span>{point}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          <motion.div variants={itemVariants} style={{ marginBottom: '40px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: '900', color: '#ef4444', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>What Skin Tight does NOT do:</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[
-                'Diagnose skin cancer — only a doctor can do that',
-                'Replace professional dermatology care',
-                'Provide general skincare or beauty advice'
-              ].map((point, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', fontSize: '14px', color: '#94a3b8' }}>
-                  <X size={18} color="#ef4444" style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <span>{point}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          <motion.p variants={itemVariants} style={{ fontSize: '12px', color: '#64748b', textAlign: 'center', lineHeight: 1.6, marginBottom: '40px' }}>
-            Skin Tight is a wellness monitoring tool currently in beta testing. It uses AI vision trained on clinical dermatology guidelines to help you identify suspicious spots earlier. It is not a medical device and does not provide medical diagnoses. Always consult a licensed board-certified dermatologist for any skin concerns.
-          </motion.p>
-
-          <motion.button
-            variants={itemVariants}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onComplete}
-            style={{
-              width: '100%',
-              padding: '20px',
-              borderRadius: '24px',
-              border: 'none',
-              background: 'linear-gradient(135deg, #2dd4bf 0%, #0d9488 100%)',
-              color: '#020617',
-              fontWeight: '900',
-              fontSize: '18px',
-              cursor: 'pointer',
-              boxShadow: '0 10px 30px rgba(45, 212, 191, 0.3)'
-            }}
-          >
-            Get Started
-          </motion.button>
-        </motion.div>
-      </div>
-    );
-  };
 
   const BodyMapPage = () => null; // Removed as requested
 
-  const AboutPage = () => {
-    const containerVariants = {
-      hidden: { opacity: 0 },
-      visible: {
-        opacity: 1,
-        transition: { staggerChildren: 0.1 }
-      }
-    };
 
-    const itemVariants = {
-      hidden: { opacity: 0, y: 20 },
-      visible: { opacity: 1, y: 0 }
-    };
 
-    return (
-      <div className="page-container" style={styles.tabContent}>
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="max-w-3xl mx-auto space-y-12 pb-20"
-        >
-          {/* HEADER */}
-          <motion.div variants={itemVariants} className="flex flex-col items-center text-center pt-8">
-            <div style={{
-              width: '100px', height: '100px', borderRadius: '30px',
-              background: 'rgba(45, 212, 191, 0.1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginBottom: '24px', border: '1px solid rgba(45, 212, 191, 0.2)',
-              boxShadow: '0 0 30px rgba(45, 212, 191, 0.3)'
-            }}>
-              <Dna size={50} color="#2dd4bf" className="animate-pulse" />
-            </div>
-            <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#f8fafc', marginBottom: '8px' }}>Skin Tight</h1>
-            <p style={{ fontSize: '18px', color: '#2dd4bf', fontWeight: '600' }}>AI-powered skin cancer monitoring for everyone.</p>
-          </motion.div>
 
-          {/* MISSION SECTION */}
-          <motion.div variants={itemVariants} className="glass-card p-8 rounded-3xl">
-            <h2 className="text-xl font-black text-white mb-4 flex items-center gap-2">
-              <SparklesIcon size={20} className="text-teal-400" /> Our Mission
-            </h2>
-            <p className="text-slate-300 leading-relaxed text-sm">
-              Skin cancer is the most common cancer in the world. One in five Americans will develop it in their lifetime — yet when caught early, survival rates exceed 98%. Skin Tight exists for one reason: to help people catch it early. We built an AI screening tool trained on clinical dermatology guidelines from the American Academy of Dermatology, the Skin Cancer Foundation, and Yale and Brown University research — so that anyone with a smartphone can monitor suspicious spots on their skin and know when to see a doctor before it is too late.
-            </p>
-          </motion.div>
 
-          {/* IMPACT STATS */}
-          <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              { label: '1 in 5', sub: 'Americans develop skin cancer' },
-              { label: '98%', sub: 'survival rate when caught early' },
-              { label: '60 sec', sub: 'to complete a scan' }
-            ].map((stat, i) => (
-              <div key={i} className="glass-card p-6 rounded-2xl text-center">
-                <div className="text-2xl font-black text-teal-400 mb-1">{stat.label}</div>
-                <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">{stat.sub}</div>
-              </div>
-            ))}
-          </motion.div>
 
-          {/* WHAT WE DO SECTION */}
-          <motion.div variants={itemVariants} className="space-y-4">
-            <h2 className="text-lg font-black text-white px-2">What Skin Tight does</h2>
-            <div className="space-y-3">
-              {[
-                'Analyzes photos of suspicious moles, spots and skin lesions using AI vision',
-                'Assesses skin cancer risk using the clinical ABCDE criteria used by dermatologists',
-                'Tracks changes in your skin over time and tells you when to see a doctor'
-              ].map((point, i) => (
-                <div key={i} className="glass-card p-4 rounded-2xl flex items-start gap-4">
-                  <CheckCircle2 size={20} className="text-teal-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-slate-300">{point}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
 
-          {/* WHAT WE DO NOT DO SECTION */}
-          <motion.div variants={itemVariants} className="space-y-4">
-            <h2 className="text-lg font-black text-white px-2">What Skin Tight does NOT do</h2>
-            <div className="space-y-3">
-              {[
-                'Diagnose skin cancer — only a licensed dermatologist can do that',
-                'Replace professional medical care or dermatology appointments',
-                'Provide general skincare, beauty or cosmetic advice'
-              ].map((point, i) => (
-                <div key={i} className="glass-card p-4 rounded-2xl flex items-start gap-4 border-red-500/10">
-                  <X size={20} className="text-red-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-slate-400">{point}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
 
-          {/* IMPORTANT DISCLAIMER SECTION */}
-          <motion.div variants={itemVariants} className="p-8 rounded-3xl bg-amber-500/10 border border-amber-500/20">
-            <h2 className="text-lg font-black text-amber-500 mb-4 flex items-center gap-2">
-              <AlertTriangle size={24} /> Important Notice
-            </h2>
-            <p className="text-sm text-amber-200/80 leading-relaxed">
-              Skin Tight is a wellness monitoring tool currently in beta testing. It uses AI vision to help identify potentially suspicious skin changes earlier. It is NOT a medical device, does NOT provide medical diagnoses, and should NEVER be used as a substitute for professional medical advice. Always consult a licensed board-certified dermatologist for any skin concern. If you notice a rapidly changing, bleeding or painful lesion seek medical attention immediately regardless of what this app says.
-            </p>
-          </motion.div>
 
-          {/* CLINICAL SOURCES SECTION */}
-          <motion.div variants={itemVariants} className="space-y-4">
-            <h2 className="text-lg font-black text-white px-2">Built on Clinical Research</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                'American Academy of Dermatology — Clinical Practice Guidelines',
-                'The Skin Cancer Foundation — ABCDE Detection Framework',
-                'Yale School of Medicine — Melanoma in Situ Research',
-                'Brown University — Dermatology and Cutaneous Oncology'
-              ].map((source, i) => (
-                <div key={i} className="glass-card p-4 rounded-2xl flex items-center gap-4">
-                  <FileText size={20} className="text-slate-400 shrink-0" />
-                  <span className="text-xs text-slate-300">{source}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
 
-          {/* CONTACT SECTION */}
-          <motion.div variants={itemVariants} className="glass-card p-8 rounded-3xl text-center">
-            <h2 className="text-lg font-black text-white mb-4">Questions or Feedback</h2>
-            <p className="text-sm text-slate-400 mb-6">
-              Skin Tight is actively being developed. If you have feedback, encounter an issue, or want to partner with us reach out at:
-            </p>
-            <div className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 font-bold mb-6">
-              <Mail size={18} /> contact@skinscanai.com
-            </div>
-            <p className="text-[10px] text-red-400/70 font-bold uppercase tracking-widest">
-              For medical emergencies always call 911 or visit your nearest emergency room.
-            </p>
-          </motion.div>
-
-          {/* VERSION INFO */}
-          <motion.div variants={itemVariants} className="text-center space-y-1">
-            <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">Skin Tight — Beta Version 1.0 — Built with Gemini AI</p>
-            <p className="text-[10px] text-slate-700">© 2025 Skin Tight. All rights reserved.</p>
-          </motion.div>
-        </motion.div>
-      </div>
-    );
-  };
-
-  const RoutinePage = () => {
-    useEffect(() => {
-      loadProtocolFromFirestore();
-    }, []);
-
-    return (
-      <div className="page-container" style={styles.tabContent}>
-        <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '20px' }}>Daily UV Protection</h2>
-        
-        <div className="glass-card p-6 rounded-3xl mb-6">
-          <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl mb-6">
-            <p className="text-xs text-amber-200 font-medium italic">Note: This protocol is generated by AI based on your Fitzpatrick type and scan history. It is for monitoring only and does not replace a professional clinical exam.</p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-            <div style={{ width: '50px', height: '50px', borderRadius: '15px', background: 'rgba(45, 212, 191, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ShieldCheck size={24} color="#2dd4bf" />
-            </div>
-            <div>
-              <div style={{ fontWeight: '700', fontSize: '18px' }}>Daily UV Protection</div>
-              <div style={{ fontSize: '14px', color: '#94a3b8' }}>Personalized monitoring & protection</div>
-            </div>
-          </div>
-
-          {!protocol ? (
-            <div style={{ textAlign: 'center', padding: '20px' }}>
-              <p style={{ color: '#94a3b8', marginBottom: '20px' }}>Complete a scan to generate your protocol</p>
-              {protocolError && (
-                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400">
-                  {protocolError}
-                </div>
-              )}
-              <button style={styles.analyzeButton} onClick={generateProtocol} disabled={loadingProtocol}>
-                {loadingProtocol ? 'Loading...' : 'Analyze Now'}
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 gap-4">
-                <div className="p-4 rounded-2xl bg-teal-500/5 border border-teal-500/10">
-                  <h3 className="text-[10px] font-black text-teal-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <Sun size={12} /> <span>Daily UV Protection</span>
-                  </h3>
-                  <div className="space-y-2">
-                    {protocol.dailyUVProtection.map((step, i) => (
-                      <div key={i} className="text-xs text-slate-200 flex gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-teal-500 shrink-0 mt-1" />
-                        {step}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-purple-500/5 border border-purple-500/10">
-                  <h3 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <Eye size={12} /> <span>Monthly Self-Exam</span>
-                  </h3>
-                  <div className="space-y-2">
-                    {protocol.monthlySelfExam.map((item, i) => (
-                      <div key={i} className="text-xs text-purple-200 flex gap-2">
-                        <CheckCircle2 size={12} className="text-purple-500 shrink-0 mt-0.5" />
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/10">
-                  <h3 className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <AlertTriangle size={12} /> <span>Warning Signs</span>
-                  </h3>
-                  <div className="space-y-2">
-                    {protocol.warningSigns.map((sign, i) => (
-                      <div key={i} className="text-xs text-red-200 flex gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 mt-1" />
-                        {sign}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-center">
-                <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1">Next Professional Exam</h4>
-                <p className="text-sm font-bold text-white">{protocol.nextExamSchedule}</p>
-              </div>
-
-              {protocolError && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400 text-center">
-                  {protocolError}
-                </div>
-              )}
-
-              <div className="space-y-6 pt-4 border-t border-white/5">
-                <div>
-                  <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2">Priority Check Areas</h4>
-                  <ul className="space-y-1">
-                    {protocol.priorityCheckAreas.map((area, i) => (
-                      <li key={i} className="text-xs text-amber-200/70 flex items-center gap-2">
-                        <div className="w-1 h-1 rounded-full bg-amber-500" /> {area}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                  <p className="text-[10px] text-slate-500 italic">This protocol is generated based on your Fitzpatrick type {userProfile.fitzpatrick} profile and recent scan history. Always consult a dermatologist for a clinical evaluation.</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const ShopPage = () => {
-    const products = [
-      { name: 'Mineral Sunscreen SPF 50+', price: '$24.99', category: 'Protection', image: 'https://picsum.photos/seed/sunscreen/400/400', desc: 'Broad-spectrum physical barrier' },
-      { name: 'UV Detection Stickers', price: '$12.99', category: 'Monitoring', image: 'https://picsum.photos/seed/uvsticker/400/400', desc: 'Visual indicator for reapplication' },
-      { name: 'Dermatoscope Lite', price: '$45.00', category: 'Monitoring', image: 'https://picsum.photos/seed/lens/400/400', desc: '10x magnification for clear photos' },
-      { name: 'UPF 50+ Sun Hat', price: '$34.99', category: 'Protection', image: 'https://picsum.photos/seed/hat/400/400', desc: 'Maximum coverage for face & neck' }
-    ];
-
-    return (
-      <div style={styles.tabContent}>
-        <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '20px' }}>Prevention Shop</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          {products.map((p, i) => (
-            <div key={i} style={styles.shopCard}>
-              <img src={p.image} referrerPolicy="no-referrer" style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '16px', marginBottom: '12px' }} />
-              <div style={{ fontSize: '10px', fontWeight: '800', color: '#2dd4bf', textTransform: 'uppercase', marginBottom: '4px' }}>{p.category}</div>
-              <div style={{ fontWeight: '700', fontSize: '14px', marginBottom: '4px' }}>{p.name}</div>
-              <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '12px', height: '32px', overflow: 'hidden' }}>{p.desc}</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontWeight: '800', color: '#f8fafc' }}>{p.price}</div>
-                <button style={{ background: '#2dd4bf', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer' }}><ShoppingBag size={16} color="#060818" /></button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  const PlansPage = () => {
-    const plans = [
-      { 
-        name: 'Free', 
-        price: '$0', 
-        color: '#94a3b8', 
-        features: ['3 Scans per month', 'Basic AI Analysis', 'Body Map Tracking', 'UV Index Alerts'],
-        active: true
-      },
-      { 
-        name: 'Pro', 
-        price: '$9.99/mo', 
-        color: '#00B4D8', 
-        features: ['Unlimited Scans', 'Advanced ABCDE Analysis', 'Family Vault (3 members)', 'PDF Doctor Reports', 'AI Routine Generation'],
-        active: false,
-        popular: true
-      },
-      { 
-        name: 'Elite', 
-        price: '$19.99/mo', 
-        color: '#a855f7', 
-        features: ['Everything in Pro', 'Unlimited Family Members', 'Priority AI Processing', 'Direct Dermatologist Chat', 'Early Access Features'],
-        active: false
-      }
-    ];
-
-    return (
-      <div className="page-container" style={styles.tabContent}>
-        <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '10px' }}>Upgrade Your Health</h2>
-        <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '24px' }}>Choose the plan that fits your family's needs.</p>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {plans.map(plan => (
-            <div key={plan.name} style={styles.planCard(plan.active, plan.color)}>
-              {plan.popular && (
-                <div style={{ position: 'absolute', top: '-12px', right: '20px', background: '#00B4D8', color: 'white', padding: '4px 12px', borderRadius: '999px', fontSize: '10px', fontWeight: '800' }}>
-                  MOST POPULAR
-                </div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h3 style={{ fontSize: '20px', fontWeight: '800', color: plan.color }}>{plan.name}</h3>
-                  <div style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px' }}>{plan.price}</div>
-                </div>
-                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: `${plan.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {plan.name === 'Free' ? <Zap size={24} color={plan.color} /> : plan.name === 'Pro' ? <Crown size={24} color={plan.color} /> : <Gem size={24} color={plan.color} />}
-                </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {plan.features.map(f => (
-                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: '#cbd5e1' }}>
-                    <Check size={16} color={plan.color} />
-                    {f}
-                  </div>
-                ))}
-              </div>
-              <button style={{ 
-                width: '100%', 
-                padding: '14px', 
-                borderRadius: '16px', 
-                border: 'none', 
-                background: plan.active ? 'rgba(255,255,255,0.05)' : plan.color,
-                color: plan.active ? '#94a3b8' : 'white',
-                fontWeight: '700',
-                cursor: 'pointer'
-              }}>
-                {plan.active ? 'Current Plan' : 'Upgrade Now'}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  // --- Feature 10: Education Card Component ---
-  const EducationCard = () => {
-    if (!result || !showEduCard) return null;
-    
-    const quiz = {
-      question: "What is the 'A' in the ABCDE melanoma framework?",
-      options: ["Age", "Asymmetry", "Appearance", "Area"],
-      answer: 1
-    };
-
-    return (
-      <div style={styles.eduCard} className="shimmer-overlay">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-          <BookOpen size={20} color="#2dd4bf" />
-          <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '700' }}>Learn About This</h4>
-        </div>
-        <p style={{ fontSize: '14px', color: '#cbd5e1', marginBottom: '16px', lineHeight: '1.5' }}>
-          {result.risk_level === 'high' ? 
-            "High risk findings often show irregular borders or multiple colors. These are key indicators that a lesion needs professional evaluation." :
-            "Low risk spots are typically symmetric and uniform in color. However, any new or changing spot should be monitored monthly."}
-        </p>
-        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '12px', marginBottom: '16px' }}>
-          <div style={{ fontSize: '12px', fontWeight: '700', color: '#2dd4bf', marginBottom: '4px' }}>DAILY TIP</div>
-          <div style={{ fontSize: '13px', color: '#f8fafc' }}>Apply SPF 30+ even on cloudy days. 80% of UV rays pass through clouds.</div>
-        </div>
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
-          <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '10px' }}>{quiz.question}</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            {quiz.options.map((opt, i) => (
-              <button 
-                key={i}
-                style={{ padding: '8px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', fontSize: '12px' }}
-                onClick={() => {
-                  if (i === quiz.answer) {
-                    setEducation(prev => {
-                      const updated = { ...prev, completedCards: [...prev.completedCards, Date.now().toString()], score: prev.score + 10 };
-                      if (currentUser) {
-                        db.collection("users").doc(currentUser.uid).update({
-                          education: updated
-                        });
-                      }
-                      return updated;
-                    });
-                    setShowEduCard(false);
-                  }
-                }}
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  };
   const downloadPDF = (scanPhotos?: string[], scanResult?: AnalysisResult) => {
     const currentPhotos = scanPhotos || photos;
     const currentResult = scanResult || result;
@@ -4634,562 +5522,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     doc.save(`SkinScan_Report_${new Date().getTime()}.pdf`);
   };
 
-  const styles = {
-    container: {
-      minHeight: '100vh',
-      width: '100%',
-      display: 'flex',
-      flexDirection: 'column' as const,
-      alignItems: 'center',
-      padding: '20px 20px 100px',
-      color: '#f8fafc',
-      fontFamily: "'Inter', sans-serif",
-      overflowX: 'hidden' as const,
-    },
-    navBar: {
-      position: 'fixed' as const,
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: '70px',
-      background: 'rgba(6, 8, 24, 0.8)',
-      backdropFilter: 'blur(16px)',
-      borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-      display: 'flex',
-      justifyContent: 'space-around',
-      alignItems: 'center',
-      padding: '0 10px',
-      zIndex: 1000,
-    },
-    navItem: (active: boolean) => ({
-      display: 'flex',
-      flexDirection: 'column' as const,
-      alignItems: 'center',
-      gap: '4px',
-      color: active ? '#2dd4bf' : '#64748b',
-      cursor: 'pointer',
-      transition: 'all 0.3s ease',
-      position: 'relative' as const,
-    }),
-    navLabel: {
-      fontSize: '10px',
-      fontWeight: '600',
-    },
-    badge: {
-      position: 'absolute' as const,
-      top: '-4px',
-      right: '-4px',
-      width: '8px',
-      height: '8px',
-      borderRadius: '50%',
-      background: '#ef4444',
-      border: '1px solid #060818',
-    },
-    topHeader: {
-      position: 'sticky' as const,
-      top: 0,
-      left: 0,
-      right: 0,
-      height: '60px',
-      padding: '0 20px',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      background: 'rgba(6, 8, 24, 0.8)',
-      backdropFilter: 'blur(12px)',
-      zIndex: 900,
-      borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-    },
-    uvCard: {
-      width: '100%',
-      padding: '16px',
-      borderRadius: '20px',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      background: 'rgba(30, 41, 59, 0.3)',
-      border: '1px solid rgba(255, 255, 255, 0.05)',
-      marginBottom: '16px',
-    },
-    scoreGauge: {
-      width: '180px',
-      height: '180px',
-      margin: '20px auto',
-      position: 'relative' as const,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    scoreValue: (color: string) => ({
-      fontSize: '48px',
-      fontWeight: '800',
-      color: color,
-      textShadow: `0 0 20px ${color}44`,
-    }),
-    timelineItem: {
-      display: 'flex',
-      gap: '16px',
-      padding: '16px',
-      borderRadius: '20px',
-      background: 'rgba(30, 41, 59, 0.2)',
-      border: '1px solid rgba(255, 255, 255, 0.05)',
-      marginBottom: '12px',
-      cursor: 'pointer',
-    },
-    bodyMapContainer: {
-      width: '100%',
-      height: '400px',
-      background: 'rgba(15, 23, 42, 0.5)',
-      borderRadius: '24px',
-      overflow: 'hidden',
-      position: 'relative' as const,
-    },
-    familyCard: {
-      padding: '16px',
-      borderRadius: '20px',
-      background: 'rgba(30, 41, 59, 0.3)',
-      border: '1px solid rgba(255, 255, 255, 0.05)',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      marginBottom: '12px',
-      cursor: 'pointer',
-    },
-    routineStep: {
-      padding: '16px',
-      borderRadius: '16px',
-      background: 'rgba(30, 41, 59, 0.2)',
-      borderLeft: '4px solid #2dd4bf',
-      marginBottom: '12px',
-    },
-    eduCard: {
-      padding: '20px',
-      borderRadius: '24px',
-      background: 'linear-gradient(135deg, rgba(45, 212, 191, 0.1), rgba(168, 85, 247, 0.1))',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      marginTop: '20px',
-    },
-    chartContainer: {
-      width: '100%',
-      height: '200px',
-      marginTop: '16px',
-    },
-    notificationBell: {
-      position: 'relative' as const,
-      cursor: 'pointer',
-    },
-    notificationDot: {
-      position: 'absolute' as const,
-      top: '-2px',
-      right: '-2px',
-      width: '10px',
-      height: '10px',
-      borderRadius: '50%',
-      background: '#ef4444',
-      border: '2px solid #060818',
-    },
-    tabContent: {
-      flex: 1,
-      width: '100%',
-      paddingBottom: '90px', // Space for nav bar
-    },
-    regionBadge: {
-      padding: '4px 12px',
-      borderRadius: '999px',
-      fontSize: '12px',
-      fontWeight: '600',
-      background: 'rgba(45, 212, 191, 0.2)',
-      color: '#2dd4bf',
-      display: 'inline-block',
-      marginBottom: '8px',
-    },
-    comparisonView: {
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: '12px',
-      marginTop: '12px',
-    },
-    comparisonLabel: {
-      fontSize: '10px',
-      color: '#94a3b8',
-      textTransform: 'uppercase' as const,
-      marginBottom: '4px',
-      textAlign: 'center' as const,
-    },
-    wrapper: {
-      maxWidth: '480px',
-      width: '100%',
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: '24px',
-      animation: 'fade-in 0.8s ease-out',
-    },
-    header: {
-      textAlign: 'center' as const,
-      marginBottom: '10px',
-      position: 'relative' as const,
-    },
-    logoContainer: {
-      width: '80px',
-      height: '80px',
-      margin: '0 auto 16px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: '50%',
-      background: 'rgba(45, 212, 191, 0.1)',
-      border: '1px solid rgba(45, 212, 191, 0.2)',
-      position: 'relative' as const,
-    },
-    logoGlow: {
-      position: 'absolute' as const,
-      width: '100%',
-      height: '100%',
-      borderRadius: '50%',
-      background: 'radial-gradient(circle, rgba(45, 212, 191, 0.4) 0%, transparent 70%)',
-      animation: 'pulse-glow 3s infinite',
-    },
-    title: {
-      fontSize: '32px',
-      fontWeight: '800',
-      margin: '0',
-      letterSpacing: '-0.02em',
-    },
-    subtitle: {
-      fontSize: '14px',
-      color: '#94a3b8',
-      marginTop: '4px',
-      letterSpacing: '0.05em',
-      textTransform: 'uppercase' as const,
-      fontWeight: '600',
-    },
-    disclaimerBanner: {
-      padding: '12px 16px',
-      borderRadius: '12px',
-      fontSize: '12px',
-      borderLeft: '4px solid #f59e0b',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      lineHeight: '1.4',
-    },
-    uploadZone: {
-      width: '100%',
-      height: '160px',
-      borderRadius: '24px',
-      overflow: 'hidden',
-      position: 'relative' as const,
-      display: 'flex',
-      flexDirection: 'column' as const,
-      justifyContent: 'center',
-      alignItems: 'center',
-      border: '2px dashed rgba(45, 212, 191, 0.3)',
-      cursor: 'pointer',
-      transition: 'all 0.3s ease',
-      background: 'rgba(30, 41, 59, 0.2)',
-    },
-    photoGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '12px',
-      width: '100%',
-      maxHeight: '340px',
-      overflowY: 'auto' as const,
-      padding: '4px',
-    },
-    photoThumbnail: {
-      width: '100%',
-      aspectRatio: '1/1',
-      borderRadius: '16px',
-      objectFit: 'cover' as const,
-      border: '1px solid rgba(45, 212, 191, 0.4)',
-      boxShadow: '0 0 10px rgba(45, 212, 191, 0.2)',
-      animation: 'fade-in 0.5s ease',
-    },
-    removeBtn: {
-      position: 'absolute' as const,
-      top: '8px',
-      right: '8px',
-      width: '24px',
-      height: '24px',
-      borderRadius: '50%',
-      background: 'rgba(239, 68, 68, 0.8)',
-      color: 'white',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      border: 'none',
-      cursor: 'pointer',
-      boxShadow: '0 0 10px rgba(239, 68, 68, 0.4)',
-      zIndex: 10,
-    },
-    counterBadge: {
-      position: 'absolute' as const,
-      top: '12px',
-      right: '16px',
-      padding: '4px 10px',
-      borderRadius: '999px',
-      fontSize: '11px',
-      fontWeight: '700',
-      background: 'rgba(45, 212, 191, 0.2)',
-      color: '#2dd4bf',
-      border: '1px solid rgba(45, 212, 191, 0.3)',
-    },
-    inputGroup: {
-      position: 'relative' as const,
-      width: '100%',
-    },
-    label: (active: boolean) => ({
-      position: 'absolute' as const,
-      left: '16px',
-      top: active ? '-10px' : '16px',
-      fontSize: active ? '12px' : '14px',
-      color: active ? '#2dd4bf' : '#94a3b8',
-      background: active ? '#060818' : 'transparent',
-      padding: active ? '0 4px' : '0',
-      transition: 'all 0.2s ease',
-      pointerEvents: 'none' as const,
-      fontWeight: active ? '600' : '400',
-    }),
-    textarea: {
-      width: '100%',
-      backgroundColor: 'rgba(30, 41, 59, 0.4)',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      borderRadius: '16px',
-      padding: '16px',
-      color: '#f8fafc',
-      fontSize: '14px',
-      minHeight: '120px',
-      resize: 'none' as const,
-      outline: 'none',
-      transition: 'all 0.3s ease',
-      backdropFilter: 'blur(8px)',
-    },
-    analyzeButton: {
-      width: '100%',
-      padding: '16px',
-      borderRadius: '16px',
-      border: 'none',
-      fontWeight: '700',
-      fontSize: '16px',
-      cursor: 'pointer',
-      color: '#060818',
-      background: 'linear-gradient(45deg, #2dd4bf, #a855f7, #38bdf8)',
-      backgroundSize: '200% 200%',
-      animation: 'button-gradient 5s infinite ease, pulse-soft 2s infinite',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: '10px',
-      transition: 'transform 0.2s',
-    },
-    loadingOverlay: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      alignItems: 'center',
-      gap: '16px',
-      padding: '40px 0',
-    },
-    dnaHelix: {
-      fontSize: '48px',
-      color: '#2dd4bf',
-      animation: 'dna-spin 2s linear infinite',
-    },
-    resultCard: {
-      marginTop: '8px',
-      animation: 'slide-up 0.6s ease-out',
-    },
-    riskBadge: (level: string) => ({
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '8px',
-      padding: '8px 20px',
-      borderRadius: '999px',
-      fontSize: '14px',
-      fontWeight: '800',
-      textTransform: 'uppercase' as const,
-      background: 
-        level === 'high' ? 'rgba(239, 68, 68, 0.2)' : 
-        level === 'moderate' ? 'rgba(245, 158, 11, 0.2)' : 
-        level === 'low' ? 'rgba(16, 185, 129, 0.2)' : 
-        'rgba(148, 163, 184, 0.2)',
-      color: 
-        level === 'high' ? '#ef4444' : 
-        level === 'moderate' ? '#f59e0b' : 
-        level === 'low' ? '#10b981' : 
-        '#94a3b8',
-      border: `1px solid ${
-        level === 'high' ? '#ef4444' : 
-        level === 'moderate' ? '#f59e0b' : 
-        level === 'low' ? '#10b981' : 
-        '#94a3b8'
-      }`,
-      boxShadow: `0 0 20px ${
-        level === 'high' ? 'rgba(239, 68, 68, 0.3)' : 
-        level === 'moderate' ? 'rgba(245, 158, 11, 0.3)' : 
-        level === 'low' ? 'rgba(16, 185, 129, 0.3)' : 
-        'rgba(148, 163, 184, 0.3)'
-      }`,
-      marginBottom: '24px',
-    }),
-    sectionTitle: {
-      fontSize: '18px',
-      fontWeight: '700',
-      margin: '24px 0 12px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      color: '#f8fafc',
-    },
-    listItem: {
-      display: 'flex',
-      gap: '12px',
-      marginBottom: '12px',
-      fontSize: '14px',
-      color: '#cbd5e1',
-      lineHeight: '1.5',
-      animation: 'fade-in 0.5s ease forwards',
-    },
-    pillBadge: {
-      display: 'inline-block',
-      padding: '4px 12px',
-      borderRadius: '999px',
-      fontSize: '12px',
-      fontWeight: '600',
-      background: 'rgba(168, 85, 247, 0.2)',
-      color: '#a855f7',
-      border: '1px solid rgba(168, 85, 247, 0.3)',
-    },
-    inputLabel: {
-      display: 'block',
-      fontSize: '12px',
-      fontWeight: '600',
-      color: '#94a3b8',
-      marginBottom: '6px',
-      textTransform: 'uppercase' as const,
-      letterSpacing: '0.05em',
-    },
-    input: {
-      width: '100%',
-      padding: '12px 16px',
-      borderRadius: '12px',
-      backgroundColor: 'rgba(255,255,255,0.05)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      color: '#f8fafc',
-      fontSize: '14px',
-      outline: 'none',
-      transition: 'border-color 0.2s ease',
-    },
-    footer: {
-      marginTop: '40px',
-      textAlign: 'center' as const,
-      padding: '20px',
-      borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-    },
-    sideMenu: {
-      position: 'fixed' as const,
-      top: 0,
-      right: 0,
-      bottom: 0,
-      width: '100%',
-      maxWidth: '400px',
-      background: 'rgba(6, 8, 24, 0.95)',
-      backdropFilter: 'blur(24px)',
-      zIndex: 2000,
-      padding: '80px 30px 40px',
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: '12px',
-      boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
-      transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-      borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
-      overflowY: 'auto' as const,
-      WebkitOverflowScrolling: 'touch' as const,
-    },
-    menuItem: (active: boolean) => ({
-      display: 'flex',
-      alignItems: 'center',
-      gap: '16px',
-      padding: '16px 20px',
-      borderRadius: '16px',
-      color: active ? '#2dd4bf' : '#cbd5e1',
-      background: active ? 'rgba(45, 212, 191, 0.1)' : 'transparent',
-      borderLeft: active ? '4px solid #2dd4bf' : '4px solid transparent',
-      fontSize: '18px',
-      fontWeight: '600',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease',
-    }),
-    planCard: (active: boolean, color: string) => ({
-      padding: '24px',
-      borderRadius: '24px',
-      background: 'rgba(30, 41, 59, 0.3)',
-      border: `2px solid ${active ? color : 'rgba(255, 255, 255, 0.05)'}`,
-      boxShadow: active ? `0 0 30px ${color}33` : 'none',
-      position: 'relative' as const,
-      transition: 'all 0.3s ease',
-      transform: active ? 'scale(1.02)' : 'scale(1)',
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: '16px',
-    }),
-    shopCard: {
-      background: 'rgba(30, 41, 59, 0.3)',
-      borderRadius: '20px',
-      border: '1px solid rgba(255, 255, 255, 0.05)',
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column' as const,
-    }
-  };
 
-  const OverdueBanner = () => {
-    if (!nextScanDate) return null;
-    const diff = new Date(nextScanDate).getTime() - new Date().getTime();
-    const daysRemaining = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    const isOverdue = daysRemaining < 0;
-    
-    // Check if dismissed today
-    const today = new Date().toISOString().split('T')[0];
-    if (bannerDismissedDate === today) return null;
-
-    if (!isOverdue) return null;
-
-    return (
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mx-6 mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-2xl flex items-center justify-between gap-4"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center animate-pulse">
-            <AlertTriangle size={20} className="text-white" />
-          </div>
-          <div>
-            <h4 className="text-sm font-bold text-white">Skin Scan Overdue</h4>
-            <p className="text-xs text-red-200/70">It has been over {Math.abs(daysRemaining)} days since your last scheduled scan.</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={() => setActiveTab('scan')}
-            className="px-4 py-2 bg-red-500 text-white text-xs font-bold rounded-xl"
-          >
-            Scan Now
-          </button>
-          <button 
-            onClick={() => {
-              setBannerDismissedDate(today);
-              localStorage.setItem('banner_dismissed_date', today);
-            }}
-            className="p-2 text-red-400 hover:bg-red-500/10 rounded-xl"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      </motion.div>
-    );
-  };
 
   if (authLoading) {
     return (
@@ -5219,85 +5552,40 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     }} />;
   }
 
-  const LegalModal = () => {
-    if (!showLegalModal) return null;
-    
-    let title = "";
-    let content = "";
-    
-    if (showLegalModal === 'terms') {
-      title = "Terms & Conditions";
-      content = TERMS_AND_CONDITIONS;
-    } else if (showLegalModal === 'privacy') {
-      title = "Privacy Policy";
-      content = PRIVACY_POLICY;
-    } else {
-      title = "Disclaimer";
-      content = DISCLAIMER_TEXT;
-    }
 
-    return (
-      <div style={{
-        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-        background: 'rgba(2, 6, 23, 0.8)', backdropFilter: 'blur(10px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 1000, padding: '20px'
-      }}>
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          style={{
-            maxWidth: '600px', width: '100%', maxHeight: '80vh',
-            background: '#0f172a', borderRadius: '24px', padding: '32px',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            display: 'flex', flexDirection: 'column'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <h2 style={{ fontSize: '24px', fontWeight: '800', margin: 0 }}>{title}</h2>
-            <button onClick={() => setShowLegalModal(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
-              <X size={24} />
-            </button>
-          </div>
-          <div style={{ overflowY: 'auto', flex: 1, color: '#94a3b8', fontSize: '14px', lineHeight: '1.6' }}>
-            <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{content}</pre>
-          </div>
-        </motion.div>
-      </div>
-    );
-  };
 
   return (
-    <div className="app-wrapper" style={{ ...styles.container, background: '#060818', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <div className="app-wrapper" style={{ ...styles.container, background: '#060818' }}>
       {isOffline && (
         <div style={{ 
           background: '#ef4444', 
           color: 'white', 
-          padding: '8px', 
+          padding: '12px', 
           textAlign: 'center', 
-          fontSize: '12px', 
-          fontWeight: '700',
+          fontSize: '14px', 
+          fontWeight: '800',
           position: 'sticky',
           top: 0,
-          zIndex: 2000
+          zIndex: 2000,
+          width: '100%'
         }}>
           You appear to be offline. Some features may be limited.
         </div>
       )}
-      <header style={styles.topHeader}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <header style={{ ...styles.topHeader, padding: 0, height: '70px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button 
             onClick={() => {
               setIsMenuOpen(true);
               updateAllAvatars();
             }}
-            style={{ background: 'none', border: 'none', color: '#f8fafc', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+            style={{ background: 'none', border: 'none', color: '#f8fafc', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }}
           >
-            <Menu size={24} />
+            <Menu size={28} />
           </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Dna size={24} color="#2dd4bf" />
-            <span style={{ fontWeight: '800', fontSize: '18px', color: '#f8fafc' }}>Skin Tight</span>
+            <Dna size={28} color="#2dd4bf" />
+            <span style={{ fontWeight: '900', fontSize: '20px', color: '#f8fafc', letterSpacing: '-0.02em' }}>Skin Tight</span>
           </div>
           {/* Profile icon moved next to the name with space as requested */}
           {fullUserData && (
@@ -5305,29 +5593,38 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               id="headerAvatar"
               onClick={() => setActiveTab('profile')}
               style={{ 
-                width: '32px', height: '32px', borderRadius: '50%', 
+                width: '36px', height: '36px', borderRadius: '50%', 
                 background: fullUserData.profileColor || '#2dd4bf',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '12px', fontWeight: '800', color: '#020617',
+                fontSize: '14px', fontWeight: '900', color: '#020617',
                 cursor: 'pointer',
-                marginLeft: '12px' // Space between name and profile icon
+                marginLeft: '8px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
               }}
             >
               {fullUserData.fullName ? fullUserData.fullName.split(' ').map((n: any) => n?.[0] || '').join('').toUpperCase() : (fullUserData.username?.[0]?.toUpperCase() || 'U')}
             </div>
           )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* Empty right side to keep the left side grouped */}
-        </div>
       </header>
 
-      <SideMenu />
+      <SideMenu 
+        isMenuOpen={isMenuOpen} 
+        setIsMenuOpen={setIsMenuOpen} 
+        currentUser={currentUser} 
+        fullUserData={fullUserData} 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        handleLogout={handleLogout} 
+      />
 
-      <div className="main-content" style={styles.wrapper}>
-        <OverdueBanner />
+      <div className="main-content" style={{ ...styles.wrapper }}>
+        <OverdueBanner 
+          nextScanDate={nextScanDate ? new Date(nextScanDate) : new Date()} 
+          onDismiss={() => setBannerDismissedDate(new Date().toISOString())} 
+        />
         {activeTab === 'home' && (
-          <div className="page-container" style={styles.tabContent}>
+          <div className="page-container" style={{ ...styles.tabContent, paddingBottom: '100px' }}>
             {showInstallPrompt && (
               <div style={{
                 marginBottom: '20px',
@@ -5337,9 +5634,10 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 borderRadius: '20px',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                width: '100%'
               }}>
-                <div style={{ fontSize: '13px', color: '#f8fafc', fontWeight: '600' }}>
+                <div style={{ fontSize: '14px', color: '#f8fafc', fontWeight: '700' }}>
                   Install Skin Tight
                 </div>
                 <button 
@@ -5348,9 +5646,9 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                     background: '#2dd4bf', 
                     color: '#060818', 
                     border: 'none', 
-                    borderRadius: '10px', 
-                    padding: '8px 16px', 
-                    fontSize: '12px', 
+                    borderRadius: '12px', 
+                    padding: '10px 20px', 
+                    fontSize: '14px', 
                     fontWeight: '800', 
                     cursor: 'pointer' 
                   }}
@@ -5363,14 +5661,15 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               marginBottom: '24px', 
               position: 'relative', 
               overflow: 'hidden', 
-              borderRadius: '24px',
-              padding: '24px',
+              borderRadius: '28px',
+              padding: '28px',
               background: 'rgba(30, 41, 59, 0.2)',
               border: '1px solid rgba(255, 255, 255, 0.05)',
-              height: '120px',
+              minHeight: '140px',
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              width: '100%'
             }}>
               <motion.div
                 animate={{ scale: [1, 1.2, 1], opacity: [0.05, 0.1, 0.05] }}
@@ -5389,35 +5688,37 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 }}
               />
               <h1 style={{ 
-                fontSize: '28px', 
+                fontSize: '32px', 
                 fontWeight: '900', 
                 background: 'linear-gradient(135deg, #f8fafc 0%, #2dd4bf 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 position: 'relative',
                 zIndex: 1,
-                margin: 0
+                margin: 0,
+                lineHeight: '1.1'
               }} >Catch It Early.</h1>
               <p style={{ 
-                fontSize: '14px', 
+                fontSize: '16px', 
                 color: '#94a3b8', 
-                margin: '4px 0 0',
+                margin: '8px 0 0',
                 position: 'relative',
-                zIndex: 1
+                zIndex: 1,
+                lineHeight: '1.5'
               }}>Scan suspicious spots. Track changes. Know when to act.</p>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', width: '100%' }}>
               <div>
-                <h2 style={{ fontSize: '24px', fontWeight: '800' }}>
+                <h2 style={{ fontSize: '28px', fontWeight: '900', lineHeight: '1.2' }}>
                   <span>Hello</span>, <span style={{ color: '#2dd4bf' }}>{fullUserData?.fullName ? fullUserData.fullName.split(' ')[0] : fullUserData?.username || 'User'}</span> 👋
                 </h2>
-                <p style={{ color: '#94a3b8', fontSize: '14px' }}>
+                <p style={{ color: '#94a3b8', fontSize: '16px', marginTop: '4px' }}>
                   {scans.length === 0 ? <span>Start your first scan to begin tracking your skin health.</span> : <span>Your skin health at a glance</span>}
                 </p>
               </div>
-              <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'rgba(45, 212, 191, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <User size={24} color="#2dd4bf" />
+              <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(45, 212, 191, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <User size={28} color="#2dd4bf" />
               </div>
             </div>
 
@@ -5438,9 +5739,33 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               </button>
             </div>
 
-            <UVCard />
+            <UVCard uvData={uvData} />
             
             {skinScore > 0 && <SkinScoreGauge score={skinScore} />}
+            
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <button 
+                onClick={() => (window as any).loadHowToImprove()}
+                style={{
+                  background: 'rgba(45, 212, 191, 0.1)',
+                  border: '1px solid rgba(45, 212, 191, 0.2)',
+                  color: '#2dd4bf',
+                  padding: '10px 24px',
+                  borderRadius: '14px',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(45, 212, 191, 0.2)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(45, 212, 191, 0.1)'}
+              >
+                <SparklesIcon size={16} /> How to Improve
+              </button>
+            </div>
 
             {recentScan && (
               <div className="glass-card p-6 rounded-3xl mb-6 border border-cyan-500/20 cursor-pointer hover:bg-white/5 transition-all" onClick={() => { setSelectedScanId(recentScan.id); setActiveTab('timeline'); }}>
@@ -5491,13 +5816,59 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               <p>This is an AI screening tool, not a medical diagnosis. Consult a licensed dermatologist for professional evaluation.</p>
             </div>
 
-            <EducationCard />
+            {showEduCard && result && (
+              <EducationCard 
+                result={result} 
+                onClose={() => setShowEduCard(false)} 
+              />
+            )}
           </div>
         )}
 
-        {activeTab === 'scan' && <ScanPage />}
+        {activeTab === 'scan' && (
+          <ScanPage 
+            result={result}
+            saveStatus={saveStatus}
+            photos={photos}
+            note={note}
+            intakeForm={intakeForm}
+            skinScore={skinScore}
+            scans={scans}
+            confidenceScore={confidenceScore}
+            showConfidenceWarning={showConfidenceWarning}
+            error={error}
+            checkingQuality={checkingQuality}
+            imageQuality={imageQuality}
+            fileInputRef={fileInputRef}
+            triggerFileInput={triggerFileInput}
+            handleFileChange={handleFileChange}
+            removePhoto={removePhoto}
+            analyzeSkin={analyzeSkin}
+            retakePhoto={retakePhoto}
+            downloadPDF={downloadPDF}
+            setCompareScanId={setCompareScanId}
+            setSelectedScanId={setSelectedScanId}
+            setIsComparing={setIsComparing}
+            setActiveTab={setActiveTab}
+            setShowEduCard={setShowEduCard}
+            setShowConfidenceWarning={setShowConfidenceWarning}
+            updateIntake={updateIntake}
+            updateQualityCheck={updateQualityCheck}
+            fullUserData={fullUserData}
+            loading={loading}
+          />
+        )}
         {activeTab === 'timeline' && <Timeline scans={scans} setSelectedScanId={setSelectedScanId} setActiveTab={setActiveTab} styles={styles} streakData={streakData} nextScanDate={nextScanDate} cycleProgress={cycleProgress} lastFullWeekCompletionDate={lastFullWeekCompletionDate} />}
-        {activeTab === 'routine' && <RoutinePage />}
+        {activeTab === 'routine' && (
+          <RoutinePage 
+            protocol={protocol}
+            loadingProtocol={loadingProtocol}
+            protocolError={protocolError}
+            generateProtocol={generateProtocol}
+            loadProtocolFromFirestore={loadProtocolFromFirestore}
+            currentUser={currentUser}
+          />
+        )}
         {activeTab === 'plans' && <PlansPage />}
         {activeTab === 'clinic' && <ClinicFinder />}
 
@@ -5605,9 +5976,11 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                   </div>
                   <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-left">
                     <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Skin Type</div>
-                    <div className="flex gap-2 mt-1">
-                      <span className="px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-400 text-[10px] font-black uppercase">Type {userProfile.fitzpatrick}</span>
-                      <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-400 text-[10px] font-black uppercase">{fullUserData?.ethnicity || 'Unknown'}</span>
+                    <div id="skinTypeDisplay" className="mt-1">
+                      <div className="flex gap-2">
+                        <span className="px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-400 text-[10px] font-black uppercase">Type {userProfile.fitzpatrick}</span>
+                        <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-400 text-[10px] font-black uppercase">{fullUserData?.ethnicity || 'Unknown'}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -5687,7 +6060,35 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
         <Footer onShowLegal={setShowLegalModal} />
       </div>
 
-      <LegalModal />
+      <LegalModal 
+        isOpen={!!showLegalModal} 
+        onClose={() => setShowLegalModal(null)} 
+      />
+
+      {/* How to Improve Panel */}
+      <div 
+        id="howToImprovePanel" 
+        style={{display:'none', position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.7)', zIndex:1000, alignItems:'flex-end', justifyContent:'center'}}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            (e.currentTarget as HTMLElement).style.display = 'none';
+          }
+        }}
+      >
+        <div style={{background:'#0d1126', borderRadius:'24px 24px 0 0', border:'1px solid rgba(255,255,255,0.08)', width:'100%', maxHeight:'90vh', overflowY:'auto', padding:'24px'}}>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px'}}>
+            <div>
+              <div style={{color:'#fff', fontSize:'18px', fontWeight:'600'}}>How to Improve</div>
+              <div style={{color:'rgba(255,255,255,0.4)', fontSize:'12px'}}>Personalized skin cancer prevention steps</div>
+            </div>
+            <button onClick={() => {
+              const panel = document.getElementById('howToImprovePanel');
+              if (panel) panel.style.display = 'none';
+            }} style={{background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', width:'32px', height:'32px', borderRadius:'50%', fontSize:'16px', cursor:'pointer'}}>×</button>
+          </div>
+          <div id="howToImproveContent"></div>
+        </div>
+      </div>
     </div>
   );
 }
