@@ -4001,11 +4001,11 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
                         onChange={(e) => setUsername(e.target.value.toLowerCase())}
                         placeholder="Choose a username"
                         required
-                        style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', transition: 'all 0.3s' }}
+                        style={{ width: '100%', padding: '12px', paddingRight: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', transition: 'all 0.3s' }}
                         onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#2dd4bf'}
                         onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)'}
                       />
-                      <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+                      <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
                         {usernameAvailable === true && <CheckCircle2 size={18} color="#10b981" />}
                         {usernameAvailable === false && <XCircle size={18} color="#ef4444" />}
                       </div>
@@ -4037,16 +4037,32 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder={authView === 'signup' ? "Create a password" : "Your password"}
                     required
-                    style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', transition: 'all 0.3s' }}
+                    style={{ width: '100%', padding: '12px', paddingRight: '44px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', transition: 'all 0.3s' }}
                     onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#2dd4bf'}
                     onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)'}
                   />
                   <button 
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}
+                    style={{ 
+                      position: 'absolute', 
+                      right: '0', 
+                      top: '0', 
+                      bottom: '0', 
+                      width: '44px', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      background: 'none', 
+                      border: 'none', 
+                      color: '#64748b', 
+                      cursor: 'pointer',
+                      pointerEvents: 'none' 
+                    }}
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    <span style={{ pointerEvents: 'auto', display: 'flex' }}>
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </span>
                   </button>
                 </div>
                 {authView === 'signup' && password && (
@@ -4070,11 +4086,11 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Confirm your password"
                         required
-                        style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', transition: 'all 0.3s' }}
+                        style={{ width: '100%', padding: '12px', paddingRight: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', transition: 'all 0.3s' }}
                         onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#2dd4bf'}
                         onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)'}
                       />
-                      <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+                      <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
                         {confirmPassword && password === confirmPassword && <CheckCircle2 size={18} color="#10b981" />}
                         {confirmPassword && password !== confirmPassword && <XCircle size={18} color="#ef4444" />}
                       </div>
