@@ -41,8 +41,8 @@ html, body {
 [class*="tab-content"] {
   width: 100% !important;
   max-width: 100% !important;
-  padding-left: 16px !important;
-  padding-right: 16px !important;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
   padding-bottom: 90px !important;
   margin: 0 !important;
   display: flex !important;
@@ -52,11 +52,16 @@ html, body {
   overflow-x: hidden !important;
 }
 
-/* REMOVE LOGO NARROWNESS */
+/* FIX NESTED PADDING */
+.main-content .page-container {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* REMOVE LOGO NARROWNESS - ONLY FOR SPECIFIC CONTAINERS, NOT ALL HEADER DIVS */
 .logo-container,
-[class*="logo-container"],
-header div:first-child {
-  width: 100% !important;
+[class*="logo-container"] {
+  width: auto !important;
   padding: 0 !important;
   margin: 0 !important;
 }
@@ -70,9 +75,9 @@ header div:first-child {
   max-width: 100% !important;
   margin-left: 0 !important;
   margin-right: 0 !important;
-  margin-bottom: 20px !important;
-  padding: 20px !important;
-  border-radius: 20px !important;
+  margin-bottom: 12px !important;
+  padding: 12px !important;
+  border-radius: 16px !important;
   box-sizing: border-box !important;
   background: rgba(30, 41, 59, 0.4) !important;
   backdrop-filter: blur(12px) !important;
@@ -81,10 +86,10 @@ header div:first-child {
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
 }
 
-/* BUTTONS */
-button,
-.btn,
-[class*="button"] {
+/* BUTTONS - PREVENT FULL WIDTH IN HEADERS AND SPECIFIC UI ELEMENTS */
+button:not(header button):not(nav button):not([class*="mini"]),
+.btn:not([class*="mini"]),
+[class*="button"]:not(header [class*="button"]):not([class*="mini"]) {
   width: 100% !important;
   max-width: 100% !important;
   min-height: 52px !important;
@@ -98,8 +103,16 @@ button,
   box-sizing: border-box !important;
 }
 
+header button,
+nav button,
+button[class*="mini"] {
+  width: auto !important;
+  min-height: 0 !important;
+  display: inline-flex !important;
+}
+
 /* INPUTS & SELECTS */
-input, 
+input:not([type="checkbox"]), 
 select, 
 textarea {
   width: 100% !important;
@@ -113,6 +126,18 @@ textarea {
   color: #fff !important;
   appearance: none !important;
   box-sizing: border-box !important;
+}
+
+/* CUSTOM CHECKBOX STYLE */
+input[type="checkbox"] {
+  appearance: auto !important;
+  width: 20px !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  cursor: pointer !important;
+  accent-color: #2dd4bf !important;
+  margin: 0 !important;
+  border-radius: 4px !important;
 }
 
 /* RESPONSIVE TYPOGRAPHY */

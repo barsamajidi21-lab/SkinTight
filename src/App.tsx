@@ -108,8 +108,8 @@ const styles = {
       display: 'flex',
       flexDirection: 'column' as const,
       alignItems: 'stretch',
-      paddingLeft: '16px',
-      paddingRight: '16px',
+      paddingLeft: '0px',
+      paddingRight: '0px',
       paddingBottom: '100px',
       color: '#f8fafc',
       fontFamily: "'Inter', sans-serif",
@@ -173,11 +173,13 @@ const styles = {
     },
     uvCard: {
       width: '100%',
-      padding: '16px',
+      padding: '20px 16px',
       borderRadius: '20px',
       display: 'flex',
-      justifyContent: 'space-between',
+      flexDirection: 'column' as const,
+      justifyContent: 'center',
       alignItems: 'center',
+      textAlign: 'center' as const,
       background: 'rgba(30, 41, 59, 0.3)',
       border: '1px solid rgba(255, 255, 255, 0.05)',
       marginBottom: '16px',
@@ -185,7 +187,7 @@ const styles = {
     scoreGauge: {
       width: '180px',
       height: '180px',
-      margin: '20px 0',
+      margin: '20px auto',
       position: 'relative' as const,
       display: 'flex',
       alignItems: 'center',
@@ -622,18 +624,18 @@ const styles = {
     if (!uvData) return null;
     return (
       <div style={styles.uvCard} className="glass-card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: `${uvData.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Sun size={24} color={uvData.color} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: `${uvData.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Sun size={28} color={uvData.color} />
           </div>
           <div>
-            <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>UV INDEX</div>
-            <div style={{ fontSize: '20px', fontWeight: '800', color: '#f8fafc' }}>{uvData.index} - {uvData.risk}</div>
+            <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>UV INDEX</div>
+            <div style={{ fontSize: '24px', fontWeight: '900', color: '#f8fafc' }}>{uvData.index} - {uvData.risk}</div>
           </div>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '10px', color: '#94a3b8' }}>REAPPLY SPF IN</div>
-          <div style={{ fontSize: '16px', fontWeight: '700', color: '#2dd4bf' }}>2h 00m</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '6px 16px', borderRadius: '12px' }}>
+          <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600' }}>REAPPLY SPF IN</div>
+          <div style={{ fontSize: '14px', fontWeight: '800', color: '#2dd4bf' }}>2h 00m</div>
         </div>
       </div>
     );
@@ -1555,9 +1557,10 @@ const WelcomePage = ({ onComplete }: { onComplete: () => void }) => {
       minHeight: '100vh',
       background: '#060818',
       color: '#f8fafc',
-      padding: '40px 16px',
+      padding: '24px 24px',
       display: 'flex',
       flexDirection: 'column',
+      justifyContent: 'flex-start',
       alignItems: 'stretch'
     }}>
       <motion.div
@@ -1566,74 +1569,64 @@ const WelcomePage = ({ onComplete }: { onComplete: () => void }) => {
         animate="visible"
         style={{ width: '100%' }}
       >
-        <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
+        <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '12px' }}>
           <div style={{
-            width: '80px', height: '80px', borderRadius: '24px',
+            width: '60px', height: '60px', borderRadius: '18px',
             background: 'rgba(45, 212, 191, 0.1)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginBottom: '16px', border: '1px solid rgba(45, 212, 191, 0.2)',
-            boxShadow: '0 0 20px rgba(45, 212, 191, 0.2)'
+            marginBottom: '4px', border: '1px solid rgba(45, 212, 191, 0.2)',
           }}>
-            <Dna size={40} color="#2dd4bf" className="animate-pulse" />
+            <Dna size={30} color="#2dd4bf" className="animate-pulse" />
           </div>
-          <h1 style={{ fontSize: '16px', fontWeight: '900', color: '#2dd4bf', letterSpacing: '4px', textTransform: 'uppercase' }}>Skin Tight</h1>
+          <h1 style={{ fontSize: '11px', fontWeight: '900', color: '#2dd4bf', letterSpacing: '2px', textTransform: 'uppercase' }}>Skin Tight</h1>
         </motion.div>
 
-        <motion.div variants={itemVariants} style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <h2 style={{ fontSize: '40px', fontWeight: '900', marginBottom: '12px', lineHeight: 1.1 }}>Catch It Early.</h2>
-          <p style={{ fontSize: '18px', color: '#94a3b8', lineHeight: 1.5 }}>AI-powered skin cancer monitoring for everyone.</p>
+        <motion.div variants={itemVariants} style={{ textAlign: 'center', marginBottom: '16px' }}>
+          <h2 style={{ fontSize: '30px', fontWeight: '900', marginBottom: '2px', lineHeight: 1.1 }}>Catch It Early.</h2>
+          <p style={{ fontSize: '14px', color: '#94a3b8', lineHeight: 1.4 }}>AI skin screening.</p>
         </motion.div>
 
-        <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '40px' }}>
+        <motion.div variants={itemVariants} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '16px' }}>
           {[
-            { icon: '🌍', number: '1 in 5', text: 'Americans will develop skin cancer in their lifetime.' },
-            { icon: '📈', number: '98%+', text: 'Detected early, skin cancer survival rates exceed 98%.' },
-            { icon: '⏱️', number: '60s', text: 'Early detection starts with a 60-second scan.' }
-          ].map((card, i) => (
-            <div key={i} className="glass-card" style={{ padding: '20px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <span style={{ fontSize: '24px' }}>{card.icon}</span>
-              <div>
-                <span style={{ fontWeight: '900', fontSize: '18px', color: '#f8fafc', display: 'block' }}>{card.number}</span>
-                <span style={{ fontSize: '14px', color: '#94a3b8' }}>{card.text}</span>
-              </div>
+            { label: '1 in 5', text: 'Risk' },
+            { label: '98%', text: 'Survival' },
+            { label: '60s', text: 'Scan' }
+          ].map((stat, i) => (
+            <div key={i} className="glass-card" style={{ padding: '10px 4px', borderRadius: '16px', textAlign: 'center' }}>
+              <div style={{ fontWeight: '900', fontSize: '15px', color: '#f8fafc' }}>{stat.label}</div>
+              <div style={{ fontSize: '9px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 'bold' }}>{stat.text}</div>
             </div>
           ))}
         </motion.div>
 
-        <motion.div variants={itemVariants} style={{ marginBottom: '32px' }}>
-          <h3 style={{ fontSize: '14px', fontWeight: '900', color: '#2dd4bf', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>What Skin Tight does:</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {[
-              'Analyzes photos of suspicious moles, spots and lesions',
-              'Assesses skin cancer risk using clinical ABCDE criteria',
-              'Tracks changes over time and alerts you when to see a doctor'
-            ].map((point, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', fontSize: '14px', color: '#cbd5e1' }}>
-                <CheckCircle2 size={18} color="#2dd4bf" style={{ flexShrink: 0, marginTop: '2px' }} />
-                <span>{point}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+          <motion.div variants={itemVariants}>
+            <h3 style={{ fontSize: '10px', fontWeight: '900', color: '#2dd4bf', marginBottom: '6px', textTransform: 'uppercase' }}>What we do:</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {['AI Analysis', 'Risk Assessment', 'Tracking'].map((point, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#cbd5e1' }}>
+                  <CheckCircle2 size={13} color="#2dd4bf" />
+                  <span>{point}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
 
-        <motion.div variants={itemVariants} style={{ marginBottom: '40px' }}>
-          <h3 style={{ fontSize: '14px', fontWeight: '900', color: '#ef4444', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>What Skin Tight does NOT do:</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {[
-              'Diagnose skin cancer — only a doctor can do that',
-              'Replace professional dermatology care',
-              'Provide general skincare or beauty advice'
-            ].map((point, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', fontSize: '14px', color: '#94a3b8' }}>
-                <X size={18} color="#ef4444" style={{ flexShrink: 0, marginTop: '2px' }} />
-                <span>{point}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
+          <motion.div variants={itemVariants}>
+            <h3 style={{ fontSize: '10px', fontWeight: '900', color: '#ef4444', marginBottom: '6px', textTransform: 'uppercase' }}>We do NOT:</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {['Diagnose', 'Replace MD', 'Beauty Tip'].map((point, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#94a3b8' }}>
+                  <X size={13} color="#ef4444" />
+                  <span>{point}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
 
-        <motion.p variants={itemVariants} style={{ fontSize: '12px', color: '#64748b', textAlign: 'center', lineHeight: 1.6, marginBottom: '40px' }}>
-          Skin Tight is a wellness monitoring tool currently in beta testing. It uses AI vision trained on clinical dermatology guidelines to help you identify suspicious spots earlier. It is not a medical device and does not provide medical diagnoses. Always consult a licensed board-certified dermatologist for any skin concerns.
+        <motion.p variants={itemVariants} style={{ fontSize: '10px', color: '#64748b', textAlign: 'center', lineHeight: 1.4, marginBottom: '16px' }}>
+          Beta tool for early identification. Not medical advice. Consult a dermatologist.
         </motion.p>
 
         <motion.button
@@ -1643,15 +1636,15 @@ const WelcomePage = ({ onComplete }: { onComplete: () => void }) => {
           onClick={onComplete}
           style={{
             width: '100%',
-            padding: '20px',
-            borderRadius: '24px',
+            padding: '16px',
+            borderRadius: '20px',
             border: 'none',
             background: 'linear-gradient(135deg, #2dd4bf 0%, #0d9488 100%)',
             color: '#020617',
-            fontWeight: '900',
-            fontSize: '18px',
+            fontWeight: '950',
+            fontSize: '16px',
             cursor: 'pointer',
-            boxShadow: '0 10px 30px rgba(45, 212, 191, 0.3)'
+            boxShadow: '0 8px 24px rgba(45, 212, 191, 0.2)'
           }}
         >
           Get Started
@@ -1704,7 +1697,7 @@ const AboutPage = () => {
             <SparklesIcon size={20} className="text-teal-400" /> Our Mission
           </h2>
           <p className="text-slate-300 leading-relaxed text-sm">
-            Skin cancer is the most common cancer in the world. One in five Americans will develop it in their lifetime — yet when caught early, survival rates exceed 98%. Skin Tight exists for one reason: to help people catch it early. We built an AI screening tool trained on clinical dermatology guidelines from the American Academy of Dermatology, the Skin Cancer Foundation, and Yale and Brown University research — so that anyone with a smartphone can monitor suspicious spots on their skin and know when to see a doctor before it is too late.
+            Skin cancer is the most common cancer in the world, affecting 1 in 5 Americans. However, when caught early, survival rates exceed 98%. Skin Tight is built to help you monitor suspicious spots using AI screening trained on clinical dermatology guidelines, ensuring you know when to see a doctor before it's too late.
           </p>
         </motion.div>
 
@@ -1727,9 +1720,9 @@ const AboutPage = () => {
           <h2 className="text-lg font-black text-white px-2">What Skin Tight does</h2>
           <div className="space-y-3">
             {[
-              'Analyzes photos of suspicious moles, spots and skin lesions using AI vision',
-              'Assesses skin cancer risk using the clinical ABCDE criteria used by dermatologists',
-              'Tracks changes in your skin over time and tells you when to see a doctor'
+              'Uses AI to analyze photos of suspicious spots.',
+              'Uses clinical criteria to assess skin cancer risk.',
+              'Tracks changes and alerts you when to see a doctor.'
             ].map((point, i) => (
               <div key={i} className="glass-card p-4 rounded-2xl flex items-start gap-4">
                 <CheckCircle2 size={20} className="text-teal-400 shrink-0 mt-0.5" />
@@ -1744,9 +1737,9 @@ const AboutPage = () => {
           <h2 className="text-lg font-black text-white px-2">What Skin Tight does NOT do</h2>
           <div className="space-y-3">
             {[
-              'Diagnose skin cancer — only a licensed dermatologist can do that',
-              'Replace professional medical care or dermatology appointments',
-              'Provide general skincare, beauty or cosmetic advice'
+              'Provide official medical diagnoses.',
+              'Replace professional dermatology care.',
+              'Offer general beauty or skincare advice.'
             ].map((point, i) => (
               <div key={i} className="glass-card p-4 rounded-2xl flex items-start gap-4 border-red-500/10">
                 <X size={20} className="text-red-400 shrink-0 mt-0.5" />
@@ -1762,7 +1755,7 @@ const AboutPage = () => {
             <AlertTriangle size={24} /> Important Notice
           </h2>
           <p className="text-sm text-amber-200/80 leading-relaxed">
-            Skin Tight is a wellness monitoring tool currently in beta testing. It uses AI vision to help identify potentially suspicious skin changes earlier. It is NOT a medical device, does NOT provide medical diagnoses, and should NEVER be used as a substitute for professional medical advice. Always consult a licensed board-certified dermatologist for any skin concern. If you notice a rapidly changing, bleeding or painful lesion seek medical attention immediately regardless of what this app says.
+            Skin Tight is an AI-powered wellness tool in beta, designed to help identify skin changes early. It is NOT a medical device and should NEVER replace professional medical advice. Always consult a board-certified dermatologist for diagnoses. If you notice pain, bleeding, or rapid changes, seek medical help immediately regardless of app results.
           </p>
         </motion.div>
 
@@ -1785,23 +1778,23 @@ const AboutPage = () => {
         </motion.div>
 
         {/* CONTACT SECTION */}
-        <motion.div variants={itemVariants} className="glass-card p-8 rounded-3xl text-center">
-          <h2 className="text-lg font-black text-white mb-4">Questions or Feedback</h2>
-          <p className="text-sm text-slate-400 mb-6">
-            Skin Tight is actively being developed. If you have feedback, encounter an issue, or want to partner with us reach out at:
+        <motion.div variants={itemVariants} className="p-4 text-center border-t border-white/5 opacity-70">
+          <h2 className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Questions or Feedback</h2>
+          <p className="text-[8px] text-slate-600 mb-3 uppercase tracking-wider">
+            If you have feedback or encounter an issue, reach out to us at:
           </p>
-          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 font-bold mb-6">
-            <Mail size={18} /> contact@skinscanai.com
+          <div className="flex justify-center items-center gap-2 text-[13px] text-teal-400 font-black mb-3">
+            <Mail size={14} /> support.skintight@gmail.com
           </div>
-          <p className="text-[10px] text-red-400/70 font-bold uppercase tracking-widest">
-            For medical emergencies always call 911 or visit your nearest emergency room.
+          <p className="text-[7px] text-red-500/30 font-black uppercase tracking-[0.15em]">
+            ALWAYS CALL EMERGENCY SERVICES FOR IMMEDIATE MEDICAL CONCERNS.
           </p>
         </motion.div>
 
         {/* VERSION INFO */}
-        <motion.div variants={itemVariants} className="text-center space-y-1">
-          <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">Skin Tight — Beta Version 1.0 — Built with Gemini AI</p>
-          <p className="text-[10px] text-slate-700">© 2025 Skin Tight. All rights reserved.</p>
+        <motion.div variants={itemVariants} className="text-center pb-8 space-y-1 opacity-40">
+          <p className="text-[7px] text-slate-700 font-black uppercase tracking-[0.2em]">Skin Tight — Beta Version 1.0 — Built with Gemini AI</p>
+          <p className="text-[7px] text-slate-800 uppercase font-bold">© 2025 Skin Tight. All rights reserved.</p>
         </motion.div>
       </motion.div>
     </div>
@@ -2065,24 +2058,7 @@ const EducationCard = ({ result, onClose }: { result: any, onClose: () => void }
   );
 };
 
-const OverdueBanner = ({ nextScanDate, onDismiss }: { nextScanDate: Date, onDismiss: () => void }) => {
-  return (
-    <motion.div 
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-red-500 p-4 flex items-center justify-between gap-4 z-50 w-full"
-      style={{ borderRadius: '12px', marginBottom: '16px' }}
-    >
-      <div className="flex items-center gap-3">
-        <AlertTriangle size={20} color="white" className="shrink-0" />
-        <span className="text-sm font-black text-white uppercase tracking-wider leading-tight">
-          Scan Overdue — Scheduled for {nextScanDate.toLocaleDateString()}
-        </span>
-      </div>
-      <button onClick={onDismiss} className="p-2 hover:bg-white/20 rounded-lg shrink-0"><X size={20} color="white" /></button>
-    </motion.div>
-  );
-};
+    const OverdueBanner = () => null; // Removed as requested
 
 const LegalModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
   if (!isOpen) return null;
@@ -2187,17 +2163,20 @@ const SideMenu = ({
             <div 
               id="menuAvatarCircle"
               style={{ 
-              width: '64px', 
-              height: '64px', 
-              borderRadius: '20px', 
-              background: fullUserData?.profileColor || 'linear-gradient(135deg, #2dd4bf 0%, #0ea5e9 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '16px',
-              boxShadow: '0 10px 20px rgba(0,0,0,0.2)'
-            }}>
-              <User size={32} color="white" />
+                width: '64px', 
+                height: '64px', 
+                borderRadius: '20px', 
+                background: fullUserData?.profileColor || 'linear-gradient(135deg, #2dd4bf 0%, #0ea5e9 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '16px',
+                boxShadow: '0 10px 20px rgba(0,0,0,0.2)',
+                fontSize: '24px',
+                fontWeight: '900',
+                color: 'white'
+              }}>
+                {fullUserData?.fullName ? fullUserData.fullName.charAt(0).toUpperCase() : (fullUserData?.username?.[0]?.toUpperCase() || 'U')}
             </div>
             <div style={{ fontWeight: '800', fontSize: '20px', color: '#f8fafc' }}>{fullUserData?.displayName || 'Skin Tight User'}</div>
             <div style={{ fontSize: '14px', color: '#94a3b8' }}>{currentUser.email}</div>
@@ -2842,40 +2821,18 @@ Focus only on skin cancer prevention. No general beauty or cosmetic advice. No f
       throw new Error("Gemini API key is missing. Please check your settings.");
     }
 
-    const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      })
-    });
-    
-    if (!apiResponse.ok) {
-      const errorData = await apiResponse.json().catch(() => ({}));
-      throw new Error(`Gemini API Error: ${apiResponse.status} ${errorData.error?.message || "Unknown error"}`);
-    }
-
-    const apiData = await apiResponse.json();
-    
-    if (!apiData || typeof apiData !== 'object') {
-      throw new Error("Invalid response from Gemini AI.");
-    }
-
-    if (apiData.error) {
-      throw new Error(`Gemini API Error: ${apiData.error.message || JSON.stringify(apiData.error)}`);
-    }
-
-    // Extremely safe extraction of text
-    let aiText = "";
-    if (apiData.candidates && Array.isArray(apiData.candidates) && apiData.candidates.length > 0) {
-      const firstCand = apiData.candidates[0];
-      if (firstCand.content && firstCand.content.parts && Array.isArray(firstCand.content.parts) && firstCand.content.parts.length > 0) {
-        aiText = firstCand.content.parts[0].text || "";
+    const ai = new GoogleGenAI({ apiKey: key });
+    const response = await ai.models.generateContent({
+      model: "gemini-flash-latest",
+      contents: [{ parts: [{ text: prompt }] }],
+      config: {
+        responseMimeType: "application/json"
       }
-    }
+    });
+
+    const aiText = response.text;
 
     if (!aiText) {
-      console.error("Gemini response structure:", JSON.stringify(apiData));
       throw new Error("AI response was empty or blocked by safety filters.");
     }
 
@@ -3290,7 +3247,8 @@ Focus only on skin cancer prevention. No general beauty or cosmetic advice. No f
     };
 
     const daysRemaining = getDaysRemaining();
-    const isOverdue = daysRemaining !== null && daysRemaining < 0;
+    const isOverdue = false; // Disabled alarming overdue status as requested
+    const daysRemainingText = daysRemaining !== null ? (daysRemaining < 0 ? `${Math.abs(daysRemaining)} Days Overdue` : `${daysRemaining} Days Remaining`) : 'Complete a scan to schedule';
 
     // Weekly Rotation Logic
     const currentWeekIndex = cycleProgress % 4;
@@ -3393,7 +3351,7 @@ Focus only on skin cancer prevention. No general beauty or cosmetic advice. No f
             </div>
             <div className="flex justify-between items-end">
               <div className={`text-[10px] font-bold uppercase ${isOverdue ? 'text-red-400' : 'text-slate-500'}`}>
-                {daysRemaining !== null ? (isOverdue ? `${Math.abs(daysRemaining)} Days Overdue` : `${daysRemaining} Days Remaining`) : 'Complete a scan to schedule'}
+                {daysRemainingText}
               </div>
               {isOverdue && <div className="animate-pulse text-[10px] font-bold text-red-500 uppercase bg-red-500/10 px-2 py-1 rounded-lg">Urgent</div>}
             </div>
@@ -3582,7 +3540,7 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
       flexDirection: 'column',
       alignItems: 'stretch',
       justifyContent: 'center',
-      padding: '16px',
+      padding: '10px',
       fontFamily: 'Inter, sans-serif'
     }}>
       <motion.div 
@@ -3670,24 +3628,51 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '14px' }}>
-            <input 
-              type="checkbox" 
-              checked={agreedTerms} 
-              onChange={(e) => setAgreedTerms(e.target.checked)}
-              style={{ width: '20px', height: '20px', accentColor: '#2dd4bf' }}
-            />
-            <span>I agree to the Terms & Conditions</span>
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '14px' }}>
-            <input 
-              type="checkbox" 
-              checked={agreedPrivacy} 
-              onChange={(e) => setAgreedPrivacy(e.target.checked)}
-              style={{ width: '20px', height: '20px', accentColor: '#2dd4bf' }}
-            />
-            <span>I agree to the Privacy Policy</span>
-          </label>
+          <div 
+            onClick={() => setAgreedTerms(!agreedTerms)}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '14px' }}
+          >
+            <div style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '6px',
+              border: `2px solid ${agreedTerms ? '#2dd4bf' : 'rgba(255,255,255,0.2)'}`,
+              background: agreedTerms ? '#2dd4bf' : 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              flexShrink: 0
+            }}>
+              {agreedTerms && <Check size={16} color="#020617" strokeWidth={4} />}
+            </div>
+            <span style={{ color: agreedTerms ? '#f8fafc' : '#94a3b8', transition: 'color 0.2s' }}>
+              I agree to the Terms & Conditions
+            </span>
+          </div>
+
+          <div 
+            onClick={() => setAgreedPrivacy(!agreedPrivacy)}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '14px' }}
+          >
+            <div style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '6px',
+              border: `2px solid ${agreedPrivacy ? '#2dd4bf' : 'rgba(255,255,255,0.2)'}`,
+              background: agreedPrivacy ? '#2dd4bf' : 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              flexShrink: 0
+            }}>
+              {agreedPrivacy && <Check size={16} color="#020617" strokeWidth={4} />}
+            </div>
+            <span style={{ color: agreedPrivacy ? '#f8fafc' : '#94a3b8', transition: 'color 0.2s' }}>
+              I agree to the Privacy Policy
+            </span>
+          </div>
         </div>
 
         <button
@@ -3718,13 +3703,13 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [ageRange, setAgeRange] = useState('');
-  const [fitzpatrick, setFitzpatrick] = useState(0);
-  const [profileColor, setProfileColor] = useState('#00B4D8');
+  const [fitzpatrick, setFitzpatrick] = useState(2);
+  const profileColors = ['#00B4D8', '#7B2FBE', '#185FA5', '#D85A30', '#3B6D11', '#BA7517', '#993556', '#A32D2D'];
+  const [profileColor, setProfileColor] = useState(profileColors[Math.floor(Math.random() * profileColors.length)]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string | null>(null);
@@ -3878,7 +3863,7 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
       flexDirection: 'column',
       alignItems: 'stretch',
       justifyContent: 'center',
-      padding: '16px',
+      padding: '10px',
       fontFamily: 'Inter, sans-serif'
     }}>
       <motion.div 
@@ -4032,38 +4017,15 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
                 <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px', fontWeight: '600' }}>PASSWORD</label>
                 <div style={{ position: 'relative' }}>
                   <input 
-                    type={showPassword ? "text" : "password"} 
+                    type="password" 
                     value={password} 
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder={authView === 'signup' ? "Create a password" : "Your password"}
                     required
-                    style={{ width: '100%', padding: '12px', paddingRight: '44px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', transition: 'all 0.3s' }}
+                    style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', transition: 'all 0.3s' }}
                     onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = '#2dd4bf'}
                     onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)'}
                   />
-                  <button 
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{ 
-                      position: 'absolute', 
-                      right: '0', 
-                      top: '0', 
-                      bottom: '0', 
-                      width: '44px', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center', 
-                      background: 'none', 
-                      border: 'none', 
-                      color: '#64748b', 
-                      cursor: 'pointer',
-                      pointerEvents: 'none' 
-                    }}
-                  >
-                    <span style={{ pointerEvents: 'auto', display: 'flex' }}>
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </span>
-                  </button>
                 </div>
                 {authView === 'signup' && password && (
                   <div style={{ marginTop: '8px' }}>
@@ -4109,51 +4071,6 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
                         <option value="">Select</option>
                         {ageRanges.map(r => <option key={r} value={r}>{r}</option>)}
                       </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '10px', fontWeight: '600' }}>FITZPATRICK SKIN TYPE</label>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
-                      {fitzpatrickTypes.map(t => (
-                        <button
-                          key={t.id}
-                          type="button"
-                          onClick={() => setFitzpatrick(t.id)}
-                          style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '10px',
-                            background: t.color,
-                            border: fitzpatrick === t.id ? '3px solid #2dd4bf' : '2px solid transparent',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                          }}
-                          title={t.desc}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '10px', fontWeight: '600' }}>PROFILE COLOR</label>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
-                      {['#00B4D8', '#7B2FBE', '#185FA5', '#D85A30', '#3B6D11', '#BA7517', '#993556', '#A32D2D'].map(c => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => setProfileColor(c)}
-                          style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '50%',
-                            background: c,
-                            border: profileColor === c ? '3px solid white' : '2px solid transparent',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                          }}
-                        />
-                      ))}
                     </div>
                   </div>
                 </>
@@ -4374,8 +4291,8 @@ function App() {
       if (!doc.exists) return;
       
       const data = doc.data();
-      const username = data.username || data.fullName || "U";
-      const firstLetter = username.charAt(0).toUpperCase();
+      const displayNameSource = data.fullName || data.username || "U";
+      const firstLetter = displayNameSource.charAt(0).toUpperCase();
       const profileColor = data.profileColor || "#00B4D8";
       
       const menuAvatar = document.getElementById("menuAvatarCircle");
@@ -4404,8 +4321,8 @@ function App() {
       if (!doc.exists) return;
       
       const data = doc.data();
-      const username = data.username || data.fullName || "U";
-      const firstLetter = username.charAt(0).toUpperCase();
+      const displayNameSource = data.fullName || data.username || "U";
+      const firstLetter = displayNameSource.charAt(0).toUpperCase();
       const profileColor = data.profileColor || "#00B4D8";
       
       const allAvatars = document.querySelectorAll(
@@ -4482,6 +4399,38 @@ function App() {
     setShowInstallPrompt(false);
   };
 
+
+  const compressImage = (base64: string, maxWidth = 1024, maxHeight = 1024, quality = 0.7): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = base64;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('Canvas context not found'));
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = (err) => reject(err);
+    });
+  };
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isEditingDoctor, setIsEditingDoctor] = useState(false);
@@ -4584,6 +4533,12 @@ function App() {
   };
 
   // --- Persistence & Initialization ---
+  useEffect(() => {
+    if (result || loading) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [result, loading]);
+
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
@@ -4767,7 +4722,7 @@ function App() {
     try {
       const ai = getAI();
       const response = await ai.models.generateContent({
-        model: "gemini-3.1-flash-lite-preview",
+        model: "gemini-flash-latest",
         contents: [
           {
             parts: [
@@ -4807,22 +4762,29 @@ function App() {
       
       filesToProcess.forEach(file => {
         const reader = new FileReader();
-        reader.onloadend = () => {
-          const photoData = reader.result as string;
-          newPhotos.push(photoData);
-          processedCount++;
-          
-          if (processedCount === filesToProcess.length) {
-            setPhotos(prev => {
-              const updated = [...prev, ...newPhotos].slice(0, 6);
-              // Trigger quality check only if it's the first photo(s) being added to an empty list
-              if (prev.length === 0 && updated.length > 0) {
-                checkImageQuality(updated[0]);
-              }
-              return updated;
-            });
-            setError(null);
-            setResult(null);
+        reader.onloadend = async () => {
+          try {
+            const rawData = reader.result as string;
+            // Compress the image before adding it to state to stay under Firestore's 1MB limit
+            const photoData = await compressImage(rawData);
+            newPhotos.push(photoData);
+            processedCount++;
+            
+            if (processedCount === filesToProcess.length) {
+              setPhotos(prev => {
+                const updated = [...prev, ...newPhotos].slice(0, 6);
+                // Trigger quality check only if it's the first photo(s) being added to an empty list
+                if (prev.length === 0 && updated.length > 0) {
+                  checkImageQuality(updated[0]);
+                }
+                return updated;
+              });
+              setError(null);
+              setResult(null);
+            }
+          } catch (err) {
+            console.error("Image processing error:", err);
+            setError("Failed to process one or more images. Please try again.");
           }
         };
         reader.readAsDataURL(file as File);
@@ -4847,6 +4809,7 @@ function App() {
     setResult(null);
     setError(null);
     setImageQuality(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setIntakeForm({
       ageRange: '',
       ethnicity: '',
@@ -5061,6 +5024,7 @@ function App() {
     setLoading(true);
     setError(null);
     setShowConfidenceWarning(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     try {
       const ai = getAI();
       const imageParts = photos.map(p => ({
@@ -5101,6 +5065,8 @@ Respond ONLY with valid JSON with these fields:
 - concerning_signs: array of ABCDE assessment findings (will be saved but UI will show simplified).
 - risk_factors_identified: array of max 2 bullet points pulled from their profile. Short and specific.
 - summary: one single sentence summary maximum 20 words.
+- cancer_type_indicators: short string identifying indicators of BCC, SCC, or Melanoma if any.
+- comparison_notes: If multiple photos provided, note any differences or stability.
 - action_card: One of three specific strings:
   1. "No immediate action needed. Monitor this spot monthly and see a dermatologist for your annual check." (for low risk)
   2. "Schedule a dermatologist appointment within the next 4-6 weeks. Not urgent but do not ignore it." (for moderate risk)
@@ -5111,7 +5077,7 @@ Respond ONLY with valid JSON with these fields:
 - disclaimer: always include.`;
       
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-flash-latest",
         contents: [
           {
             parts: [
@@ -5386,7 +5352,7 @@ STRICT LENGTH LIMITS:
 Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"], "priorityCheckAreas": ["string"], "warningSigns": ["string"], "nextExamSchedule": "string" }`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview", // Using correct model name from skill
+        model: "gemini-flash-latest",
         contents: [{ parts: [{ text: prompt }] }],
         config: { responseMimeType: "application/json" }
       });
@@ -5588,40 +5554,62 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
           You appear to be offline. Some features may be limited.
         </div>
       )}
-      <header style={{ ...styles.topHeader, padding: 0, height: '70px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button 
-            onClick={() => {
-              setIsMenuOpen(true);
-              updateAllAvatars();
+      <header 
+        id="appHeader"
+        style={{ 
+          ...styles.topHeader, 
+          padding: '0 16px', 
+          height: '70px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'flex-start', 
+          gap: '18px',
+          width: '100%'
+        }}
+      >
+        <button 
+          onClick={() => {
+            setIsMenuOpen(true);
+            updateAllAvatars();
+          }}
+          style={{ background: 'none', border: 'none', color: '#f8fafc', cursor: 'pointer', padding: '0', display: 'flex', alignItems: 'center', width: 'auto', flexShrink: 0 }}
+        >
+          <Menu size={30} />
+        </button>
+        
+        <Dna size={30} color="#2dd4bf" style={{ flexShrink: 0 }} />
+        
+        <span style={{ 
+          fontWeight: '950', 
+          fontSize: '21px', 
+          color: '#f8fafc', 
+          letterSpacing: '-0.02em', 
+          whiteSpace: 'nowrap',
+          flexShrink: 0,
+          lineHeight: 1
+        }}>
+          Skin Tight
+        </span>
+
+        {fullUserData && (
+          <div 
+            id="headerAvatar"
+            onClick={() => setActiveTab('profile')}
+            style={{ 
+              width: '43px', height: '43px', borderRadius: '50%', 
+              background: fullUserData.profileColor || '#2dd4bf',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '16px', fontWeight: '900', color: '#020617',
+              cursor: 'pointer',
+              flexShrink: 0,
+              boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+              border: '2px solid rgba(255,255,255,0.1)',
+              marginLeft: '2px'
             }}
-            style={{ background: 'none', border: 'none', color: '#f8fafc', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }}
           >
-            <Menu size={28} />
-          </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Dna size={28} color="#2dd4bf" />
-            <span style={{ fontWeight: '900', fontSize: '20px', color: '#f8fafc', letterSpacing: '-0.02em' }}>Skin Tight</span>
+            {fullUserData.fullName ? fullUserData.fullName.split(' ').map((n: any) => n?.[0] || '').join('').toUpperCase().slice(0, 2) : (fullUserData.username?.[0]?.toUpperCase() || 'U')}
           </div>
-          {/* Profile icon moved next to the name with space as requested */}
-          {fullUserData && (
-            <div 
-              id="headerAvatar"
-              onClick={() => setActiveTab('profile')}
-              style={{ 
-                width: '36px', height: '36px', borderRadius: '50%', 
-                background: fullUserData.profileColor || '#2dd4bf',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '14px', fontWeight: '900', color: '#020617',
-                cursor: 'pointer',
-                marginLeft: '8px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-              }}
-            >
-              {fullUserData.fullName ? fullUserData.fullName.split(' ').map((n: any) => n?.[0] || '').join('').toUpperCase() : (fullUserData.username?.[0]?.toUpperCase() || 'U')}
-            </div>
-          )}
-        </div>
+        )}
       </header>
 
       <SideMenu 
@@ -5635,10 +5623,6 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
       />
 
       <div className="main-content" style={{ ...styles.wrapper }}>
-        <OverdueBanner 
-          nextScanDate={nextScanDate ? new Date(nextScanDate) : new Date()} 
-          onDismiss={() => setBannerDismissedDate(new Date().toISOString())} 
-        />
         {activeTab === 'home' && (
           <div className="page-container" style={{ ...styles.tabContent, paddingBottom: '100px' }}>
             {showInstallPrompt && (
@@ -5724,7 +5708,10 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               }}>Scan suspicious spots. Track changes. Know when to act.</p>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', width: '100%' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '24px', width: '100%', gap: '16px' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(45, 212, 191, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <User size={32} color="#2dd4bf" />
+              </div>
               <div>
                 <h2 style={{ fontSize: '28px', fontWeight: '900', lineHeight: '1.2' }}>
                   <span>Hello</span>, <span style={{ color: '#2dd4bf' }}>{fullUserData?.fullName ? fullUserData.fullName.split(' ')[0] : fullUserData?.username || 'User'}</span> 👋
@@ -5732,9 +5719,6 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 <p style={{ color: '#94a3b8', fontSize: '16px', marginTop: '4px' }}>
                   {scans.length === 0 ? <span>Start your first scan to begin tracking your skin health.</span> : <span>Your skin health at a glance</span>}
                 </p>
-              </div>
-              <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(45, 212, 191, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <User size={28} color="#2dd4bf" />
               </div>
             </div>
 
@@ -5783,49 +5767,117 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               </button>
             </div>
 
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '24px' }}>
+              <motion.div 
+                id="newScanButtonHero"
+                className="glass-card" 
+                onClick={() => setActiveTab('scan')}
+                whileHover={{ scale: 1.05, y: -5 }}
+                whileTap={{ scale: 0.95 }}
+                animate={{ 
+                  boxShadow: [
+                    '0 0 20px rgba(45, 212, 191, 0.4)',
+                    '0 0 40px rgba(14, 165, 233, 0.6)',
+                    '0 0 20px rgba(168, 85, 247, 0.4)',
+                    '0 0 20px rgba(45, 212, 191, 0.4)'
+                  ],
+                  border: [
+                    '2px solid rgba(45, 212, 191, 0.8)',
+                    '2px solid rgba(14, 165, 233, 0.8)',
+                    '2px solid rgba(168, 85, 247, 0.8)',
+                    '2px solid rgba(45, 212, 191, 0.8)'
+                  ]
+                }}
+                transition={{ 
+                  duration: 3, 
+                  repeat: Infinity, 
+                  ease: "linear",
+                  boxShadow: { duration: 3, repeat: Infinity, ease: "linear" },
+                  border: { duration: 3, repeat: Infinity, ease: "linear" }
+                }}
+                style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  textAlign: 'center',
+                  padding: '32px 24px',
+                  borderRadius: '28px',
+                  cursor: 'pointer',
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  backdropFilter: 'blur(20px)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(45deg, rgba(45, 212, 191, 0.05) 0%, rgba(14, 165, 233, 0.05) 100%)', pointerEvents: 'none' }} />
+                
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                  style={{ marginBottom: '16px' }}
+                >
+                  <Camera size={48} color="#2dd4bf" />
+                </motion.div>
+                
+                <div style={{ fontWeight: '950', fontSize: '24px', marginBottom: '8px', color: '#f8fafc', letterSpacing: '-0.02em' }}>START NEW SCAN</div>
+                <div style={{ fontSize: '14px', color: '#94a3b8', fontWeight: 'bold' }}>Immediate AI Skin Analysis</div>
+                
+                <motion.div 
+                  animate={{ x: [-100, 300] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", repeatDelay: 1 }}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    width: '50px',
+                    height: '100%',
+                    background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent)',
+                    transform: 'skewX(-25deg)',
+                    pointerEvents: 'none'
+                  }}
+                />
+              </motion.div>
+            </div>
+
             {recentScan && (
-              <div className="glass-card p-6 rounded-3xl mb-6 border border-cyan-500/20 cursor-pointer hover:bg-white/5 transition-all" onClick={() => { setSelectedScanId(recentScan.id); setActiveTab('timeline'); }}>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-2">
-                    <History size={14} /> <span>MOST RECENT SCAN</span>
+              <div className="glass-card p-8 rounded-3xl mb-6 border border-cyan-500/20 cursor-pointer hover:bg-white/5 transition-all text-center" onClick={() => { setSelectedScanId(recentScan.id); setActiveTab('timeline'); }}>
+                <div className="flex flex-col items-center mb-6">
+                  <h3 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                    <History size={16} /> <span>MOST RECENT SCAN</span>
                   </h3>
                   <span className="text-[10px] text-slate-500 font-bold">{new Date(recentScan.date).toLocaleDateString()}</span>
                 </div>
-                <div className="flex gap-4 items-center">
-                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-800 border border-white/5 shrink-0">
+                
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-24 h-24 rounded-2xl overflow-hidden bg-slate-800 border border-white/5 shadow-xl">
                     {recentScan.photos && recentScan.photos[0] ? (
                       <img src={recentScan.photos[0]} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-600">
-                        <Camera size={20} />
+                        <Camera size={32} />
                       </div>
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                  
+                  <div className="w-full">
+                    <div className="flex flex-col items-center gap-2 mb-3">
+                      <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
                         recentScan.result.risk_level === 'high' ? 'bg-red-500/20 text-red-400' :
                         recentScan.result.risk_level === 'moderate' ? 'bg-amber-500/20 text-amber-400' :
                         'bg-emerald-500/20 text-emerald-400'
                       }`}>
                         {recentScan.result.risk_level} Risk
                       </span>
-                      <span className="text-xs font-bold text-slate-300 truncate">{recentScan.bodyRegion}</span>
+                      <span className="text-lg font-black text-white">{recentScan.bodyRegion}</span>
                     </div>
-                    <p className="text-xs text-slate-400 line-clamp-1 italic">"{recentScan.result.summary}"</p>
+                    <p className="text-sm text-slate-400 italic line-clamp-2 max-w-xs mx-auto">"{recentScan.result.summary}"</p>
                   </div>
-                  <ChevronRight size={20} className="text-slate-600 shrink-0" />
+                  
+                  <div className="mt-4 flex items-center gap-2 text-teal-400 font-bold text-xs uppercase tracking-widest">
+                    View Full Result <ChevronRight size={14} />
+                  </div>
                 </div>
               </div>
             )}
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '24px' }}>
-              <div className="glass-card p-4 rounded-2xl cursor-pointer hover:bg-white/5 transition-all" onClick={() => setActiveTab('scan')}>
-                <Camera size={24} color="#2dd4bf" style={{ marginBottom: '8px' }} />
-                <div style={{ fontWeight: '700', fontSize: '14px' }}>New Scan</div>
-                <div style={{ fontSize: '12px', color: '#94a3b8' }}>Analyze skin concerns</div>
-              </div>
-            </div>
 
             <div style={styles.disclaimerBanner} className="glass-card shimmer-overlay">
               <AlertCircle size={20} color="#f59e0b" style={{ flexShrink: 0 }} />
@@ -5922,57 +5974,62 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
 
         {activeTab === 'profile' && (
           <div className="page-container" style={styles.tabContent}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: '800', margin: 0 }}>My Profile</h2>
+            <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: '20px', marginBottom: '20px', width: '100%', overflow: 'hidden' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0, color: '#f8fafc', whiteSpace: 'nowrap' }}>My Profile</h2>
               {!isEditingProfile && (
                 <button 
+                  className="mini-edit-btn"
                   onClick={() => {
                     setTempProfile(userProfile);
                     setIsEditingProfile(true);
                   }}
                   style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '8px',
-                    background: 'rgba(45, 212, 191, 0.1)', 
-                    border: '1px solid rgba(45, 212, 191, 0.2)', 
+                    background: 'rgba(45, 212, 191, 0.08)', 
+                    border: '1.5px solid rgba(45, 212, 191, 0.2)', 
                     color: '#2dd4bf', 
-                    padding: '8px 16px',
-                    borderRadius: '12px',
+                    padding: '3px 8px',
+                    borderRadius: '6px',
                     fontSize: '14px', 
-                    fontWeight: '700', 
-                    cursor: 'pointer' 
+                    fontWeight: '950', 
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    lineHeight: '1',
+                    width: 'auto',
+                    minHeight: '0',
+                    display: 'inline-flex'
                   }}
                 >
-                  <Edit3 size={16} /> Edit Profile
+                  Edit Profile
                 </button>
               )}
             </div>
             
             {/* Personal Info Card */}
-            <div className="glass-card p-8 rounded-[32px] mb-6 relative overflow-hidden">
+            <div className="glass-card mb-6 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-teal-500/10 to-transparent rounded-bl-full -mr-8 -mt-8" />
               
               <div className="flex flex-col items-center text-center">
                 <div 
                   style={{ 
-                    width: '100px', 
-                    height: '100px', 
-                    borderRadius: '50%', 
-                    background: userProfile.profileColor,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '36px',
-                    fontWeight: '900',
-                    color: 'white',
-                    marginBottom: '20px',
-                    boxShadow: `0 10px 25px ${userProfile.profileColor}40`,
-                    border: '4px solid rgba(255,255,255,0.1)'
-                  }}
-                >
-                  {userProfile.fullName ? userProfile.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
-                </div>
+              width: '100px', 
+              height: '100px', 
+              borderRadius: '50%', 
+              background: userProfile.profileColor || '#2dd4bf',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '36px',
+              fontWeight: '900',
+              color: 'white',
+              marginBottom: '20px',
+              boxShadow: `0 10px 25px ${userProfile.profileColor || '#2dd4bf'}40`,
+              border: '4px solid rgba(255,255,255,0.1)'
+            }}
+          >
+            {userProfile.fullName ? userProfile.fullName.charAt(0).toUpperCase() : (fullUserData?.username?.[0]?.toUpperCase() || 'U')}
+          </div>
                 
                 <h3 className="text-2xl font-black text-white mb-1">{userProfile.fullName || 'Anonymous User'}</h3>
                 <p className="text-slate-400 font-bold text-sm mb-4">@{fullUserData?.username || 'user'}</p>
@@ -5982,21 +6039,30 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                   {fullUserData?.email || 'No email set'}
                 </div>
 
-                <div className="w-full grid grid-cols-2 gap-4 mt-4">
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-left">
-                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Member Since</div>
-                    <div className="text-sm font-bold text-white flex items-center gap-2">
-                      <Calendar size={14} className="text-teal-400" />
-                      {fullUserData?.createdAt ? (fullUserData.createdAt.toDate ? fullUserData.createdAt.toDate().toLocaleDateString() : new Date(fullUserData.createdAt).toLocaleDateString()) : 'Recently'}
-                    </div>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-left">
-                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Skin Type</div>
-                    <div id="skinTypeDisplay" className="mt-1">
-                      <div className="flex gap-2">
-                        <span className="px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-400 text-[10px] font-black uppercase">Type {userProfile.fitzpatrick}</span>
-                        <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-400 text-[10px] font-black uppercase">{fullUserData?.ethnicity || 'Unknown'}</span>
+                <div className="w-full space-y-3 mt-6">
+                  <div className="p-5 rounded-3xl bg-white/5 border border-white/10 text-center">
+                    <div className="text-[10px] font-black text-teal-500 uppercase tracking-[0.2em] mb-3">Your Skin Profile</div>
+                    <div className="flex flex-wrap justify-center gap-3">
+                      <div className="px-4 py-2 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-black uppercase">
+                        Fitzpatrick Type {userProfile.fitzpatrick}
                       </div>
+                      <div className="px-4 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-black uppercase">
+                        {fullUserData?.ethnicity || 'Not Set'}
+                      </div>
+                    </div>
+                    <div className="mt-4 px-2">
+                      <p className="text-xs text-slate-400 leading-relaxed max-w-xs mx-auto">
+                        {(() => {
+                          const type = Number(userProfile.fitzpatrick);
+                          if (type === 1) return "Always burns, never tans. Very fair skin with highest sensitivity.";
+                          if (type === 2) return "Usually burns, tans minimally. Fair skin with high sensitivity.";
+                          if (type === 3) return "Sometimes mild burn, tans uniformly. Light brown skin with moderate sensitivity.";
+                          if (type === 4) return "Rarely burns, tans easily. Moderate brown skin with lower sensitivity.";
+                          if (type === 5) return "Very rarely burns, tans very easily. Dark brown skin with low sensitivity.";
+                          if (type === 6) return "Never burns, deeply pigmented skin. Highly resistant to sun damage.";
+                          return "Information about your sun sensitivity based on your skin type selection.";
+                        })()}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -6028,29 +6094,6 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Profile Color</label>
-                      <div className="flex flex-wrap gap-3">
-                        {['#00B4D8', '#7B2FBE', '#185FA5', '#D85A30', '#3B6D11', '#BA7517', '#993556', '#A32D2D'].map(color => (
-                          <button 
-                            key={color}
-                            onClick={() => setTempProfile({...tempProfile, profileColor: color})}
-                            style={{ 
-                              width: '40px', 
-                              height: '40px', 
-                              borderRadius: '50%', 
-                              background: color,
-                              border: tempProfile.profileColor === color ? '3px solid white' : '2px solid rgba(255,255,255,0.1)',
-                              cursor: 'pointer',
-                              transform: tempProfile.profileColor === color ? 'scale(1.1)' : 'scale(1)',
-                              transition: 'all 0.2s',
-                              boxShadow: tempProfile.profileColor === color ? `0 0 15px ${color}80` : 'none'
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
                     <div className="flex gap-3 pt-4">
                       <button 
                         onClick={() => setIsEditingProfile(false)}
@@ -6070,6 +6113,12 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 </motion.div>
               )}
             </AnimatePresence>
+            <div style={{ textAlign: 'center', marginTop: '40px', padding: '20px', opacity: 0.5 }}>
+              <div style={{ fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Member Since</div>
+              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f8fafc', marginTop: '4px' }}>
+                {fullUserData?.createdAt ? (fullUserData.createdAt.toDate ? fullUserData.createdAt.toDate().toLocaleDateString() : new Date(fullUserData.createdAt).toLocaleDateString()) : 'Recently'}
+              </div>
+            </div>
           </div>
         )}
         
