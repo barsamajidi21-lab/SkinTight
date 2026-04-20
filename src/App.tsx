@@ -950,39 +950,6 @@ const styles = {
     );
   };
 
-  const ConfidenceMeter = ({ score, currentSection }: { score: number; currentSection: number }) => {
-  const getColor = () => {
-    if (score < 50) return '#ef4444';
-    if (score < 80) return '#f59e0b';
-    return '#2dd4bf';
-  };
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="glass-card p-4 rounded-2xl mb-6 border border-white/5"
-    >
-      <div className="flex justify-between items-center mb-2">
-        <div className="flex flex-col">
-          <span className="text-[10px] font-bold text-teal-400 uppercase tracking-widest mb-1">Section {currentSection} of 4</span>
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Form Completeness</span>
-        </div>
-        <span className="text-sm font-black" style={{ color: getColor() }}>{score}%</span>
-      </div>
-      <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-        <motion.div 
-          initial={{ width: 0 }}
-          animate={{ width: `${score}%` }}
-          transition={{ duration: 0.5 }}
-          className="h-full"
-          style={{ backgroundColor: getColor() }}
-        />
-      </div>
-    </motion.div>
-  );
-};
-
 const ScanPage = ({
   result,
   saveStatus,
@@ -1014,23 +981,6 @@ const ScanPage = ({
   fullUserData,
   loading
 }: any) => {
-  const [currentSection, setCurrentSection] = React.useState(1);
-  const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({
-    'Sun Exposure History': true,
-    'Medical History': true
-  });
-
-  const toggleSection = (title: string, sectionNum: number) => {
-    setOpenSections(prev => ({ ...prev, [title]: !prev[title] }));
-    if (sectionNum) setCurrentSection(sectionNum);
-  };
-
-  const allQualityChecked = intakeForm.qualityCheck.clear && 
-                           intakeForm.qualityCheck.lighting && 
-                           intakeForm.qualityCheck.fillsFrame && 
-                           intakeForm.qualityCheck.uploaded &&
-                           photos.length > 0;
-
   return (
     <div className="page-container" style={styles.tabContent}>
       {result ? (
@@ -1136,43 +1086,9 @@ const ScanPage = ({
         </motion.div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <ConfidenceMeter score={confidenceScore} currentSection={currentSection} />
           
           <AnimatePresence>
-            {showConfidenceWarning && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="bg-amber-500/20 border border-amber-500/50 p-6 rounded-3xl mb-2"
-              >
-                <div className="flex items-center gap-3 mb-2 text-amber-500">
-                  <AlertTriangle size={24} />
-                  <h3 className="font-bold">Limited data provided</h3>
-                </div>
-                <p className="text-sm text-amber-200/80 mb-4">
-                  The AI will attempt analysis but accuracy may be reduced. We strongly recommend completing more sections for a reliable result.
-                </p>
-                <div className="flex gap-3">
-                  <button 
-                    onClick={() => setShowConfidenceWarning(false)}
-                    className="flex-1 py-3 bg-amber-500 text-white font-bold rounded-xl text-sm"
-                  >
-                    Complete More Info
-                  </button>
-                  <button 
-                    onClick={() => analyzeSkin(true)}
-                    className="flex-1 py-3 bg-white/10 text-white font-bold rounded-xl text-sm"
-                  >
-                    Continue Anyway
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {(error || confidenceScore < 50) && (
+            {error && (
               <motion.div 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -1181,13 +1097,9 @@ const ScanPage = ({
               >
                 <div className="flex items-center gap-3 mb-2 text-red-500">
                   <AlertCircle size={24} />
-                  <h3 className="font-bold">{confidenceScore < 50 ? "Insufficient information" : "Analysis Error"}</h3>
+                  <h3 className="font-bold">Analysis Error</h3>
                 </div>
-                <p className="text-sm text-red-200/80">
-                  {confidenceScore < 50 
-                    ? "More data is needed for a safe and accurate assessment. Please complete more sections of the intake form and upload clear photos to reach at least 50% completeness."
-                    : error}
-                </p>
+                <p className="text-sm text-red-200/80">{error}</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1208,7 +1120,7 @@ const ScanPage = ({
               <>
                 <Camera size={48} color="#2dd4bf" style={{ marginBottom: '12px' }} />
                 <p style={{ fontWeight: '700' }}>Capture or Upload Photos</p>
-                <p style={{ fontSize: '12px', color: '#94a3b8' }}>Up to 6 clear photos</p>
+                <p style={{ fontSize: '12px', color: '#94a3b8' }}>Clear photos of skin concern</p>
               </>
             ) : (
               <div style={styles.photoGrid}>
@@ -1227,70 +1139,14 @@ const ScanPage = ({
             )}
           </div>
 
-          {checkingQuality && (
-            <div className="flex items-center gap-2 text-sm text-cyan-400 animate-pulse px-2">
-              <RefreshCw size={16} className="animate-spin" />
-              AI checking image quality...
-            </div>
-          )}
-          {imageQuality === 'POOR' && (
-            <div className="bg-amber-500/20 border border-amber-500/50 p-4 rounded-2xl text-sm text-amber-200">
-              This photo appears blurry or poorly lit. For accurate analysis please retake the photo in good natural lighting with the camera close to the skin.
-            </div>
-          )}
-          {imageQuality === 'NOT_SKIN' && (
-            <div className="bg-red-500/20 border border-red-500/50 p-4 rounded-2xl text-sm text-red-200">
-              This does not appear to be a photo of skin. Please upload a clear photo of the skin area you want analyzed.
-            </div>
-          )}
-
           <div className="space-y-4">
             <div className="glass-card rounded-3xl overflow-hidden">
-              <div className="p-6 flex justify-between items-center bg-white/5">
-                <h3 className="text-lg font-bold flex items-center gap-2"><User size={20} color="#2dd4bf" /> SECTION 1 — Your Profile</h3>
-                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Auto-filled</span>
-              </div>
-              <div className="p-6">
-                <div className="flex flex-wrap gap-2 mb-3">
-                  <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold text-slate-300">
-                    Age: {fullUserData?.ageRange || 'Not set'}
-                  </div>
-                  <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold text-slate-300 flex items-center gap-2">
-                    Skin Type: {fullUserData?.fitzpatrickType ? `Type ${fullUserData.fitzpatrickType}` : 'Not set'}
-                    {fullUserData?.fitzpatrickType && (
-                      <div 
-                        style={{ 
-                          width: '12px', 
-                          height: '12px', 
-                          borderRadius: '3px', 
-                          background: fitzpatrickTypes.find(t => t.id === fullUserData.fitzpatrickType)?.color 
-                        }} 
-                      />
-                    )}
-                  </div>
-                  <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold text-slate-300">
-                    {fullUserData?.ethnicity || 'Ethnicity not set'}
-                  </div>
-                </div>
-                <p className="text-[11px] text-slate-500">
-                  From your profile · <button onClick={() => setActiveTab('profile')} className="text-cyan-400 hover:underline font-bold">Edit</button>
-                </p>
-              </div>
-            </div>
-
-            <div className="glass-card rounded-3xl overflow-hidden">
-              <div className="p-6 flex justify-between items-center bg-white/5">
-                <h3 className="text-lg font-bold flex items-center gap-2"><MapPin size={20} color="#a855f7" /> SECTION 2 — About This Skin Spot</h3>
-                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Required</span>
-              </div>
-              <div className="p-6 bg-amber-500/10 border-b border-amber-500/20">
-                <p className="text-xs text-amber-200/80 leading-relaxed italic">
-                  <span className="font-bold text-amber-400">Note:</span> These questions help our AI provide a more accurate assessment based on clinical risk factors.
-                </p>
+              <div className="p-6 bg-white/5">
+                <h3 className="text-lg font-bold flex items-center gap-2"><CheckCircle2 size={20} color="#2dd4bf" /> About This Scan</h3>
               </div>
               <div className="p-6 space-y-6">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Where exactly on your body is it? <span className="text-red-500">*</span></label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3 text-red-500">Where is this on your body? *</label>
                   <select 
                     className={`w-full bg-white/5 border rounded-xl p-4 text-white outline-none transition-all ${!intakeForm.bodyLocation ? 'border-red-500/30' : 'border-white/10 focus:border-cyan-500'}`}
                     value={intakeForm.bodyLocation}
@@ -1302,62 +1158,13 @@ const ScanPage = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">How long have you had this spot?</label>
-                  <select 
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-cyan-500 transition-all"
-                    value={intakeForm.duration}
-                    onChange={(e) => updateIntake('duration', e.target.value)}
-                  >
-                    <option value="" disabled>Select Duration</option>
-                    {durations.map(d => <option key={d} value={d} className="bg-slate-900">{d}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Has it changed recently?</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Has this specific body part changed on your body?</label>
                   <div className="flex gap-2">
                     {['Yes', 'No', "Not sure"].map(o => (
                       <button 
                         key={o}
                         onClick={() => updateIntake('changedRecently', o)}
-                        className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all ${intakeForm.changedRecently === o ? 'bg-purple-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
-                      >
-                        {o}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="glass-card rounded-3xl overflow-hidden">
-              <div className="p-6 flex justify-between items-center bg-white/5">
-                <h3 className="text-lg font-bold flex items-center gap-2"><Sun size={20} color="#f59e0b" /> SECTION 3 — Sun History</h3>
-                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Required</span>
-              </div>
-              <div className="p-6 space-y-6">
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">How much sun exposure do you get daily?</label>
-                  <select 
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-cyan-500 transition-all"
-                    value={intakeForm.dailySunExposure}
-                    onChange={(e) => updateIntake('dailySunExposure', e.target.value)}
-                  >
-                    <option value="" disabled>Select Exposure</option>
-                    <option value="Mostly indoors" className="bg-slate-900">Mostly indoors</option>
-                    <option value="Moderate (30 min to 2 hours)" className="bg-slate-900">Moderate (30 min to 2 hours)</option>
-                    <option value="High (more than 2 hours outdoors)" className="bg-slate-900">High (more than 2 hours outdoors)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Have you ever had severe blistering sunburns?</label>
-                  <div className="flex gap-2">
-                    {['Never', 'Once or twice', 'Many times'].map(o => (
-                      <button 
-                        key={o}
-                        onClick={() => updateIntake('severeSunburns', o)}
-                        className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.severeSunburns === o ? 'bg-amber-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+                        className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all ${intakeForm.changedRecently === o ? 'bg-cyan-500 text-white border border-cyan-400' : 'bg-white/5 text-slate-400 border border-white/10'}`}
                       >
                         {o}
                       </button>
@@ -1372,84 +1179,22 @@ const ScanPage = ({
                       <button 
                         key={o}
                         onClick={() => updateIntake('useSunProtection', o)}
-                        className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.useSunProtection === o ? 'bg-amber-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+                        className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.useSunProtection === o ? 'bg-cyan-500 text-white border border-cyan-400' : 'bg-white/5 text-slate-400 border border-white/10'}`}
                       >
                         {o}
                       </button>
                     ))}
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="glass-card rounded-3xl overflow-hidden">
-              <div className="p-6 flex justify-between items-center bg-white/5">
-                <h3 className="text-lg font-bold flex items-center gap-2"><Activity size={20} color="#ef4444" /> SECTION 4 — Medical History</h3>
-                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Required</span>
-              </div>
-              <div className="p-6 space-y-6">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Have you or a blood relative had skin cancer?</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Does anyone in your bloodline have skin cancer?</label>
                   <div className="flex flex-wrap gap-2">
-                    {['Yes (me)', 'Yes (family member)', 'Yes (both)', 'No'].map(o => (
+                    {['Yes', 'No', 'Not sure'].map(o => (
                       <button 
                         key={o}
                         onClick={() => updateIntake('cancerHistory', o)}
-                        className={`flex-1 min-w-[120px] py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.cancerHistory === o ? 'bg-red-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
-                      >
-                        {o}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {intakeForm.cancerHistory !== 'No' && intakeForm.cancerHistory !== '' && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Which type?</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {['Melanoma', 'Basal Cell Carcinoma', 'Squamous Cell Carcinoma', 'Not sure'].map(type => (
-                        <button 
-                          key={type}
-                          onClick={() => {
-                            const current = intakeForm.cancerTypes;
-                            if (current.includes(type)) {
-                              updateIntake('cancerTypes', current.filter((t: string) => t !== type));
-                            } else {
-                              updateIntake('cancerTypes', [...current, type]);
-                            }
-                          }}
-                          className={`py-3 px-4 rounded-xl font-bold text-[10px] transition-all ${intakeForm.cancerTypes.includes(type) ? 'bg-red-500/20 text-red-400 border border-red-500' : 'bg-white/5 text-slate-400 border border-white/10'}`}
-                        >
-                          {type}
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Do you have many unusual or atypical moles?</label>
-                  <div className="flex gap-2">
-                    {['Yes', 'No', 'Not sure'].map(o => (
-                      <button 
-                        key={o}
-                        onClick={() => updateIntake('atypicalMoles', o)}
-                        className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.atypicalMoles === o ? 'bg-red-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
-                      >
-                        {o}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Are you immunocompromised or on immunosuppressant medications?</label>
-                  <div className="flex gap-2">
-                    {['Yes', 'No', 'Not sure'].map(o => (
-                      <button 
-                        key={o}
-                        onClick={() => updateIntake('isImmunocompromised', o)}
-                        className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.isImmunocompromised === o ? 'bg-red-500 text-white' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+                        className={`flex-1 min-w-[80px] py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.cancerHistory === o ? 'bg-cyan-500 text-white border border-cyan-400' : 'bg-white/5 text-slate-400 border border-white/10'}`}
                       >
                         {o}
                       </button>
@@ -1458,56 +1203,11 @@ const ScanPage = ({
                 </div>
               </div>
             </div>
-
-            <div className="glass-card rounded-3xl overflow-hidden border-2 border-cyan-500/30">
-              <div className="p-6 flex justify-between items-center bg-cyan-500/10">
-                <h3 className="text-lg font-bold flex items-center gap-2"><ShieldCheck size={20} color="#2dd4bf" /> SECTION 5 — Image Quality Confirmation</h3>
-                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Required</span>
-              </div>
-              <div className="p-6 space-y-4">
-                {[
-                  { id: 'clear', label: "The photo is clear and in focus" },
-                  { id: 'lighting', label: "The lighting is good — no shadows" },
-                  { id: 'fillsFrame', label: "The spot fills most of the frame" },
-                  { id: 'uploaded', label: "I have uploaded at least one photo" }
-                ].map(item => (
-                  <button 
-                    key={item.id}
-                    onClick={() => updateQualityCheck(item.id as any, !intakeForm.qualityCheck[item.id as keyof IntakeForm['qualityCheck']])}
-                    className={`w-full flex items-center gap-3 p-4 rounded-2xl text-sm font-medium transition-all ${intakeForm.qualityCheck[item.id as keyof IntakeForm['qualityCheck']] ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50' : 'bg-white/5 text-slate-400 border border-white/10'}`}
-                  >
-                    <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${intakeForm.qualityCheck[item.id as keyof IntakeForm['qualityCheck']] ? 'bg-cyan-500 border-cyan-500' : 'border-slate-600'}`}>
-                      {intakeForm.qualityCheck[item.id as keyof IntakeForm['qualityCheck']] && <Check size={14} color="white" />}
-                    </div>
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 mb-2">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Data Sufficiency</span>
-              <span className={`text-xs font-black ${confidenceScore >= 70 ? 'text-emerald-400' : 'text-cyan-400'}`}>{confidenceScore}%</span>
-            </div>
-            <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/10">
-              <motion.div 
-                initial={{ width: 0 }}
-                animate={{ width: `${confidenceScore}%` }}
-                className={`h-full ${confidenceScore >= 70 ? 'bg-emerald-500' : 'bg-cyan-500'}`}
-              />
-            </div>
-            {confidenceScore < 70 && (
-              <p className="text-[10px] text-slate-500 mt-2 italic">
-                Complete more sections to reach 70% sufficiency for AI analysis.
-              </p>
-            )}
           </div>
 
           <button 
-            style={{ ...styles.analyzeButton, opacity: confidenceScore < 70 || !intakeForm.bodyLocation || loading ? 0.5 : 1 }}
-            disabled={confidenceScore < 70 || !intakeForm.bodyLocation || loading}
+            style={{ ...styles.analyzeButton, opacity: !intakeForm.bodyLocation || photos.length === 0 || loading ? 0.5 : 1 }}
+            disabled={!intakeForm.bodyLocation || photos.length === 0 || loading}
             onClick={() => analyzeSkin()}
           >
             {loading ? (
@@ -1522,16 +1222,6 @@ const ScanPage = ({
               </>
             )}
           </button>
-          {confidenceScore < 70 && (
-            <p className="text-center text-xs text-red-400 font-bold animate-pulse">
-              Please complete the intake form and confirm image quality to reach 70% sufficiency.
-            </p>
-          )}
-          {!intakeForm.bodyLocation && confidenceScore >= 70 && (
-            <p className="text-center text-xs text-red-400 font-bold animate-pulse">
-              Please select body location to continue
-            </p>
-          )}
         </div>
       )}
     </div>
@@ -5010,17 +4700,6 @@ function App() {
     const today = new Date();
     if (photos.length === 0) return;
     
-    const score = calculateConfidenceScore();
-    if (score < 50) {
-      setError("Insufficient information for analysis. Please upload at least one clear photo and complete the required sections. The AI needs enough data to give you a safe and accurate assessment. Guessing from limited information could be dangerous.");
-      return;
-    }
-    
-    if (score < 80 && !force) {
-      setShowConfidenceWarning(true);
-      return;
-    }
-
     setLoading(true);
     setError(null);
     setShowConfidenceWarning(false);
