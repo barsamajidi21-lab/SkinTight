@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, Suspense } from 'react';
+import React, { useState, useRef, useEffect, useMemo, Suspense, Component, ReactNode, FormEvent, ChangeEvent } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { jsPDF } from "jspdf";
 import { Canvas, useFrame } from '@react-three/fiber';
@@ -705,12 +705,12 @@ const styles = {
   };
 
   const ClinicFinder = () => {
-    const mapRef = React.useRef<HTMLDivElement>(null);
-    const mapInstance = React.useRef<any>(null);
-    const [clinics, setClinics] = React.useState<any[]>([]);
-    const [loadingClinics, setLoadingClinics] = React.useState(false);
-    const [userLocation, setUserLocation] = React.useState<[number, number] | null>(null);
-    const [statusMessage, setStatusMessage] = React.useState<string | null>(null);
+    const mapRef = useRef<HTMLDivElement>(null);
+    const mapInstance = useRef<any>(null);
+    const [clinics, setClinics] = useState<any[]>([]);
+    const [loadingClinics, setLoadingClinics] = useState(false);
+    const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+    const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
     const findClinics = (radius = 10000) => {
       if (!navigator.geolocation) {
@@ -1682,8 +1682,8 @@ const PlansPage = () => {
 };
 
 const EducationCard = ({ result, onClose }: { result: any, onClose: () => void }) => {
-  const [showQuiz, setShowQuiz] = React.useState(false);
-  const [quizAnswer, setQuizAnswer] = React.useState<number | null>(null);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
 
   const quiz = {
     question: "What is the 'E' in the ABCDE rule for skin cancer?",
@@ -1805,10 +1805,15 @@ const SideMenu = ({
 }) => {
   const menuItems = [
     { id: 'home', label: 'Home', icon: Home },
-    { id: 'timeline', label: 'Timeline and Schedule', icon: Calendar },
-    { id: 'profile', label: 'My Profile', icon: UserCircle },
+    ...(currentUser ? [
+      { id: 'timeline', label: 'Timeline and Schedule', icon: Calendar },
+      { id: 'profile', label: 'My Profile', icon: UserCircle },
+    ] : []),
     { id: 'clinic', label: 'Find Dermatologists', icon: MapPinned },
     { id: 'welcome', label: 'About Skin Tight', icon: Info },
+    ...(!currentUser ? [
+      { id: 'auth', label: 'Sign In / Join', icon: UserPlus },
+    ] : [])
   ];
 
   return (
@@ -1904,26 +1909,53 @@ const SideMenu = ({
         </div>
 
         <div style={{ marginTop: 'auto', padding: '20px' }}>
-          <button 
-            onClick={handleLogout}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              padding: '16px 20px',
-              borderRadius: '16px',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: 'none',
-              color: '#ef4444',
-              fontSize: '16px',
-              fontWeight: '700',
-              cursor: 'pointer'
-            }}
-          >
-            <LogOut size={24} />
-            Logout
-          </button>
+          {currentUser ? (
+            <button 
+              onClick={handleLogout}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                padding: '16px 20px',
+                borderRadius: '16px',
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: 'none',
+                color: '#ef4444',
+                fontSize: '16px',
+                fontWeight: '700',
+                cursor: 'pointer'
+              }}
+            >
+              <LogOut size={24} />
+              Logout
+            </button>
+          ) : (
+            <button 
+              onClick={() => {
+                setActiveTab('auth');
+                setIsMenuOpen(false);
+              }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                padding: '16px 20px',
+                borderRadius: '20px',
+                background: 'linear-gradient(135deg, #2dd4bf 0%, #0ea5e9 100%)',
+                border: 'none',
+                color: '#020617',
+                fontSize: '16px',
+                fontWeight: '900',
+                cursor: 'pointer',
+                boxShadow: '0 10px 20px rgba(45, 212, 191, 0.2)'
+              }}
+            >
+              <UserPlus size={24} />
+              Sign In / Join
+            </button>
+          )}
         </div>
       </div>
     </>
@@ -2243,7 +2275,7 @@ const fitzpatrickTypes = [
 ];
 
 // --- Error Boundary for 3D Models ---
-class ModelErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+class ModelErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: any) {
     super(props);
     this.state = { hasError: false };
@@ -2833,8 +2865,8 @@ Focus only on skin cancer prevention. No general beauty or cosmetic advice. No f
   }
 
   const Timeline = ({ scans, setSelectedScanId, setActiveTab, styles, streakData, nextScanDate, cycleProgress, lastFullWeekCompletionDate }: TimelineProps) => {
-    const chartRef = React.useRef<HTMLCanvasElement>(null);
-    const chartInstance = React.useRef<any>(null);
+    const chartRef = useRef<HTMLCanvasElement>(null);
+    const chartInstance = useRef<any>(null);
 
     useEffect(() => {
       let isMounted = true;
@@ -3388,7 +3420,7 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
   );
 };
 
-const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => {
+const AuthPage = ({ onAuthSuccess, onSkip }: { onAuthSuccess: (user: any) => void, onSkip?: () => void }) => {
   const [authView, setAuthView] = useState<'signin' | 'signup' | 'forgot'>('signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -3401,11 +3433,11 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
   const profileColors = ['#00B4D8', '#7B2FBE', '#185FA5', '#D85A30', '#3B6D11', '#BA7517', '#993556', '#A32D2D'];
   const [profileColor, setProfileColor] = useState(profileColors[Math.floor(Math.random() * profileColors.length)]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [success, setSuccess] = React.useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   // Real-time username check
-  React.useEffect(() => {
+  useEffect(() => {
     if (!username || username.length < 3 || authView !== 'signup') {
       setUsernameAvailable(null);
       return;
@@ -3447,7 +3479,7 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
     setSuccess(message);
   };
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleSignIn = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -3461,9 +3493,9 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: FormEvent) => {
     e.preventDefault();
-    if (!fullName || !username || !email || !password || !ageRange || fitzpatrick === 0) {
+    if (!fullName || !username || !email || !password || fitzpatrick === 0) {
       showErrorMessage('Please fill in all fields.');
       return;
     }
@@ -3511,7 +3543,7 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
     }
   };
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
+  const handleForgotPassword = async (e: FormEvent) => {
     e.preventDefault();
     if (!email) {
       showErrorMessage("Please enter your email address.");
@@ -3755,7 +3787,6 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
                       <select 
                         value={ageRange} 
                         onChange={(e) => setAgeRange(e.target.value)}
-                        required
                         style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none' }}
                       >
                         <option value="">Select</option>
@@ -3793,6 +3824,27 @@ const AuthPage = ({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) => 
                 {loading && <Loader2 className="animate-spin" size={20} />}
                 {loading ? 'Processing...' : authView === 'signin' ? 'Sign In' : 'Create Account'}
               </button>
+
+              {onSkip && (
+                <button 
+                  type="button"
+                  onClick={onSkip}
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'transparent',
+                    color: '#94a3b8',
+                    fontWeight: '700',
+                    fontSize: '15px',
+                    cursor: 'pointer',
+                    marginTop: '8px'
+                  }}
+                >
+                  Continue as Guest
+                </button>
+              )}
 
               {authView === 'signin' && (
                 <button 
@@ -3851,39 +3903,39 @@ function setOneSignalExternalId(userId: string) {
 
 function App() {
   // --- Navigation State ---
-  const [activeTab, setActiveTab] = useState<'home' | 'scan' | 'timeline' | 'routine' | 'plans' | 'profile' | 'clinic' | 'welcome'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'scan' | 'timeline' | 'routine' | 'plans' | 'profile' | 'clinic' | 'welcome' | 'auth'>('home');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [notifications, setNotifications] = useState<{ id: string; text: string; type: 'warning' | 'info' | 'alert'; read: boolean; date: string }[]>([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [onboardingComplete, setOnboardingComplete] = React.useState<boolean>(false);
-  const [welcomeSeen, setWelcomeSeen] = React.useState<boolean>(false);
-  const [showLegalModal, setShowLegalModal] = React.useState<'terms' | 'privacy' | 'disclaimer' | null>(null);
-  const [streakData, setStreakData] = React.useState<StreakData>({ currentStreak: 0, longestStreak: 0, lastScanMonth: '' });
-  const [nextScanDate, setNextScanDate] = React.useState<string | null>(null);
-  const [cycleProgress, setCycleProgress] = React.useState<number>(0);
-  const [lastFullWeekCompletionDate, setLastFullWeekCompletionDate] = React.useState<string | null>(null);
-  const [bannerDismissedDate, setBannerDismissedDate] = React.useState<string | null>(null);
+  const [onboardingComplete, setOnboardingComplete] = useState<boolean>(false);
+  const [welcomeSeen, setWelcomeSeen] = useState<boolean>(false);
+  const [showLegalModal, setShowLegalModal] = useState<'terms' | 'privacy' | 'disclaimer' | null>(null);
+  const [streakData, setStreakData] = useState<StreakData>({ currentStreak: 0, longestStreak: 0, lastScanMonth: '' });
+  const [nextScanDate, setNextScanDate] = useState<string | null>(null);
+  const [cycleProgress, setCycleProgress] = useState<number>(0);
+  const [lastFullWeekCompletionDate, setLastFullWeekCompletionDate] = useState<string | null>(null);
+  const [bannerDismissedDate, setBannerDismissedDate] = useState<string | null>(null);
 
-  const [protocolExpanded, setProtocolExpanded] = React.useState(false);
+  const [protocolExpanded, setProtocolExpanded] = useState(false);
 
   // --- Firebase Auth State ---
-  const [currentUser, setCurrentUser] = React.useState<any>(null);
-  const [fullUserData, setFullUserData] = React.useState<any>(null);
-  const [authLoading, setAuthLoading] = React.useState(true);
-  const [isOffline, setIsOffline] = React.useState(!navigator.onLine);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [fullUserData, setFullUserData] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   // --- Existing State ---
-  const [photos, setPhotos] = React.useState<string[]>([]);
-  const [note, setNote] = React.useState('');
-  const [loading, setLoading] = React.useState(false);
-  const [result, setResult] = React.useState<AnalysisResult | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-  const [isInputFocused, setIsInputFocused] = React.useState(false);
-  const [imageQuality, setImageQuality] = React.useState<'GOOD' | 'POOR' | 'NOT_SKIN' | null>(null);
-  const [checkingQuality, setCheckingQuality] = React.useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [note, setNote] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [imageQuality, setImageQuality] = useState<'GOOD' | 'POOR' | 'NOT_SKIN' | null>(null);
+  const [checkingQuality, setCheckingQuality] = useState(false);
   
-  const [intakeForm, setIntakeForm] = React.useState<IntakeForm>({
+  const [intakeForm, setIntakeForm] = useState<IntakeForm>({
     ageRange: '',
     ethnicity: '',
     fitzpatrick: 0,
@@ -4128,10 +4180,10 @@ function App() {
   const [tempDoctor, setTempDoctor] = useState(doctorInfo);
 
   // --- Feature 10: Education State ---
-  const [education, setEducation] = React.useState<EducationProgress>({ completedCards: [], score: 0 });
-  const [showEduCard, setShowEduCard] = React.useState(false);
+  const [education, setEducation] = useState<EducationProgress>({ completedCards: [], score: 0 });
+  const [showEduCard, setShowEduCard] = useState(false);
 
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const getAI = () => {
     const key = process.env.GEMINI_API_KEY;
@@ -4441,7 +4493,7 @@ function App() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
       const remainingSlots = 6 - photos.length;
@@ -5195,10 +5247,6 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     );
   }
 
-  if (!currentUser) {
-    return <AuthPage onAuthSuccess={initializeNewSession} />;
-  }
-
   if (!onboardingComplete) {
     return <OnboardingScreen onComplete={() => {
       setOnboardingComplete(true);
@@ -5211,6 +5259,13 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
       setWelcomeSeen(true);
       localStorage.setItem('welcomeSeen', 'true');
     }} />;
+  }
+
+  if (!currentUser && activeTab === 'auth') {
+    return <AuthPage onAuthSuccess={(user) => {
+      initializeNewSession(user);
+      setActiveTab('home');
+    }} onSkip={() => setActiveTab('home')} />;
   }
 
 
@@ -5270,25 +5325,42 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
           Skin Tight
         </span>
 
-        {fullUserData && (
-          <div 
-            id="headerAvatar"
-            onClick={() => setActiveTab('profile')}
-            style={{ 
-              width: '43px', height: '43px', borderRadius: '50%', 
-              background: fullUserData.profileColor || '#2dd4bf',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '16px', fontWeight: '900', color: '#020617',
-              cursor: 'pointer',
-              flexShrink: 0,
-              boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
-              border: '2px solid rgba(255,255,255,0.1)',
-              marginLeft: '2px'
-            }}
-          >
-            {fullUserData.fullName ? fullUserData.fullName.split(' ').map((n: any) => n?.[0] || '').join('').toUpperCase().slice(0, 2) : (fullUserData.username?.[0]?.toUpperCase() || 'U')}
-          </div>
-        )}
+        <div style={{ marginLeft: 'auto' }}>
+          {currentUser ? (
+            <div 
+              id="headerAvatar"
+              onClick={() => setActiveTab('profile')}
+              style={{ 
+                width: '43px', height: '43px', borderRadius: '50%', 
+                background: fullUserData?.profileColor || '#2dd4bf',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '16px', fontWeight: '900', color: '#020617',
+                cursor: 'pointer',
+                flexShrink: 0,
+                boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+                border: '2px solid rgba(255,255,255,0.1)'
+              }}
+            >
+              {fullUserData?.fullName ? fullUserData.fullName.split(' ').map((n: any) => n?.[0] || '').join('').toUpperCase().slice(0, 2) : (fullUserData?.username?.[0]?.toUpperCase() || 'U')}
+            </div>
+          ) : (
+            <button 
+              onClick={() => setActiveTab('auth')}
+              style={{
+                background: 'rgba(45, 212, 191, 0.1)',
+                border: '1px solid rgba(45, 212, 191, 0.2)',
+                color: '#2dd4bf',
+                padding: '6px 14px',
+                borderRadius: '12px',
+                fontSize: '12px',
+                fontWeight: '800',
+                cursor: 'pointer'
+              }}
+            >
+              Sign In
+            </button>
+          )}
+        </div>
       </header>
 
       <SideMenu 
@@ -5651,7 +5723,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
           )}
         </AnimatePresence>
 
-        {activeTab === 'profile' && (
+        {activeTab === 'profile' && currentUser && (
           <div className="page-container" style={styles.tabContent}>
             <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: '20px', marginBottom: '20px', width: '100%', overflow: 'hidden' }}>
               <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0, color: '#f8fafc', whiteSpace: 'nowrap' }}>My Profile</h2>
