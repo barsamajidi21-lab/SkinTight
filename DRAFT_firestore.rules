@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // --- Entity Validations ---
+    function isValidUser(data) {
+      return data.keys().hasAll(['fullName', 'username', 'email', 'fitzpatrickType', 'skinScore', 'streakDays', 'scansCompleted'])
+        && data.fullName is string && data.fullName.size() <= 128
+        && data.username is string && data.username.size() <= 64
+        && data.email is string && data.email.size() <= 128
+        && data.fitzpatrickType is int
+        && data.skinScore is int
+        && data.streakDays is int
+        && data.scansCompleted is int
+        && (data.get('ageRange', '') is string)
+        && (data.get('profileColor', '') is string)
+        && (data.get('ethnicity', '') is string);
+    }
+
+    function isValidScan(data) {
+      return data.keys().hasAll(['date', 'result'])
+        && data.result is map
+        && (data.get('note', '') is string)
+        && (data.get('photos', []) is list);
+    }
+
+    function isValidUsernameMap(data) {
+      return data.keys().hasOnly(['uid'])
+        && data.uid is string && data.uid.size() <= 128;
+    }
+
+    function isValidDoctorInfo(data) {
+      return data.get('name', '') is string
+        && data.get('email', '') is string
+        && data.get('phone', '') is string
+        && data.get('clinic', '') is string
+        && data.get('address', '') is string;
+    }
+
+    function isValidScoreHistory(data) {
+      return data.get('history', []) is list;
+    }
+
+    // --- Collections ---
+
+    // /users/{userId}
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data)
+        && request.resource.data.email == resource.data.email; // Email is immutable
+      
+      // Subcollections
+      match /scans/{scanId} {
+        allow list, get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidScan(request.resource.data);
+        allow update: if isOwner(userId) && isValidScan(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /timeline/scores {
+        allow get: if isOwner(userId);
+        allow write: if isOwner(userId) && isValidScoreHistory(request.resource.data);
+      }
+
+      match /doctorInfo/current {
+        allow get: if isOwner(userId);
+        allow write: if isOwner(userId) && isValidDoctorInfo(request.resource.data);
+      }
+    }
+
+    // /usernames/{username}
+    match /usernames/{username} {
+      allow get: if true; // Publicly readable for availability check
+      allow create: if isSignedIn() && isValidUsernameMap(request.resource.data) 
+        && request.resource.data.uid == request.auth.uid;
+      // No updates or deletes allowed once set
+    }
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string" },
+        "username": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "ageRange": { "type": "string" },
+        "fitzpatrickType": { "type": "integer" },
+        "profileColor": { "type": "string" },
+        "skinScore": { "type": "integer" },
+        "streakDays": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "scansCompleted": { "type": "integer" },
+        "ethnicity": { "type": "string" },
+        "lastScanDate": { "type": "string", "format": "date-time" },
+        "highUvDays": { "type": "integer" },
+        "nextScanDate": { "type": "string" },
+        "cycleProgress": { "type": "integer" },
+        "streakData": {
+          "type": "object",
+          "properties": {
+            "currentStreak": { "type": "integer" },
+            "longestStreak": { "type": "integer" },
+            "lastScanMonth": { "type": "string" }
+          }
+        },
+        "bodyDots": { "type": "array" }
+      },
+      "required": ["email", "username"]
+    },
+    "Scan": {
+      "title": "Scan",
+      "description": "A single skin scan entry",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date-time" },
+        "result": { "type": "object" },
+        "note": { "type": "string" },
+        "photos": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "ScoreHistory": {
+      "title": "Score History",
+      "description": "Historical skin scores",
+      "type": "object",
+      "properties": {
+        "history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": { "type": "string", "format": "date-time" },
+              "score": { "type": "integer" }
+            }
+          }
+        }
+      }
+    },
+    "DoctorInfo": {
+      "title": "Doctor Info",
+      "description": "Dermatologist contact information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "clinic": { "type": "string" },
+        "address": { "type": "string" }
+      }
+    },
+    "UsernameMap": {
+      "title": "Username Map",
+      "description": "Maps username to UID to enforce uniqueness",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" }
+      }
+    },
+    "Cycle": {
+      "title": "Cycle",
+      "description": "Weekly or monthly scan cycle progress",
+      "type": "object",
+      "properties": {
+        "zone1": { "type": "boolean" },
+        "zone2": { "type": "boolean" },
+        "zone3": { "type": "boolean" },
+        "zone4": { "type": "boolean" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/users/{userId}/scans/{scanId}": {
+      "schema": "Scan",
+      "description": "User skin scans"
+    },
+    "/users/{userId}/timeline/scores": {
+      "schema": "ScoreHistory",
+      "description": "User score history"
+    },
+    "/users/{userId}/doctorInfo/current": {
+      "schema": "DoctorInfo",
+      "description": "User's doctor contact"
+    },
+    "/users/{userId}/cycles/{cycleId}": {
+      "schema": "Cycle",
+      "description": "User scan cycle progress"
+    },
+    "/usernames/{username}": {
+      "schema": "UsernameMap",
+      "description": "Username registry"
+    }
+  }
+}

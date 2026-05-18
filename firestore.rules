@@ -1,0 +1,104 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Health check
+    match /_health_check_/heartbeat {
+      allow get: if true;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isVerified() {
+      // Relaxing verification requirement for now as some providers/environments report null
+      return isSignedIn();
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 256 && id.matches('^[a-zA-Z0-9_\\-\\.]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entity Validations ---
+    function isValidUser(data) {
+      // Basic keys required for a healthy profile
+      return data.keys().hasAll(['username', 'email', 'skinScore', 'scansCompleted'])
+        && data.username is string && data.username.size() <= 64
+        && data.email is string && data.email.size() <= 128
+        && data.get('skinScore', 100) is int
+        && data.get('scansCompleted', 0) is int;
+    }
+
+    function isValidScan(data) {
+      return data.keys().hasAll(['date', 'result'])
+        && data.result is map;
+    }
+
+    function isValidUsernameMap(data) {
+      return data.keys().hasAll(['uid'])
+        && data.uid is string && data.uid.size() <= 128;
+    }
+
+    // --- Collections ---
+
+    // /users/{userId}
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) 
+        && (!('email' in incoming()) || incoming().email == existing().email)
+        && (!('username' in incoming()) || incoming().username == existing().username);
+      
+      // Subcollections
+      match /scans/{scanId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId) && isValidId(scanId);
+        allow create: if isOwner(userId) && isValidScan(incoming());
+        allow update: if isOwner(userId) && isValidScan(incoming());
+        allow delete: if isOwner(userId) && isValidId(scanId);
+      }
+
+      match /cycles/{cycleId} {
+        allow get: if isOwner(userId) && isValidId(cycleId);
+        allow write: if isOwner(userId);
+      }
+
+      match /timeline/scores {
+        allow get: if isOwner(userId);
+        allow write: if isOwner(userId) && (incoming().get('history', []) is list);
+      }
+
+      match /doctorInfo/current {
+        allow get: if isOwner(userId);
+        allow write: if isOwner(userId);
+      }
+    }
+
+    // /usernames/{username}
+    match /usernames/{username} {
+      allow get: if true; // Public for availability check during signup
+      // UID mapping for uniqueness claim
+      allow create: if isSignedIn() && isValidUsernameMap(incoming()) 
+        && incoming().uid == request.auth.uid;
+      // Immutable
+    }
+  }
+}

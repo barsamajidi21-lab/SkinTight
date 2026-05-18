@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useMemo, Suspense, Component, ReactNode, FormEvent, ChangeEvent } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
 import { jsPDF } from "jspdf";
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, useGLTF, Float, Sparkles } from '@react-three/drei';
@@ -49,6 +48,7 @@ import {
   Info,
   Phone,
   Mail,
+  Clock,
   Edit3,
   Map,
   MapPin,
@@ -79,16 +79,42 @@ import {
   Heart
 } from 'lucide-react';
 
-// --- Constants ---
-const firebaseConfig = {
-  apiKey: "AIzaSyAjRB6aTxd-1w65vZfNrhytNtNYLm4vA-g",
-  authDomain: "skintight-fefe4.firebaseapp.com",
-  projectId: "skintight-fefe4",
-  storageBucket: "skintight-fefe4.firebasestorage.app",
-  messagingSenderId: "392837262380",
-  appId: "1:392837262380:web:907c312220168dd800f589"
-};
+import { db, auth } from './lib/firebase';
+import { 
+  collection, 
+  doc, 
+  getDoc, 
+  getDocFromServer,
+  getDocs, 
+  setDoc, 
+  updateDoc, 
+  addDoc, 
+  query, 
+  where, 
+  orderBy, 
+  limit, 
+  onSnapshot,
+  increment,
+  Timestamp,
+  FieldValue,
+  serverTimestamp,
+  deleteDoc,
+  DocumentSnapshot,
+  QuerySnapshot
+} from 'firebase/firestore';
+import { 
+  onAuthStateChanged, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  signOut,
+  User as FirebaseUser,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+  sendPasswordResetEmail
+} from 'firebase/auth';
 
+// --- Constants ---
 const ONESIGNAL_APP_ID = "9960c3dd-03ff-4220-8a73-77ff77838dad";
 
 // Helper to get current week cycle key (e.g., "2024-W15")
@@ -99,6 +125,94 @@ const getCurrentCycleKey = () => {
   const weekNum = Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
   return `${now.getFullYear()}-W${weekNum}`;
 };
+
+// --- Types & Enums ---
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth?.currentUser?.uid || null,
+      email: auth?.currentUser?.email || null,
+      emailVerified: auth?.currentUser?.emailVerified || null,
+      isAnonymous: auth?.currentUser?.isAnonymous || null,
+    },
+    operationType,
+    path
+  };
+  const errorString = JSON.stringify(errInfo);
+  console.error('Firestore Error Detailed: ', errorString);
+  // Do not throw to prevent app crashes, handle in UI
+}
+
+// Client-side AI Helper
+const callAI = async (prompt: string, model: string = "gemini-3-flash-preview", config: any = {}) => {
+  const response = await fetch("/api/ai/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt, model, config }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "AI Generation failed");
+  }
+  return await response.json();
+};
+
+const callAIVision = async (parts: any[], model: string = "gemini-3-flash-preview", config: any = {}) => {
+  const response = await fetch("/api/ai/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ parts, model, config }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "AI Vision Analysis failed");
+  }
+  return await response.json();
+};
+
+// Test Firestore connection as required by guidelines
+async function testFirestoreConnection() {
+  try {
+    // Use a unique dummy document to test connectivity
+    await getDoc(doc(db, '_health_check_', 'heartbeat'));
+    console.log("Firestore connection verified successfully.");
+  } catch (error: any) {
+    if (error && error.message && error.message.includes('offline')) {
+      console.error("Firestore is offline. Check database configuration and network.");
+    } else if (error && error.message && error.message.includes('not-found')) {
+      console.error("Critical: Database ID not found. Ensure the configured database exists.");
+    } else {
+      console.error("Firestore connectivity test failed:", error);
+    }
+  }
+}
+testFirestoreConnection();
+
+// Helper for server timestamps to avoid repeating long path
+const getServerTimestamp = () => serverTimestamp();
+const getIncrement = (val: number) => increment(val);
 
 const styles = {
     container: {
@@ -779,11 +893,15 @@ const styles = {
               id: e.id,
               name: e.tags.name || "Dermatology Clinic",
               address: e.tags['addr:street'] ? `${e.tags['addr:housenumber'] || ''} ${e.tags['addr:street']}, ${e.tags['addr:city'] || ''}` : "Address not available",
+              phone: e.tags.phone || e.tags['contact:phone'] || null,
+              website: e.tags.website || e.tags['contact:website'] || null,
+              hours: e.tags.opening_hours || null,
               lat: e.lat || (e.center ? e.center.lat : latitude),
               lon: e.lon || (e.center ? e.center.lon : longitude),
               distance: calculateDistance(latitude, longitude, e.lat || (e.center ? e.center.lat : latitude), e.lon || (e.center ? e.center.lon : longitude))
             }))
-            .sort((a: any, b: any) => a.distance - b.distance);
+            .sort((a: any, b: any) => a.distance - b.distance)
+            .slice(0, 5);
 
           if (foundClinics.length === 0 && radius === 10000) {
             setStatusMessage("No specialized clinics found nearby. Expanding search to 50km...");
@@ -799,7 +917,7 @@ const styles = {
                 node["amenity"="doctors"](around:20000, ${latitude}, ${longitude});
                 node["healthcare"="clinic"](around:20000, ${latitude}, ${longitude});
               );
-              out body 5;
+              out body;
             `;
             const genResponse = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(generalQuery)}`);
             const genData = await genResponse.json();
@@ -807,10 +925,13 @@ const styles = {
               id: e.id,
               name: e.tags.name || "Medical Center",
               address: e.tags['addr:street'] ? `${e.tags['addr:housenumber'] || ''} ${e.tags['addr:street']}` : "Address not available",
+              phone: e.tags.phone || e.tags['contact:phone'] || null,
+              website: e.tags.website || e.tags['contact:website'] || null,
+              hours: e.tags.opening_hours || null,
               lat: e.lat,
               lon: e.lon,
               distance: calculateDistance(latitude, longitude, e.lat, e.lon)
-            })).sort((a: any, b: any) => a.distance - b.distance);
+            })).sort((a: any, b: any) => a.distance - b.distance).slice(0, 5);
           }
 
           setClinics(foundClinics);
@@ -844,17 +965,36 @@ const styles = {
             }).addTo(mapInstance.current);
 
             marker.bindPopup(`
-              <div style="padding: 12px; min-width: 180px; font-family: 'Inter', sans-serif;">
-                <div style="font-size: 10px; color: ${isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8'}; font-weight: 800; text-transform: uppercase; margin-bottom: 4px;">${isSpecialized ? 'Specialized Care' : isHospital ? 'Hospital' : 'Medical Center'}</div>
-                <div style="font-weight: 800; color: #0f172a; margin-bottom: 4px; font-size: 14px;">${clinic.name}</div>
-                <div style="font-size: 11px; color: #64748b; margin-bottom: 12px;">${clinic.address}</div>
-                <div style="display: flex; gap: 8px;">
-                  <button onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${clinic.lat},${clinic.lon}')" style="flex: 1; background: #0f172a; color: white; border: none; padding: 8px; border-radius: 8px; font-weight: 700; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+              <div style="padding: 16px; min-width: 220px; font-family: 'Inter', sans-serif; background: #ffffff; border-radius: 12px;">
+                <div style="font-size: 10px; color: ${isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8'}; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em;">${isSpecialized ? 'Dermatology Specialist' : isHospital ? 'Hospital Facility' : 'Medical Center'}</div>
+                <div style="font-weight: 900; color: #0f172a; margin-bottom: 6px; font-size: 16px; line-height: 1.2;">${clinic.name}</div>
+                <div style="font-size: 12px; color: #64748b; margin-bottom: 12px; line-height: 1.4;">${clinic.address}</div>
+                
+                ${clinic.phone ? `
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: #334155; font-size: 12px; font-weight: 600;">
+                    <span style="color: #2dd4bf;">📞</span> ${clinic.phone}
+                  </div>
+                ` : ''}
+
+                ${clinic.hours ? `
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #334155; font-size: 11px;">
+                    <span style="color: #f59e0b;">🕒</span> ${clinic.hours}
+                  </div>
+                ` : ''}
+
+                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                  <button onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${clinic.lat},${clinic.lon}')" style="flex: 1; background: #0f172a; color: white; border: none; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 10px; cursor: pointer; transition: opacity 0.2s;">
                     DIRECTIONS
                   </button>
-                  <button style="flex: 1; background: #2dd4bf; color: #060818; border: none; padding: 8px; border-radius: 8px; font-weight: 700; font-size: 10px; cursor: pointer;">
-                    BOOK
-                  </button>
+                  ${clinic.phone ? `
+                    <button onclick="window.location.href='tel:${clinic.phone}'" style="flex: 1; background: #2dd4bf; color: #060818; border: none; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 10px; cursor: pointer;">
+                      CALL NOW
+                    </button>
+                  ` : `
+                    <button style="flex: 1; background: #f1f5f9; color: #64748b; border: none; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 10px; cursor: not-allowed;">
+                      NO PHONE
+                    </button>
+                  `}
                 </div>
               </div>
             `);
@@ -930,16 +1070,47 @@ const styles = {
               <p style={{ color: '#64748b', fontSize: '14px' }}>No clinics found in your area.</p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {clinics?.slice(0, 3).map(clinic => (
-                <div key={clinic.id} className="glass-card" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '700', fontSize: '15px' }}>{clinic.name}</div>
-                    <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>{clinic.address}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {clinics?.slice(0, 5).map(clinic => (
+                <div key={clinic.id} className="glass-card" style={{ padding: '20px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '900', fontSize: '17px', color: '#fff', marginBottom: '4px' }}>{clinic.name}</div>
+                      <div style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.4' }}>{clinic.address}</div>
+                    </div>
+                    <div style={{ padding: '6px 12px', background: 'rgba(45, 212, 191, 0.1)', borderRadius: '100px', fontSize: '12px', fontWeight: '900', color: '#2dd4bf' }}>
+                      {clinic.distance.toFixed(1)} km
+                    </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '14px', fontWeight: '800', color: '#00B4D8' }}>{clinic.distance.toFixed(1)} km</div>
-                    <button style={{ background: 'transparent', border: 'none', color: '#2dd4bf', fontSize: '12px', fontWeight: '700', padding: 0, marginTop: '4px' }}>DETAILS</button>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                    {clinic.phone && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#fff', fontWeight: '700' }}>
+                        <Phone size={14} className="text-teal-400" /> {clinic.phone}
+                      </div>
+                    )}
+                    {clinic.hours && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#94a3b8' }}>
+                        <Clock size={14} className="text-amber-400" /> {clinic.hours}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button 
+                      onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${clinic.lat},${clinic.lon}`)}
+                      style={{ flex: 1, padding: '12px', borderRadius: '14px', background: '#fff', color: '#0f172a', fontWeight: '900', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    >
+                      <MapPin size={16} /> DIRECTIONS
+                    </button>
+                    {clinic.phone && (
+                      <button 
+                        onClick={() => window.location.href = `tel:${clinic.phone}`}
+                        style={{ flex: 1, padding: '12px', borderRadius: '14px', background: 'rgba(45, 212, 191, 0.1)', border: '1px solid rgba(45, 212, 191, 0.2)', color: '#2dd4bf', fontWeight: '900', fontSize: '12px' }}
+                      >
+                        CALL CLINIC
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -1347,10 +1518,7 @@ const WelcomePage = ({ onComplete }: { onComplete: () => void }) => {
 const AboutPage = () => {
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
   };
 
   const itemVariants = {
@@ -1364,127 +1532,92 @@ const AboutPage = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="w-full space-y-12 pb-20"
+        className="w-full space-y-8 pb-32"
       >
-        {/* HEADER */}
-        <motion.div variants={itemVariants} className="flex flex-col items-center text-center pt-8">
-          <div style={{
-            width: '100px', height: '100px', borderRadius: '30px',
-            background: 'rgba(45, 212, 191, 0.1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginBottom: '24px', border: '1px solid rgba(45, 212, 191, 0.2)',
-            boxShadow: '0 0 30px rgba(45, 212, 191, 0.3)'
-          }}>
-            <Dna size={50} color="#2dd4bf" className="animate-pulse" />
+        {/* CONTACT SECTION (Starts the page) */}
+        <motion.div variants={itemVariants} className="p-6 text-center bg-teal-500/5 rounded-3xl border border-teal-500/10 mt-4 overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/10 blur-3xl -mr-16 -mt-16 rounded-full" />
+          <h2 className="text-base font-black text-white mb-2">Questions or Feedback?</h2>
+          <p className="text-sm text-slate-400 mb-6 max-w-sm mx-auto leading-relaxed">
+            We value your experience and safety. Our team is here to help with any questions or issues you may have.
+          </p>
+          
+          <div className="inline-flex items-center gap-3 px-6 py-3 bg-teal-500 text-slate-950 rounded-full font-black text-sm shadow-xl shadow-teal-500/20 hover:scale-105 transition-transform cursor-pointer">
+            <Mail size={16} /> support.skintight@gmail.com
           </div>
-          <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#f8fafc', marginBottom: '8px' }}>Skin Tight</h1>
-          <p style={{ fontSize: '18px', color: '#2dd4bf', fontWeight: '600' }}>AI-powered skin cancer monitoring for everyone.</p>
+          
+          <div className="mt-6 pt-6 border-t border-white/5">
+            <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest leading-loose">
+              Always call emergency services for immediate medical concerns.
+            </p>
+          </div>
+        </motion.div>
+
+        {/* HEADER */}
+        <motion.div variants={itemVariants} className="flex flex-col items-center text-center pt-4">
+          <div className="w-20 h-20 rounded-2xl bg-teal-500/10 flex items-center justify-center mb-6 border border-teal-500/20 shadow-2xl shadow-teal-500/10">
+            <Dna size={40} color="#2dd4bf" />
+          </div>
+          <h1 className="text-2xl font-black text-white mb-2">Skin Tight</h1>
+          <p className="text-base text-teal-400 font-medium">AI-powered skin cancer monitoring for everyone.</p>
         </motion.div>
 
         {/* MISSION SECTION */}
-        <motion.div variants={itemVariants} className="glass-card p-8 rounded-3xl">
-          <h2 className="text-xl font-black text-white mb-4 flex items-center gap-2">
-            <SparklesIcon size={20} className="text-teal-400" /> Our Mission
+        <motion.div variants={itemVariants} className="glass-card p-6 rounded-2xl border border-white/5">
+          <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <SparklesIcon size={18} className="text-teal-400" /> Our Mission
           </h2>
-          <p className="text-slate-300 leading-relaxed text-sm">
-            Skin cancer is the most common cancer in the world, affecting 1 in 5 Americans. However, when caught early, survival rates exceed 98%. Skin Tight is built to help you monitor suspicious spots using AI screening trained on clinical dermatology guidelines, ensuring you know when to see a doctor before it's too late.
+          <p className="text-sm text-slate-400 leading-relaxed">
+            Skin cancer is the most common cancer in the world, affecting 1 in 5 people. However, when caught early, survival rates exceed 98%. Skin Tight is built to help you monitor suspicious spots using AI screening, ensuring you stay ahead of your skin health.
           </p>
         </motion.div>
 
         {/* IMPACT STATS */}
-        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <motion.div variants={itemVariants} className="grid grid-cols-1 gap-4">
           {[
-            { label: '1 in 5', sub: 'Americans develop skin cancer' },
-            { label: '98%', sub: 'survival rate when caught early' },
-            { label: '60 sec', sub: 'to complete a scan' }
+            { label: '1 in 5 Americans', sub: 'Develop skin cancer' },
+            { label: '98% survival', sub: 'When caught early' },
+            { label: '60 seconds', sub: 'To complete a scan' }
           ].map((stat, i) => (
-            <div key={i} className="glass-card p-6 rounded-2xl text-center">
-              <div className="text-2xl font-black text-teal-400 mb-1">{stat.label}</div>
-              <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">{stat.sub}</div>
+            <div key={i} className="glass-card p-4 rounded-xl flex justify-between items-center bg-white/5 border border-white/5">
+              <span className="text-sm font-black text-teal-400">{stat.label}</span>
+              <span className="text-xs text-slate-500 font-medium">{stat.sub}</span>
             </div>
           ))}
         </motion.div>
 
-        {/* WHAT WE DO SECTION */}
-        <motion.div variants={itemVariants} className="space-y-4">
-          <h2 className="text-lg font-black text-white px-2">What Skin Tight does</h2>
-          <div className="space-y-3">
-            {[
-              'Uses AI to analyze photos of suspicious spots.',
-              'Uses clinical criteria to assess skin cancer risk.',
-              'Tracks changes and alerts you when to see a doctor.'
-            ].map((point, i) => (
-              <div key={i} className="glass-card p-4 rounded-2xl flex items-start gap-4">
-                <CheckCircle2 size={20} className="text-teal-400 shrink-0 mt-0.5" />
-                <span className="text-sm text-slate-300">{point}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
+        {/* SECTIONS */}
+        {[
+          { title: 'What Skin Tight does', points: ['Analyze photos of suspicious spots', 'Assess skin cancer risk', 'Track changes over time'], icon: <CheckCircle2 size={16} className="text-teal-400" /> },
+          { title: 'What we do NOT do', points: ['Provide medical diagnoses', 'Replace dermatology care', 'Offer beauty advice'], icon: <X size={16} className="text-red-400" /> }
+        ].map((sec, i) => (
+          <motion.div key={i} variants={itemVariants} className="space-y-4">
+            <h2 className="text-base font-bold text-white pl-2">{sec.title}</h2>
+            <div className="space-y-3">
+              {sec.points.map((p, j) => (
+                <div key={j} className="glass-card p-4 rounded-xl flex items-center gap-4 bg-white/5 border border-white/5">
+                  {sec.icon}
+                  <span className="text-sm text-slate-300">{p}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        ))}
 
-        {/* WHAT WE DO NOT DO SECTION */}
-        <motion.div variants={itemVariants} className="space-y-4">
-          <h2 className="text-lg font-black text-white px-2">What Skin Tight does NOT do</h2>
-          <div className="space-y-3">
-            {[
-              'Provide official medical diagnoses.',
-              'Replace professional dermatology care.',
-              'Offer general beauty or skincare advice.'
-            ].map((point, i) => (
-              <div key={i} className="glass-card p-4 rounded-2xl flex items-start gap-4 border-red-500/10">
-                <X size={20} className="text-red-400 shrink-0 mt-0.5" />
-                <span className="text-sm text-slate-400">{point}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* IMPORTANT DISCLAIMER SECTION */}
-        <motion.div variants={itemVariants} className="p-8 rounded-3xl bg-amber-500/10 border border-amber-500/20">
-          <h2 className="text-lg font-black text-amber-500 mb-4 flex items-center gap-2">
-            <AlertTriangle size={24} /> Important Notice
+        {/* IMPORTANT DISCLAIMER */}
+        <motion.div variants={itemVariants} className="p-6 rounded-2xl bg-amber-500/5 border border-amber-500/10">
+          <h2 className="text-sm font-bold text-amber-500 mb-3 flex items-center gap-2">
+            <AlertTriangle size={18} /> Important Notice
           </h2>
-          <p className="text-sm text-amber-200/80 leading-relaxed">
-            Skin Tight is an AI-powered wellness tool in beta, designed to help identify skin changes early. It is NOT a medical device and should NEVER replace professional medical advice. Always consult a board-certified dermatologist for diagnoses. If you notice pain, bleeding, or rapid changes, seek medical help immediately regardless of app results.
-          </p>
-        </motion.div>
-
-        {/* CLINICAL SOURCES SECTION */}
-        <motion.div variants={itemVariants} className="space-y-4">
-          <h2 className="text-lg font-black text-white px-2">Built on Clinical Research</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              'American Academy of Dermatology — Clinical Practice Guidelines',
-              'The Skin Cancer Foundation — ABCDE Detection Framework',
-              'Yale School of Medicine — Melanoma in Situ Research',
-              'Brown University — Dermatology and Cutaneous Oncology'
-            ].map((source, i) => (
-              <div key={i} className="glass-card p-4 rounded-2xl flex items-center gap-4">
-                <FileText size={20} className="text-slate-400 shrink-0" />
-                <span className="text-xs text-slate-300">{source}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* CONTACT SECTION */}
-        <motion.div variants={itemVariants} className="p-4 text-center border-t border-white/5 opacity-70">
-          <h2 className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Questions or Feedback</h2>
-          <p className="text-[8px] text-slate-600 mb-3 uppercase tracking-wider">
-            If you have feedback or encounter an issue, reach out to us at:
-          </p>
-          <div className="flex justify-center items-center gap-2 text-[13px] text-teal-400 font-black mb-3">
-            <Mail size={14} /> support.skintight@gmail.com
-          </div>
-          <p className="text-[7px] text-red-500/30 font-black uppercase tracking-[0.15em]">
-            ALWAYS CALL EMERGENCY SERVICES FOR IMMEDIATE MEDICAL CONCERNS.
+          <p className="text-xs text-amber-200/60 leading-relaxed">
+            Skin Tight is an AI-powered tool. Not a medical device. Always consult a dermatologist for diagnoses. Seek medical help for rapid changes.
           </p>
         </motion.div>
 
         {/* VERSION INFO */}
-        <motion.div variants={itemVariants} className="text-center pb-8 space-y-1 opacity-40">
-          <p className="text-[7px] text-slate-700 font-black uppercase tracking-[0.2em]">Skin Tight — Beta Version 1.0 — Built with Gemini AI</p>
-          <p className="text-[7px] text-slate-800 uppercase font-bold">© 2025 Skin Tight. All rights reserved.</p>
+        <motion.div variants={itemVariants} className="text-center pt-8 opacity-40">
+          <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Skin Tight — Beta 1.0 — Built with Gemini AI</p>
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">© 2025 Skin Tight. All rights reserved.</p>
         </motion.div>
       </motion.div>
     </div>
@@ -1874,7 +2007,7 @@ const SideMenu = ({
                 {fullUserData?.fullName ? fullUserData.fullName.charAt(0).toUpperCase() : (fullUserData?.username?.[0]?.toUpperCase() || 'U')}
             </div>
             <div style={{ fontWeight: '800', fontSize: '20px', color: '#f8fafc' }}>{fullUserData?.displayName || 'Skin Tight User'}</div>
-            <div style={{ fontSize: '14px', color: '#94a3b8' }}>{currentUser.email}</div>
+            <div style={{ fontSize: '14px', color: '#94a3b8' }}>{currentUser?.email || fullUserData?.email || 'N/A'}</div>
           </div>
         )}
 
@@ -2104,9 +2237,9 @@ const tagUserScanCompleted = () => {
   }
   
   if (auth.currentUser) {
-    db.collection("users").doc(auth.currentUser.uid).update({
-      lastScanCompletedAt: (window as any).firebase.firestore.FieldValue.serverTimestamp()
-    });
+    updateDoc(doc(db, "users", auth.currentUser.uid), {
+      lastScanCompletedAt: getServerTimestamp()
+    }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${auth.currentUser?.uid}`));
   }
 };
 
@@ -2116,26 +2249,17 @@ const checkAndShowScanReminder = () => {
   
   const cycleKey = getCurrentCycleKey();
   
-  db.collection("users").doc(user.uid)
-    .collection("cycles").doc(cycleKey)
-    .get()
-    .then(function(doc: any) {
-      const data = doc.exists ? doc.data() : {};
+  getDoc(doc(db, "users", user.uid, "cycles", cycleKey))
+    .then(function(docSnap: any) {
+      const data = docSnap.exists() ? docSnap.data() : {};
       const hasCompletedAny = data.zone1 || data.zone2 || data.zone3 || data.zone4;
       
       const reminderBanner = document.getElementById("scanReminderBanner");
       if (!hasCompletedAny && reminderBanner) {
         reminderBanner.style.display = "flex";
       }
-    });
+    }).catch(err => handleFirestoreError(err, OperationType.GET, `users/${user.uid}/cycles/${cycleKey}`));
 };
-
-// Initialize Firebase (using compat mode as requested)
-if (!(window as any).firebase.apps.length) {
-  (window as any).firebase.initializeApp(firebaseConfig);
-}
-const auth = (window as any).firebase.auth();
-const db = (window as any).firebase.firestore();
 
 const AI_SYSTEM_PROMPT = `You are a specialist AI skin cancer screening assistant. Your ONLY purpose is to help users identify suspicious skin lesions, moles, spots or growths that may indicate skin cancer or pre-cancerous conditions. You do NOT provide general skincare advice, beauty recommendations, anti-aging tips, cosmetic suggestions or general dermatology advice unrelated to skin cancer risk. If a user asks about anything outside of skin cancer screening, detection, prevention or monitoring, respond with: 'This app is specifically designed for skin cancer screening and monitoring. For general skincare advice please consult a dermatologist or skincare professional.' Always focus on: suspicious lesion analysis, ABCDE criteria assessment, skin cancer type identification, UV damage risk, monitoring frequency recommendations, and when to see a dermatologist urgently. Cover the entire body surface — not just the face. Any part of the skin on any body area can develop skin cancer and deserves equal attention.`;
 
@@ -2445,6 +2569,30 @@ function shouldRegenerateProtocol(userData: any) {
   return lastScan > generatedAt;
 }
 
+const mapScanData = (docId: string, data: any): ScanRecord => {
+  const result: AnalysisResult = data.result || {
+    risk_level: (data.riskLevel || 'low') as any,
+    confidence_level: (data.confidence || 'medium') as any,
+    findings: data.findings || [],
+    concerning_signs: data.concerningSigns || [],
+    risk_factors_identified: data.riskFactorsIdentified || [],
+    summary: data.summary || 'Scan results from ' + (data.date?.toDate?.() || new Date(data.date || Date.now())).toLocaleDateString(),
+    action_card: data.actionCard || '',
+    suggestions: data.suggestions || [],
+    urgency: data.urgency || 'Routine',
+    data_quality_note: data.dataQualityNote || '',
+    disclaimer: data.disclaimer || "This is an AI screening tool, not a medical diagnosis."
+  };
+
+  return {
+    id: docId,
+    ...data,
+    date: data.date?.toDate ? data.date.toDate().toISOString() : (typeof data.date === 'string' ? data.date : new Date().toISOString()),
+    result,
+    photos: data.photoBase64 ? [data.photoBase64] : (data.photos || [])
+  };
+};
+
 function renderHowToImprove(data: any, currentScore: number) {
   const contentEl = document.getElementById("howToImproveContent");
   if (!contentEl) return;
@@ -2479,8 +2627,6 @@ function renderHowToImprove(data: any, currentScore: number) {
 }
 
 async function loadHowToImprove() {
-  const auth = (window as any).firebase.auth();
-  const db = (window as any).firebase.firestore();
   const user = auth.currentUser;
   if (!user) return;
  
@@ -2491,10 +2637,18 @@ async function loadHowToImprove() {
   if (contentEl) contentEl.innerHTML = '<div style="text-align:center;padding:40px;color:#00B4D8;">Generating your personal action plan...</div>';
  
   try {
-    const userDoc = await db.collection("users").doc(user.uid).get();
+    let userDoc;
+    try {
+      userDoc = await getDoc(doc(db, "users", user.uid));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.GET, `users/${user.uid}`);
+      return;
+    }
     const profile = userDoc.data();
     
-    if (!profile) throw new Error("User profile not found.");
+    if (!profile) {
+      throw new Error("User profile not found. Please ensure you've completed your registration and try logging in again.");
+    }
 
     // Check cache
     if (profile.howToImproveCache && !shouldRegenerateProtocol(profile)) {
@@ -2502,14 +2656,27 @@ async function loadHowToImprove() {
       return;
     }
 
-    const snapshot = await db.collection("users").doc(user.uid).collection("scans")
-      .orderBy("date", "desc").limit(3).get();
+    let snapshot;
+    try {
+      snapshot = await getDocs(query(collection(db, "users", user.uid, "scans"), orderBy("date", "desc"), limit(3)));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.GET, `users/${user.uid}/scans`);
+      return;
+    }
        
     const recentScans: any[] = [];
-    snapshot.forEach(function(d: any) { recentScans.push(d.data()); });
+    snapshot.forEach(function(d: any) { 
+      const data = d.data();
+      const mapped = mapScanData(d.id, data);
+      recentScans.push({
+        region: mapped.bodyRegion,
+        risk: mapped.result.risk_level || "none",
+        date: mapped.date
+      }); 
+    });
        
-    const latestRisk = recentScans.length > 0 ? (recentScans[0].result?.risk_level || "none") : "none";
     const currentScore = profile.skinScore || 100;
+    const scanHistoryText = recentScans.map(s => `- ${s.region} (${s.risk} risk, scanned on ${new Date(s.date).toLocaleDateString()})`).join("\n");
        
     const prompt = `You are a skin cancer prevention specialist. Based on this user profile give them a personalized action plan to improve their skin health score and minimize skin cancer risk.
 
@@ -2518,7 +2685,7 @@ User profile:
 - Fitzpatrick skin type: ${profile.fitzpatrickType || "unknown"}
 - Age range: ${profile.ageRange || "unknown"}
 - Ethnicity: ${profile.ethnicity || "unknown"}
-- Most recent scan risk level: ${latestRisk}
+- Most recent scan risk level: ${recentScans.length > 0 ? recentScans[0].risk : "none"}
 - Total scans completed: ${profile.scansCompleted || 0}
 
 Generate exactly 5 specific actionable steps this person can take RIGHT NOW to improve their score and reduce skin cancer risk. Each step must be directly relevant to their skin type and risk level.
@@ -2538,21 +2705,11 @@ Format your response as JSON only with this structure:
 
 Focus only on skin cancer prevention. No general beauty or cosmetic advice. No filler content. Be direct and specific.`;
 
-    const key = process.env.GEMINI_API_KEY;
-    if (!key || key === "undefined" || key === "") {
-      throw new Error("Gemini API key is missing. Please check your settings.");
-    }
-
-    const ai = new GoogleGenAI({ apiKey: key });
-    const response = await ai.models.generateContent({
-      model: "gemini-flash-latest",
-      contents: [{ parts: [{ text: prompt }] }],
-      config: {
-        responseMimeType: "application/json"
-      }
+    const responseData = await callAI(prompt, "gemini-3-flash-preview", {
+      responseMimeType: "application/json"
     });
 
-    const aiText = response.text;
+    const aiText = responseData.text;
 
     if (!aiText) {
       throw new Error("AI response was empty or blocked by safety filters.");
@@ -2566,10 +2723,14 @@ Focus only on skin cancer prevention. No general beauty or cosmetic advice. No f
     }
     
     // Save to cache
-    await db.collection("users").doc(user.uid).update({
-      howToImproveCache: result,
-      howToImproveGeneratedAt: (window as any).firebase.firestore.FieldValue.serverTimestamp()
-    });
+    try {
+      await updateDoc(doc(db, "users", user.uid), {
+        howToImproveCache: result,
+        howToImproveGeneratedAt: getServerTimestamp()
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `users/${user.uid}`);
+    }
     
     renderHowToImprove(result, currentScore);
   } catch (error: any) {
@@ -3260,9 +3421,9 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
       color: '#f8fafc',
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'stretch',
+      alignItems: 'center',
       justifyContent: 'center',
-      padding: '10px',
+      padding: '24px 16px',
       fontFamily: 'Inter, sans-serif'
     }}>
       <motion.div 
@@ -3270,15 +3431,18 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
         animate={{ opacity: 1, y: 0 }}
         style={{
           width: '100%',
+          maxWidth: '480px',
           background: 'rgba(15, 23, 42, 0.6)',
           backdropFilter: 'blur(20px)',
           borderRadius: '32px',
-          padding: '24px',
+          padding: '32px 24px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div style={{ 
             width: '80px', height: '80px', background: 'rgba(45, 212, 191, 0.1)', 
             borderRadius: '24px', display: 'flex', alignItems: 'center', 
@@ -3444,10 +3608,10 @@ const AuthPage = ({ onAuthSuccess, onSkip }: { onAuthSuccess: (user: any) => voi
     }
     const checkUsername = async () => {
       try {
-        const doc = await db.collection("usernames").doc(username.toLowerCase()).get();
-        setUsernameAvailable(!doc.exists);
+        const docSnap = await getDoc(doc(db, "usernames", username.toLowerCase()));
+        setUsernameAvailable(!docSnap.exists());
       } catch (err) {
-        console.error("Error checking username:", err);
+        handleFirestoreError(err, OperationType.GET, `usernames/${username.toLowerCase()}`);
       }
     };
     const timer = setTimeout(checkUsername, 500);
@@ -3455,18 +3619,35 @@ const AuthPage = ({ onAuthSuccess, onSkip }: { onAuthSuccess: (user: any) => voi
   }, [username, authView]);
 
   const handleAuthError = (error: any) => {
+    console.error("Authentication Error Handler:", error);
     const messages: Record<string, string> = {
       "auth/email-already-in-use": "An account with this email already exists. Please sign in.",
       "auth/invalid-email": "Please enter a valid email address.",
       "auth/weak-password": "Password must be at least 6 characters.",
-      "auth/user-not-found": "No account found with that email address.",
+      "auth/user-not-found": "No account found with that email address. Please sign up instead.",
       "auth/wrong-password": "Incorrect password. Please try again or reset your password.",
       "auth/too-many-requests": "Too many failed attempts. Please wait a few minutes and try again.",
       "auth/network-request-failed": "Network error. Please check your connection and try again.",
-      "auth/invalid-credential": "Incorrect email or password. Please try again."
+      "auth/invalid-credential": "Incorrect email or password. Please try again.",
+      "auth/operation-not-allowed": "Email/Password sign-in is disabled. Please enable it in your Firebase Console under Authentication > Sign-in method."
     };
     
-    const message = messages[error.code] || "Something went wrong. Please try again.";
+    let message = messages[error.code];
+    if (!message) {
+      // Check if it's a wrapped Firestore error from handleFirestoreError
+      if (error.message && error.message.includes("operationType")) {
+        try {
+          const detail = JSON.parse(error.message);
+          message = `Database Error: ${detail.error}. Please contact support with path: ${detail.path}`;
+        } catch (e) {
+          message = error.message || "Something went wrong. Please try again.";
+        }
+      } else if (error.code) {
+        message = `Auth Error (${error.code}): ${error.message}`;
+      } else {
+        message = error.message || "Something went wrong. Please try again.";
+      }
+    }
     showErrorMessage(message);
   };
 
@@ -3484,7 +3665,7 @@ const AuthPage = ({ onAuthSuccess, onSkip }: { onAuthSuccess: (user: any) => voi
     setLoading(true);
     setError(null);
     try {
-      const userCredential = await auth.signInWithEmailAndPassword(email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       onAuthSuccess(userCredential.user);
     } catch (err: any) {
       handleAuthError(err);
@@ -3515,25 +3696,33 @@ const AuthPage = ({ onAuthSuccess, onSkip }: { onAuthSuccess: (user: any) => voi
     setLoading(true);
     setError(null);
     try {
-      const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-      await userCredential.user.updateProfile({ displayName: fullName });
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(userCredential.user, { displayName: fullName });
       
-      await db.collection("users").doc(userCredential.user.uid).set({
-        fullName: fullName,
-        username: username.toLowerCase(),
-        email: email,
-        ageRange: ageRange,
-        fitzpatrickType: fitzpatrick,
-        profileColor: profileColor,
-        skinScore: 100,
-        streakDays: 0,
-        createdAt: (window as any).firebase.firestore.FieldValue.serverTimestamp(),
-        scansCompleted: 0
-      });
+      try {
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+          fullName: fullName,
+          username: username.toLowerCase(),
+          email: email,
+          ageRange: ageRange,
+          fitzpatrickType: fitzpatrick,
+          profileColor: profileColor,
+          skinScore: 100,
+          streakDays: 0,
+          createdAt: getServerTimestamp(),
+          scansCompleted: 0
+        });
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, `users/${userCredential.user.uid}`);
+      }
 
-      await db.collection("usernames").doc(username.toLowerCase()).set({
-        uid: userCredential.user.uid
-      });
+      try {
+        await setDoc(doc(db, "usernames", username.toLowerCase()), {
+          uid: userCredential.user.uid
+        });
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, `usernames/${username.toLowerCase()}`);
+      }
 
       onAuthSuccess(userCredential.user);
     } catch (err: any) {
@@ -3552,7 +3741,7 @@ const AuthPage = ({ onAuthSuccess, onSkip }: { onAuthSuccess: (user: any) => voi
     setLoading(true);
     setError(null);
     try {
-      await auth.sendPasswordResetEmail(email);
+      await sendPasswordResetEmail(auth, email);
       showSuccessMessage(`✅ Reset email sent to ${email}. Check your inbox. The link expires in 24 hours.`);
     } catch (err: any) {
       if (err.code === "auth/user-not-found") {
@@ -3583,9 +3772,9 @@ const AuthPage = ({ onAuthSuccess, onSkip }: { onAuthSuccess: (user: any) => voi
       color: '#f8fafc',
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'stretch',
+      alignItems: 'center',
       justifyContent: 'center',
-      padding: '10px',
+      padding: '24px 16px',
       fontFamily: 'Inter, sans-serif'
     }}>
       <motion.div 
@@ -3593,23 +3782,26 @@ const AuthPage = ({ onAuthSuccess, onSkip }: { onAuthSuccess: (user: any) => voi
         animate={{ opacity: 1, y: 0 }}
         style={{
           width: '100%',
+          maxWidth: '480px',
           background: 'rgba(15, 23, 42, 0.6)',
           backdropFilter: 'blur(20px)',
           borderRadius: '32px',
-          padding: '24px',
+          padding: '32px 24px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
         {authView === 'forgot' ? (
           <div style={{ position: 'relative' }}>
             <button 
               onClick={() => { setAuthView('signin'); setSuccess(null); setError(null); }}
-              style={{ position: 'absolute', top: '-20px', left: '-20px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              style={{ position: 'absolute', top: '-10px', left: '-10px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
             >
               <ArrowLeft size={20} />
             </button>
-            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px' }}>Reset your password</h2>
               <p style={{ color: '#94a3b8', fontSize: '14px' }}>Enter your email address and we will send you a link to reset your password.</p>
             </div>
@@ -3655,7 +3847,7 @@ const AuthPage = ({ onAuthSuccess, onSkip }: { onAuthSuccess: (user: any) => voi
           </div>
         ) : (
           <>
-            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ 
                 width: '60px', height: '60px', background: 'rgba(45, 212, 191, 0.1)', 
                 borderRadius: '18px', display: 'flex', alignItems: 'center', 
@@ -3781,8 +3973,8 @@ const AuthPage = ({ onAuthSuccess, onSkip }: { onAuthSuccess: (user: any) => voi
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div>
                       <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px', fontWeight: '600' }}>AGE RANGE</label>
                       <select 
                         value={ageRange} 
@@ -3792,6 +3984,41 @@ const AuthPage = ({ onAuthSuccess, onSkip }: { onAuthSuccess: (user: any) => voi
                         <option value="">Select</option>
                         {ageRanges.map(r => <option key={r} value={r}>{r}</option>)}
                       </select>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '10px', fontWeight: '600' }}>SKIN TYPE (FITZPATRICK)</label>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+                        {[1,2,3,4,5,6].map((type) => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => setFitzpatrick(type)}
+                            style={{
+                              flex: 1,
+                              aspectRatio: '1/1',
+                              borderRadius: '10px',
+                              border: fitzpatrick === type ? '2px solid #2dd4bf' : '1px solid rgba(255,255,255,0.1)',
+                              background: [
+                                '#F6E4E2', // Type I
+                                '#F1C1B0', // Type II
+                                '#D6A88C', // Type III
+                                '#A67C52', // Type IV
+                                '#7A4A33', // Type V
+                                '#3C2219'  // Type VI
+                              ][type-1],
+                              cursor: 'pointer',
+                              transform: fitzpatrick === type ? 'scale(1.1)' : 'scale(1)',
+                              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                              boxShadow: fitzpatrick === type ? '0 0 15px rgba(45, 212, 191, 0.4)' : 'none'
+                            }}
+                            title={`Type ${type}`}
+                          />
+                        ))}
+                      </div>
+                      <p style={{ fontSize: '11px', color: '#64748b', marginTop: '8px', textAlign: 'center' }}>
+                        {fitzpatrick > 0 ? `Selected: Type ${fitzpatrick}` : 'Select your skin type'}
+                      </p>
                     </div>
                   </div>
                 </>
@@ -3901,6 +4128,43 @@ function setOneSignalExternalId(userId: string) {
   });
 }
 
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true };
+  }
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("Uncaught app error:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ minHeight: '100vh', background: '#020617', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center' }}>
+          <div style={{ padding: '40px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '32px', maxWidth: '400px' }}>
+            <div style={{ width: '64px', height: '64px', background: 'rgba(239, 68, 68, 0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+              <AlertTriangle size={32} color="#f87171" />
+            </div>
+            <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#fff', marginBottom: '12px' }}>Oops! Something went wrong</h2>
+            <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '32px', lineHeight: '1.6' }}>
+              We've encountered an unexpected error. Don't worry, your data is safe. Please try refreshing the app.
+            </p>
+            <button 
+              onClick={() => window.location.reload()}
+              style={{ width: '100%', padding: '16px', background: '#2dd4bf', color: '#020617', border: 'none', borderRadius: '16px', fontWeight: '800', cursor: 'pointer' }}
+            >
+              Reload App
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function App() {
   // --- Navigation State ---
   const [activeTab, setActiveTab] = useState<'home' | 'scan' | 'timeline' | 'routine' | 'plans' | 'profile' | 'clinic' | 'welcome' | 'auth'>('home');
@@ -3929,6 +4193,22 @@ function App() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // --- Connectivity Check ---
+  useEffect(() => {
+    const testConnection = async () => {
+      try {
+        await getDocFromServer(doc(db, '_health_check_', 'heartbeat'));
+        console.log("Firebase connection established.");
+      } catch (error: any) {
+        if (error.message && (error.message.includes('the client is offline') || error.message.includes('Missing or insufficient permissions'))) {
+          // Heartbeat might fail if rules are blocking it, but we want to know if truly offline
+          if (!navigator.onLine) setIsOffline(true);
+        }
+      }
+    };
+    testConnection();
+  }, []);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -4029,10 +4309,10 @@ function App() {
     const user = auth.currentUser;
     if (!user) return;
     
-    db.collection("users").doc(user.uid).get().then(function(doc: any) {
-      if (!doc.exists) return;
+    getDoc(doc(db, "users", user.uid)).then(function(docSnap: any) {
+      if (!docSnap.exists()) return;
       
-      const data = doc.data();
+      const data = docSnap.data();
       const displayNameSource = data.fullName || data.username || "U";
       const firstLetter = displayNameSource.charAt(0).toUpperCase();
       const profileColor = data.profileColor || "#00B4D8";
@@ -4050,19 +4330,19 @@ function App() {
       
       const menuEmail = document.getElementById("menuUserEmail");
       if (menuEmail) {
-        menuEmail.textContent = data.email || "";
+        menuEmail.textContent = data.email || auth.currentUser?.email || "";
       }
-    });
+    }).catch((err: any) => handleFirestoreError(err, OperationType.GET, `users/${user.uid}`));
   };
 
   const updateAllAvatars = () => {
     const user = auth.currentUser;
     if (!user) return;
     
-    db.collection("users").doc(user.uid).get().then(function(doc: any) {
-      if (!doc.exists) return;
+    getDoc(doc(db, "users", user.uid)).then(function(docSnap: any) {
+      if (!docSnap.exists()) return;
       
-      const data = doc.data();
+      const data = docSnap.data();
       const displayNameSource = data.fullName || data.username || "U";
       const firstLetter = displayNameSource.charAt(0).toUpperCase();
       const profileColor = data.profileColor || "#00B4D8";
@@ -4086,9 +4366,9 @@ function App() {
         "#menuUserEmail, .displayUserEmail"
       );
       allEmails.forEach(function(el) {
-        el.textContent = data.email || "";
+        el.textContent = data.email || auth.currentUser?.email || "";
       });
-    });
+    }).catch((err: any) => handleFirestoreError(err, OperationType.GET, `users/${user.uid}`));
   };
 
   // --- Feature 8: Settings State ---
@@ -4142,35 +4422,47 @@ function App() {
   };
 
 
-  const compressImage = (base64: string, maxWidth = 1024, maxHeight = 1024, quality = 0.7): Promise<string> => {
+  const compressImage = (file: File, maxWidth = 1024, maxHeight = 1024, quality = 0.7): Promise<string> => {
     return new Promise((resolve, reject) => {
       const img = new Image();
-      img.src = base64;
+      const url = URL.createObjectURL(file);
+      
       img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
+        URL.revokeObjectURL(url);
+        try {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
 
-        if (width > height) {
-          if (width > maxWidth) {
-            height *= maxWidth / width;
-            width = maxWidth;
+          if (width > height) {
+            if (width > maxWidth) {
+              height *= maxWidth / width;
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width *= maxHeight / height;
+              height = maxHeight;
+            }
           }
-        } else {
-          if (height > maxHeight) {
-            width *= maxHeight / height;
-            height = maxHeight;
-          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return reject(new Error('Canvas context failed'));
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        } catch (e: any) {
+          reject(new Error(`Rendering failed: ${e.message || 'Unknown'}`));
         }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return reject(new Error('Canvas context not found'));
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
       };
-      img.onerror = (err) => reject(err);
+      
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Unsupported or corrupt image format'));
+      };
+      
+      img.src = url;
     });
   };
 
@@ -4185,23 +4477,9 @@ function App() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const getAI = () => {
-    const key = process.env.GEMINI_API_KEY;
-    if (!key || key === "undefined" || key === "") {
-      throw new Error("Gemini API key is missing. Please ensure GEMINI_API_KEY is set in your environment variables.");
-    }
-    return new GoogleGenAI({ apiKey: key });
-  };
+  const getAI = () => null; // Deprecated, use callAI/callAIVision helper instead
 
-  const clearAllSessionData = () => {
-    const keysToKeep = ["skinScanAccounts", "appLanguage", "welcomeSeen", "termsAccepted"];
-    const allKeys = Object.keys(localStorage);
-    allKeys.forEach(key => {
-      if (!keysToKeep.includes(key)) {
-        localStorage.removeItem(key);
-      }
-    });
-    
+  const clearAllSessionData = () => {    
     // Reset state
     setPhotos([]);
     setNote('');
@@ -4241,10 +4519,10 @@ function App() {
     setFullUserData(null);
     setCurrentUser(null);
     
-    console.log("Session data cleared for sign out");
+    console.log("Session state reset");
   };
 
-  const initializeNewSession = (user: any) => {
+  const initializeNewSession = async (user: any) => {
     clearAllSessionData();
     setCurrentUser(user);
     
@@ -4254,20 +4532,34 @@ function App() {
       requestNotificationPermission();
     }, 3000);
     
-    db.collection("users").doc(user.uid).get().then((doc: any) => {
-      if (doc.exists) {
-        const userData = doc.data();
+    try {
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
         setFullUserData(userData);
-        loadUserData(user.uid);
-        loadMostRecentScan();
+        
+        // Parallel load of all data
+        await Promise.all([
+          loadUserData(user.uid),
+          loadMostRecentScan(user.uid)
+        ]);
+        
         console.log("New session initialized for:", userData.username || userData.fullName);
+      } else {
+        console.warn("User profile document NOT found for UID:", user.uid);
+        if (activeTab !== 'auth') {
+          setActiveTab('auth');
+        }
       }
-    });
+    } catch (err) {
+      console.error("Critical session initialization error:", err);
+      handleFirestoreError(err, OperationType.GET, `users/${user.uid}`);
+    }
   };
 
   const handleLogout = async () => {
     try {
-      await auth.signOut();
+      await signOut(auth);
       clearAllSessionData();
     } catch (err) {
       console.error("Logout error:", err);
@@ -4275,6 +4567,8 @@ function App() {
   };
 
   // --- Persistence & Initialization ---
+  const lastInitializedUid = useRef<string | null>(null);
+
   useEffect(() => {
     if (result || loading) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -4287,13 +4581,20 @@ function App() {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    const unsubscribe = auth.onAuthStateChanged(async (user: any) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
       console.log("Auth state changed:", user ? user.uid : "null");
       if (user) {
-        initializeNewSession(user);
+        // Only initialize if it's a new login or a different user
+        if (lastInitializedUid.current !== user.uid) {
+          lastInitializedUid.current = user.uid;
+          initializeNewSession(user);
+        }
         updateAllAvatars();
       } else {
-        clearAllSessionData();
+        if (lastInitializedUid.current !== null) {
+          lastInitializedUid.current = null;
+          clearAllSessionData();
+        }
       }
       setAuthLoading(false);
     });
@@ -4325,16 +4626,22 @@ function App() {
     setLoading(true);
     try {
       // Load Profile & Settings
-      const profileDoc = await db.collection("users").doc(userId).get();
-      if (profileDoc.exists) {
+      let profileDoc;
+      try {
+        profileDoc = await getDoc(doc(db, "users", userId));
+      } catch (err) {
+        handleFirestoreError(err, OperationType.GET, `users/${userId}`);
+      }
+      
+      if (profileDoc && profileDoc.exists()) {
         const data = profileDoc.data();
         setFullUserData(data);
         if (data.streakData) setStreakData(data.streakData);
         if (data.skinScore) setSkinScore(data.skinScore);
         if (data.nextScanDate) setNextScanDate(data.nextScanDate);
         if (data.cycleProgress !== undefined) setCycleProgress(data.cycleProgress);
-      tagUserScanPending();
-      checkAndShowScanReminder();
+        tagUserScanPending();
+        checkAndShowScanReminder();
         if (data.lastFullWeekCompletionDate) setLastFullWeekCompletionDate(data.lastFullWeekCompletionDate);
         if (data.protocol) setProtocol(data.protocol);
         if (data.education) setEducation(data.education);
@@ -4354,26 +4661,32 @@ function App() {
       }
 
       // Load Score History
-      const scoresDoc = await db.collection("users").doc(userId).collection("timeline").doc("scores").get();
-      if (scoresDoc.exists) {
-        setScoreHistory(scoresDoc.data()?.history || []);
+      try {
+        const scoresDoc = await getDoc(doc(db, "users", userId, "timeline", "scores"));
+        if (scoresDoc.exists()) {
+          setScoreHistory(scoresDoc.data()?.history || []);
+        }
+      } catch (err) {
+        handleFirestoreError(err, OperationType.GET, `users/${userId}/timeline/scores`);
       }
 
       // Load Scans
-      const scansSnapshot = await db.collection("users").doc(userId).collection("scans").orderBy("date", "desc").get();
-      const loadedScans = scansSnapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data(),
-        date: doc.data().date?.toDate().toISOString() || new Date().toISOString()
-      }));
-      setScans(loadedScans);
+      try {
+        await loadScanHistory(userId);
+      } catch (err) {
+        console.error("Failed to load scans in loadUserData:", err);
+      }
 
       // Load Doctor Info
-      const doctorDoc = await db.collection("users").doc(userId).collection("doctorInfo").doc("current").get();
-      if (doctorDoc.exists) {
-        const docData = doctorDoc.data();
-        setDoctorInfo(docData);
-        setTempDoctor(docData);
+      try {
+        const doctorDoc = await getDoc(doc(db, "users", userId, "doctorInfo", "current"));
+        if (doctorDoc.exists()) {
+          const docData = doctorDoc.data() as any;
+          setDoctorInfo(docData);
+          setTempDoctor(docData);
+        }
+      } catch (err) {
+        handleFirestoreError(err, OperationType.GET, `users/${userId}/doctorInfo/current`);
       }
 
     } catch (err) {
@@ -4417,9 +4730,9 @@ function App() {
           setHighUvDays(prev => {
             const next = prev + 1;
             if (currentUser) {
-              db.collection("users").doc(currentUser.uid).update({
+              updateDoc(doc(db, "users", currentUser.uid), {
                 highUvDays: next
-              });
+              }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${currentUser?.uid}`));
             }
             return next;
           });
@@ -4459,28 +4772,15 @@ function App() {
     return score;
   };
 
-  const checkImageQuality = async (photo: string) => {
+    const checkImageQuality = async (photo: string) => {
     setCheckingQuality(true);
     try {
-      const ai = getAI();
-      const response = await ai.models.generateContent({
-        model: "gemini-flash-latest",
-        contents: [
-          {
-            parts: [
-              {
-                inlineData: {
-                  mimeType: "image/jpeg",
-                  data: photo.split(',')[1],
-                },
-              },
-              {
-                text: "Look at this image. Is it a clear close-up photo of a skin lesion or skin area? Rate the image quality as: GOOD (clear, well-lit, close-up, lesion visible), POOR (blurry, dark, too far away, or lesion not clearly visible), or NOT_SKIN (this is not a photo of skin). Respond with only one word: GOOD, POOR, or NOT_SKIN.",
-              },
-            ],
-          },
-        ],
-      });
+      const response = await callAIVision(
+        [
+          { inlineData: { mimeType: "image/jpeg", data: photo.split(',')[1] } },
+          { text: "Look at this image. Is it a clear close-up photo of a skin lesion or skin area? Rate the image quality as: GOOD (clear, well-lit, close-up, lesion visible), POOR (blurry, dark, too far away, or lesion not clearly visible), or NOT_SKIN (this is not a photo of skin). Respond with only one word: GOOD, POOR, or NOT_SKIN." }
+        ]
+      );
       const result = response.text.trim().toUpperCase() as 'GOOD' | 'POOR' | 'NOT_SKIN';
       setImageQuality(result);
     } catch (err: any) {
@@ -4493,47 +4793,47 @@ function App() {
     }
   };
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files) {
-      const remainingSlots = 6 - photos.length;
-      const filesToProcess = Array.from(files).slice(0, remainingSlots);
-      
-      let processedCount = 0;
-      const newPhotos: string[] = [];
-      
-      filesToProcess.forEach(file => {
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-          try {
-            const rawData = reader.result as string;
-            // Compress the image before adding it to state to stay under Firestore's 1MB limit
-            const photoData = await compressImage(rawData);
-            newPhotos.push(photoData);
-            processedCount++;
-            
-            if (processedCount === filesToProcess.length) {
-              setPhotos(prev => {
-                const updated = [...prev, ...newPhotos].slice(0, 6);
-                // Trigger quality check only if it's the first photo(s) being added to an empty list
-                if (prev.length === 0 && updated.length > 0) {
-                  checkImageQuality(updated[0]);
-                }
-                return updated;
-              });
-              setError(null);
-              setResult(null);
-            }
-          } catch (err) {
-            console.error("Image processing error:", err);
-            setError("Failed to process one or more images. Please try again.");
-          }
-        };
-        reader.readAsDataURL(file as File);
-      });
+    if (!files || files.length === 0) return;
+
+    const remainingSlots = 6 - photos.length;
+    if (remainingSlots <= 0) {
+      setError("Maximum 6 photos allowed.");
+      return;
     }
-    // Reset input so same file can be picked again if removed
-    if (e.target) e.target.value = '';
+    
+    const filesToProcess = Array.from(files).slice(0, remainingSlots);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const processedPhotos = await Promise.all(filesToProcess.map(async (file) => {
+        try {
+          return await compressImage(file);
+        } catch (err: any) {
+          throw new Error(err.message || "Failed to process image");
+        }
+      }));
+
+      setPhotos(prev => {
+        const updated = [...prev, ...processedPhotos].slice(0, 6);
+        // Trigger quality check only if it's the first photo(s) being added to an empty list
+        if (prev.length === 0 && updated.length > 0) {
+          checkImageQuality(updated[0]);
+        }
+        return updated;
+      });
+      setError(null);
+      setResult(null);
+    } catch (err: any) {
+      console.error("Image processing error:", err);
+      const errorMessage = (err instanceof Error) ? err.message : String(err);
+      setError(`Failed to process images: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+      if (e.target) e.target.value = '';
+    }
   };
 
   const triggerFileInput = () => {
@@ -4589,8 +4889,8 @@ function App() {
     
     setSaveStatus('idle');
     
-    db.collection("users").doc(user.uid).collection("scans").add({
-      date: (window as any).firebase.firestore.FieldValue.serverTimestamp(),
+    addDoc(collection(db, "users", user.uid, "scans"), {
+      date: getServerTimestamp(),
       riskLevel: scanData.result.risk_level,
       confidence: scanData.result.confidence_level,
       findings: scanData.result.findings,
@@ -4612,127 +4912,91 @@ function App() {
       // Clear status after 5 seconds
       setTimeout(() => setSaveStatus('idle'), 5000);
     }).catch(function(error: any) {
-      console.error("Error saving scan to Firestore:", error);
+      handleFirestoreError(error, OperationType.CREATE, `users/${user.uid}/scans`);
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 5000);
     });
   };
 
   const updateSkinScoreInFirestore = (userId: string, newScore: number) => {
-    db.collection("users").doc(userId).update({
+    updateDoc(doc(db, "users", userId), {
       skinScore: newScore,
-      lastScanDate: (window as any).firebase.firestore.FieldValue.serverTimestamp(),
-      scansCompleted: (window as any).firebase.firestore.FieldValue.increment(1)
-    });
+      lastScanDate: getServerTimestamp(),
+      scansCompleted: getIncrement(1)
+    }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${userId}`));
   };
 
-  const loadScanHistory = () => {
-    const user = auth.currentUser;
-    if (!user) return;
+  const loadScanHistory = async (userId?: string) => {
+    const id = userId || auth.currentUser?.uid;
+    if (!id) return;
     
     setHistoryLoading(true);
-    
-    db.collection("users").doc(user.uid).collection("scans")
-      .orderBy("date", "desc")
-      .limit(50)
-      .get()
-      .then(function(snapshot: any) {
-        if (snapshot.empty) {
-          setScans([]);
-          setHistoryLoading(false);
-          return;
-        }
-        
-        const loadedScans: ScanRecord[] = [];
-        snapshot.forEach(function(doc: any) {
-          const data = doc.data();
-          loadedScans.push({ 
-            id: doc.id, 
-            ...data,
-            date: data.date?.toDate().toISOString() || new Date().toISOString(),
-            result: data.result || {
-              risk_level: data.riskLevel,
-              confidence_level: data.confidence,
-              findings: data.findings,
-              concerning_signs: data.concerningSigns,
-              suggestions: data.suggestions,
-              urgency: data.urgency,
-              disclaimer: "This is an AI screening tool, not a medical diagnosis."
-            },
-            photos: data.photoBase64 ? [data.photoBase64] : (data.photos || [])
-          });
-        });
-        
-        setScans(loadedScans);
-        setHistoryLoading(false);
-      })
-      .catch(function(error: any) {
-        console.error("Error loading scans:", error);
-        setHistoryLoading(false);
+    try {
+      const snapshot = await getDocs(query(collection(db, "users", id, "scans"), orderBy("date", "desc"), limit(50)));
+      
+      const loadedScans: ScanRecord[] = [];
+      snapshot.forEach(function(doc: any) {
+        loadedScans.push(mapScanData(doc.id, doc.data()));
       });
+      
+      setScans(loadedScans);
+      setHistoryLoading(false);
+      return loadedScans;
+    } catch (err) {
+      handleFirestoreError(err, OperationType.GET, `users/${id}/scans`);
+      setHistoryLoading(false);
+      throw err;
+    }
   };
 
   const loadUserSkinScore = () => {
     const user = auth.currentUser;
     if (!user) return;
     
-    db.collection("users").doc(user.uid).get().then(function(doc: any) {
-      if (doc.exists) {
-        const data = doc.data();
+    getDoc(doc(db, "users", user.uid)).then(function(docSnap: any) {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
         const score = data.skinScore || 100;
         setSkinScore(score);
         setFullUserData(data);
       }
-    });
+    }).catch(err => handleFirestoreError(err, OperationType.GET, `users/${user.uid}`));
   };
 
-  const loadMostRecentScan = () => {
-    const user = auth.currentUser;
-    if (!user) return;
+  const loadMostRecentScan = async (userId?: string) => {
+    const id = userId || auth.currentUser?.uid;
+    if (!id) return;
     
-    db.collection("users").doc(user.uid).collection("scans")
-      .orderBy("date", "desc")
-      .limit(1)
-      .get()
-      .then(function(snapshot: any) {
-        if (!snapshot.empty) {
-          const data = snapshot.docs[0].data();
-          const scan = { 
-            id: snapshot.docs[0].id, 
-            ...data,
-            date: data.date?.toDate().toISOString() || new Date().toISOString(),
-            result: data.result || {
-              risk_level: data.riskLevel,
-              confidence_level: data.confidence,
-              findings: data.findings,
-              concerning_signs: data.concerningSigns,
-              suggestions: data.suggestions,
-              urgency: data.urgency,
-              disclaimer: "This is an AI screening tool, not a medical diagnosis."
-            },
-            photos: data.photoBase64 ? [data.photoBase64] : (data.photos || [])
-          };
-          setRecentScan(scan as ScanRecord);
-        } else {
-          setRecentScan(null);
-        }
-      });
+    try {
+      const snapshot = await getDocs(query(collection(db, "users", id, "scans"), orderBy("date", "desc"), limit(1)));
+      if (!snapshot.empty) {
+        const scan = mapScanData(snapshot.docs[0].id, snapshot.docs[0].data());
+        setRecentScan(scan);
+        return scan;
+      } else {
+        setRecentScan(null);
+        return null;
+      }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.GET, `users/${id}/scans`);
+      throw err;
+    }
   };
 
   const saveProtocolToFirestore = (protocolData: any, scanId: string | null = null) => {
     const user = auth.currentUser;
     if (!user) return;
     
-    db.collection("users").doc(user.uid).set({
+    setDoc(doc(db, "users", user.uid), {
       protocol: {
         content: protocolData,
-        generatedAt: (window as any).firebase.firestore.FieldValue.serverTimestamp(),
+        generatedAt: getServerTimestamp(),
         basedOnScanId: scanId
       }
     }, { merge: true }).then(function() {
       console.log("Protocol saved for user:", user.uid);
     }).catch(function(error: any) {
-      console.error("Error saving protocol:", error);
+      handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}`);
     });
   };
 
@@ -4740,12 +5004,12 @@ function App() {
     const user = auth.currentUser;
     if (!user) return;
     
-    db.collection("users").doc(user.uid).get().then(function(doc: any) {
-      if (doc.exists && doc.data().protocol) {
-        setProtocol(doc.data().protocol.content);
+    getDoc(doc(db, "users", user.uid)).then(function(docSnap: any) {
+      if (docSnap.exists() && docSnap.data().protocol) {
+        setProtocol(docSnap.data().protocol.content);
         console.log("Protocol loaded from Firestore");
       }
-    });
+    }).catch(err => handleFirestoreError(err, OperationType.GET, `users/${user.uid}`));
   };
 
   const analyzeSkin = async (force = false) => {
@@ -4807,41 +5071,16 @@ Respond ONLY with valid JSON with these fields:
 - data_quality_note: string.
 - disclaimer: always include.`;
       
-      const response = await ai.models.generateContent({
-        model: "gemini-flash-latest",
-        contents: [
-          {
-            parts: [
-              ...imageParts,
-              {
-                text: prompt,
-              },
-            ],
-          },
+      const responseData = await callAIVision(
+        [
+          ...imageParts,
+          { text: prompt }
         ],
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              risk_level: { type: Type.STRING, description: "low, moderate, high, or insufficient_data" },
-              confidence_level: { type: Type.STRING, description: "low, medium, or high" },
-              findings: { type: Type.ARRAY, items: { type: Type.STRING } },
-              concerning_signs: { type: Type.ARRAY, items: { type: Type.STRING } },
-              risk_factors_identified: { type: Type.ARRAY, items: { type: Type.STRING } },
-              cancer_type_indicators: { type: Type.STRING },
-              comparison_notes: { type: Type.STRING },
-              suggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
-              urgency: { type: Type.STRING },
-              data_quality_note: { type: Type.STRING },
-              disclaimer: { type: Type.STRING },
-            },
-            required: ["risk_level", "confidence_level", "findings", "concerning_signs", "risk_factors_identified", "cancer_type_indicators", "comparison_notes", "suggestions", "urgency", "data_quality_note", "disclaimer"],
-          },
-        },
-      });
-
-      const text = response.text;
+        "gemini-3-flash-preview",
+        { responseMimeType: "application/json" }
+      );
+      
+      const text = responseData.text;
       if (!text) throw new Error("Empty response from AI");
       
       const jsonResult = JSON.parse(text) as AnalysisResult;
@@ -4885,11 +5124,11 @@ Respond ONLY with valid JSON with these fields:
           setLastFullWeekCompletionDate(nowIso);
 
           if (currentUser) {
-            db.collection("users").doc(currentUser.uid).update({
+            updateDoc(doc(db, "users", currentUser.uid), {
               nextScanDate: nextDateStr,
               cycleProgress: updatedProgress,
               lastFullWeekCompletionDate: nowIso
-            });
+            }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${currentUser?.uid}`));
           }
         }
       }
@@ -4916,9 +5155,9 @@ Respond ONLY with valid JSON with these fields:
         };
         
         if (currentUser) {
-          db.collection("users").doc(currentUser.uid).update({
+          updateDoc(doc(db, "users", currentUser.uid), {
             streakData: updated
-          });
+          }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${currentUser?.uid}`));
         }
         
         return updated;
@@ -4928,16 +5167,16 @@ Respond ONLY with valid JSON with these fields:
       const newScore = calculateSkinScore(jsonResult);
       setSkinScore(newScore);
       if (currentUser) {
-        db.collection("users").doc(currentUser.uid).update({
+        updateDoc(doc(db, "users", currentUser.uid), {
           skinScore: newScore
-        });
+        }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${currentUser?.uid}`));
       }
       setScoreHistory(prev => {
         const updated = [...prev, { date: new Date().toISOString(), score: newScore }];
         if (currentUser) {
-          db.collection("users").doc(currentUser.uid).collection("timeline").doc("scores").set({
+          setDoc(doc(db, "users", currentUser.uid, "timeline", "scores"), {
             history: updated
-          });
+          }).catch(err => handleFirestoreError(err, OperationType.WRITE, `users/${currentUser?.uid}/timeline/scores`));
         }
         return updated;
       });
@@ -4982,9 +5221,9 @@ Respond ONLY with valid JSON with these fields:
         setBodyDots(prev => {
           const updated = [...prev, newDot];
           if (currentUser) {
-            db.collection("users").doc(currentUser.uid).update({
+            updateDoc(doc(db, "users", currentUser.uid), {
               bodyDots: updated
-            });
+            }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${currentUser?.uid}`));
           }
           return updated;
         });
@@ -5039,7 +5278,7 @@ Respond ONLY with valid JSON with these fields:
   const saveProfile = async () => {
     if (!currentUser) return;
     try {
-      await db.collection("users").doc(currentUser.uid).update({
+      await updateDoc(doc(db, "users", currentUser.uid), {
         fullName: tempProfile.fullName,
         profileColor: tempProfile.profileColor
       });
@@ -5052,25 +5291,24 @@ Respond ONLY with valid JSON with these fields:
       setIsEditingProfile(false);
       updateAllAvatars();
     } catch (err) {
-      console.error("Error saving profile:", err);
+      handleFirestoreError(err, OperationType.UPDATE, `users/${currentUser.uid}`);
     }
   };
 
   const saveDoctor = async () => {
     if (!currentUser) return;
     try {
-      await db.collection("users").doc(currentUser.uid).collection("doctorInfo").doc("current").set(tempDoctor);
+      await setDoc(doc(db, "users", currentUser.uid, "doctorInfo", "current"), tempDoctor);
       setDoctorInfo(tempDoctor);
       setIsEditingDoctor(false);
     } catch (err) {
-      console.error("Error saving doctor info:", err);
+      handleFirestoreError(err, OperationType.WRITE, `users/${currentUser.uid}/doctorInfo/current`);
     }
   };
   const generateProtocol = async () => {
     setLoadingProtocol(true);
     setProtocolError(null);
     try {
-      const ai = getAI();
       const prompt = `${AI_SYSTEM_PROMPT}
 Generate a personalized "Skin Cancer Prevention Protocol" for a ${userProfile.age} year old with Fitzpatrick type ${userProfile.fitzpatrick} skin. 
 The output must ONLY contain cancer prevention and monitoring content, nothing cosmetic.
@@ -5082,13 +5320,9 @@ STRICT LENGTH LIMITS:
 - nextExamSchedule: ONE clear sentence with a specific timeframe. (High risk: 2 weeks, Moderate: 4-6 weeks, Low: 6-12 months).
 Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"], "priorityCheckAreas": ["string"], "warningSigns": ["string"], "nextExamSchedule": "string" }`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-flash-latest",
-        contents: [{ parts: [{ text: prompt }] }],
-        config: { responseMimeType: "application/json" }
-      });
+      const responseData = await callAI(prompt, "gemini-3-flash-preview", { responseMimeType: "application/json" });
 
-      const protocolData = JSON.parse(response.text || '{}');
+      const protocolData = JSON.parse(responseData.text || '{}');
       const newProtocol = {
         dailyUVProtection: protocolData.dailyUVProtection || [],
         monthlySelfExam: protocolData.monthlySelfExam || [],
@@ -5271,7 +5505,9 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
 
 
   return (
-    <div className="app-wrapper" style={{ ...styles.container, background: '#060818' }}>
+    <ErrorBoundary>
+      <>
+        <div className="app-wrapper" style={{ ...styles.container, background: '#060818' }}>
       {isOffline && (
         <div style={{ 
           background: '#ef4444', 
@@ -5694,176 +5930,126 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
         {activeTab === 'welcome' && <AboutPage />}
 
         <AnimatePresence>
-          {selectedScanId && (
-            <ScanDetail 
-              scan={scans.find(s => s.id === selectedScanId)!} 
-              onClose={() => setSelectedScanId(null)}
-              onDownload={downloadPDF}
-              onCompare={scans.filter(s => s.bodyRegion === scans.find(sc => sc.id === selectedScanId)?.bodyRegion).length > 1 ? () => {
-                const currentScan = scans.find(s => s.id === selectedScanId)!;
-                const otherScans = scans.filter(s => s.bodyRegion === currentScan.bodyRegion && s.id !== currentScan.id);
-                if (otherScans.length > 0) {
-                  setCompareScanId(otherScans[0].id);
-                  setIsComparing(true);
-                }
-              } : undefined}
-              styles={styles}
-            />
-          )}
-        </AnimatePresence>
+          {selectedScanId && scans.find(s => s.id === selectedScanId) && (
+          <ScanDetail 
+            scan={scans.find(s => s.id === selectedScanId)!} 
+            onClose={() => setSelectedScanId(null)}
+            onDownload={downloadPDF}
+            onCompare={scans.filter(s => s.bodyRegion === scans.find(sc => sc.id === selectedScanId)?.bodyRegion).length > 1 ? () => {
+              const currentScan = scans.find(s => s.id === selectedScanId)!;
+              const otherScans = scans.filter(s => s.bodyRegion === currentScan.bodyRegion && s.id !== currentScan.id);
+              if (otherScans.length > 0) {
+                setCompareScanId(otherScans[0].id);
+                setIsComparing(true);
+              }
+            } : undefined}
+            styles={styles}
+          />
+        )}
+      </AnimatePresence>
 
-        <AnimatePresence>
-          {isComparing && selectedScanId && compareScanId && (
-            <CompareView 
-              scan1={scans.find(s => s.id === selectedScanId)!}
-              scan2={scans.find(s => s.id === compareScanId)!}
-              onClose={() => setIsComparing(false)}
-              styles={styles}
-            />
-          )}
+      <AnimatePresence>
+        {isComparing && selectedScanId && compareScanId && scans.find(s => s.id === selectedScanId) && scans.find(s => s.id === compareScanId) && (
+          <CompareView 
+            scan1={scans.find(s => s.id === selectedScanId)!}
+            scan2={scans.find(s => s.id === compareScanId)!}
+            onClose={() => setIsComparing(false)}
+            styles={styles}
+          />
+        )}
         </AnimatePresence>
 
         {activeTab === 'profile' && currentUser && (
           <div className="page-container" style={styles.tabContent}>
-            <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: '20px', marginBottom: '20px', width: '100%', overflow: 'hidden' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0, color: '#f8fafc', whiteSpace: 'nowrap' }}>My Profile</h2>
-              {!isEditingProfile && (
-                <button 
-                  className="mini-edit-btn"
-                  onClick={() => {
-                    setTempProfile(userProfile);
-                    setIsEditingProfile(true);
-                  }}
-                  style={{ 
-                    background: 'rgba(45, 212, 191, 0.08)', 
-                    border: '1.5px solid rgba(45, 212, 191, 0.2)', 
-                    color: '#2dd4bf', 
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    fontSize: '14px', 
-                    fontWeight: '950', 
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    cursor: 'pointer',
-                    flexShrink: 0,
-                    lineHeight: '1',
-                    width: 'auto',
-                    minHeight: '0',
-                    display: 'inline-flex'
-                  }}
-                >
-                  Edit Profile
-                </button>
-              )}
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', marginBottom: '30px', width: '100%' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '900', margin: 0, color: '#f8fafc', whiteSpace: 'nowrap', textAlign: 'center' }}>My Profile</h2>
             </div>
             
             {/* Personal Info Card */}
-            <div className="glass-card mb-6 relative overflow-hidden">
+            <div className="glass-card mb-6 relative overflow-hidden flex flex-col items-center">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-teal-500/10 to-transparent rounded-bl-full -mr-8 -mt-8" />
               
-              <div className="flex flex-col items-center text-center">
+              <div className="flex flex-col items-center text-center w-full max-w-md mx-auto">
                 <div 
                   style={{ 
-              width: '100px', 
-              height: '100px', 
-              borderRadius: '50%', 
-              background: userProfile.profileColor || '#2dd4bf',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '36px',
-              fontWeight: '900',
-              color: 'white',
-              marginBottom: '20px',
-              boxShadow: `0 10px 25px ${userProfile.profileColor || '#2dd4bf'}40`,
-              border: '4px solid rgba(255,255,255,0.1)'
-            }}
-          >
-            {userProfile.fullName ? userProfile.fullName.charAt(0).toUpperCase() : (fullUserData?.username?.[0]?.toUpperCase() || 'U')}
-          </div>
+                    width: '110px', 
+                    height: '110px', 
+                    borderRadius: '50%', 
+                    background: userProfile.profileColor || '#2dd4bf',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '40px',
+                    fontWeight: '950',
+                    color: 'white',
+                    marginBottom: '24px',
+                    boxShadow: `0 15px 35px ${userProfile.profileColor || '#2dd4bf'}50`,
+                    border: '4px solid rgba(255,255,255,0.15)'
+                  }}
+                >
+                  {userProfile.fullName ? userProfile.fullName.charAt(0).toUpperCase() : (fullUserData?.username?.[0]?.toUpperCase() || 'U')}
+                </div>
                 
-                <h3 className="text-2xl font-black text-white mb-1">{userProfile.fullName || 'Anonymous User'}</h3>
-                <p className="text-slate-400 font-bold text-sm mb-4">@{fullUserData?.username || 'user'}</p>
+                <h3 className="text-3xl font-black text-white mb-1">
+                  {userProfile.fullName || (fullUserData?.username ? `@${fullUserData.username}` : 'SkinTight User')}
+                </h3>
+                {userProfile.fullName && fullUserData?.username && (
+                  <p className="text-teal-400 font-black text-sm mb-4 tracking-wider uppercase">@{fullUserData.username}</p>
+                )}
                 
-                <div className="flex items-center gap-2 text-slate-300 text-sm mb-6 bg-white/5 px-4 py-2 rounded-full border border-white/5">
-                  <Mail size={14} className="text-teal-400" />
-                  {fullUserData?.email || 'No email set'}
+                <div className="flex items-center justify-center gap-2 text-slate-300 text-sm mb-8 bg-white/5 px-6 py-3 rounded-2xl border border-white/5 w-fit">
+                  <Mail size={16} className="text-teal-400" />
+                  <span className="font-bold">{currentUser?.email || fullUserData?.email || 'No email associated'}</span>
                 </div>
 
-                <div className="w-full space-y-3 mt-6">
-                  <div className="p-5 rounded-3xl bg-white/5 border border-white/10 text-center">
-                    <div className="text-[10px] font-black text-teal-500 uppercase tracking-[0.2em] mb-3">Your Skin Profile</div>
-                    <div className="flex flex-wrap justify-center gap-3">
-                      <div className="px-4 py-2 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-black uppercase">
-                        Fitzpatrick Type {userProfile.fitzpatrick}
-                      </div>
-                      <div className="px-4 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-black uppercase">
-                        {fullUserData?.ethnicity || 'Not Set'}
-                      </div>
+                <div className="w-full space-y-6 mt-4">
+                  {/* Stats Row */}
+                  <div className="flex justify-center gap-4 mb-2">
+                    <div className="flex-1 p-4 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
+                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Scans</div>
+                      <div className="text-2xl font-black text-white">{scans.length}</div>
                     </div>
-                    <div className="mt-4 px-2">
-                      <p className="text-xs text-slate-400 leading-relaxed max-w-xs mx-auto">
-                        {(() => {
-                          const type = Number(userProfile.fitzpatrick);
-                          if (type === 1) return "Always burns, never tans. Very fair skin with highest sensitivity.";
-                          if (type === 2) return "Usually burns, tans minimally. Fair skin with high sensitivity.";
-                          if (type === 3) return "Sometimes mild burn, tans uniformly. Light brown skin with moderate sensitivity.";
-                          if (type === 4) return "Rarely burns, tans easily. Moderate brown skin with lower sensitivity.";
-                          if (type === 5) return "Very rarely burns, tans very easily. Dark brown skin with low sensitivity.";
-                          if (type === 6) return "Never burns, deeply pigmented skin. Highly resistant to sun damage.";
-                          return "Information about your sun sensitivity based on your skin type selection.";
-                        })()}
-                      </p>
+                    <div className="flex-1 p-4 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
+                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Skin Score</div>
+                      <div className="text-2xl font-black text-teal-400">{skinScore}%</div>
+                    </div>
+                  </div>
+
+                  <div className="p-6 rounded-[32px] bg-white/5 border border-white/10 text-center w-full">
+                    <div className="text-[11px] font-black text-teal-500 uppercase tracking-[0.3em] mb-4">AI Analysis Profile</div>
+                    
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="flex flex-wrap justify-center gap-3">
+                        <div className="px-5 py-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-black uppercase tracking-wider">
+                          Fitzpatrick Type {userProfile.fitzpatrick}
+                        </div>
+                        {fullUserData?.ethnicity && (
+                          <div className="px-5 py-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-black uppercase tracking-wider">
+                            {fullUserData.ethnicity}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="mt-2 px-4 max-w-sm mx-auto">
+                        <p className="text-[13px] text-slate-400 leading-relaxed font-medium">
+                          {(() => {
+                            const type = Number(userProfile.fitzpatrick);
+                            if (type === 1) return "Very fair skin, highly sensitive. Always burns, never tans. Significant UV protection required.";
+                            if (type === 2) return "Fair skin, high sensitivity. Usually burns, tans minimally. Frequent self-checks recommended.";
+                            if (type === 3) return "Creamy white to light brown. Sometimes mild burn, tans uniformly. Balanced protection needed.";
+                            if (type === 4) return "Olive or moderate brown. Rarely burns, tans easily. Lower (but present) risk profile.";
+                            if (type === 5) return "Dark brown skin. Very rarely burns, tans very easily. Focus on early detection.";
+                            if (type === 6) return "Deeply pigmented skin. Never burns. Highly resistant to sun damage, but check palms and soles.";
+                            return "Your personalized skin profile based on AI dermatological standards.";
+                          })()}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Edit Profile Form */}
-            <AnimatePresence>
-              {isEditingProfile && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  className="glass-card p-8 rounded-[32px] mb-6 border border-teal-500/20"
-                >
-                  <h3 className="text-lg font-black text-white mb-6 flex items-center gap-2">
-                    <Settings size={20} className="text-teal-400" /> Edit Your Details
-                  </h3>
-                  
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Full Name</label>
-                      <input 
-                        type="text" 
-                        style={styles.input} 
-                        value={tempProfile.fullName} 
-                        onChange={e => setTempProfile({...tempProfile, fullName: e.target.value})}
-                        placeholder="Enter your full name"
-                      />
-                    </div>
-
-                    <div className="flex gap-3 pt-4">
-                      <button 
-                        onClick={() => setIsEditingProfile(false)}
-                        className="flex-1 py-4 bg-white/5 text-slate-400 font-bold rounded-2xl border border-white/10 hover:bg-white/10 transition-all"
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        style={styles.analyzeButton} 
-                        className="flex-1"
-                        onClick={saveProfile}
-                      >
-                        <Save size={20} /> Save Changes
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
             <div style={{ textAlign: 'center', marginTop: '40px', padding: '20px', opacity: 0.5 }}>
               <div style={{ fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Member Since</div>
               <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f8fafc', marginTop: '4px' }}>
@@ -5875,6 +6061,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
         
         <Footer onShowLegal={setShowLegalModal} />
       </div>
+    </div>
 
       <LegalModal 
         isOpen={!!showLegalModal} 
@@ -5905,7 +6092,8 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
           <div id="howToImproveContent"></div>
         </div>
       </div>
-    </div>
+    </>
+    </ErrorBoundary>
   );
 }
 

@@ -1,5 +1,6 @@
 {
   "name": "Skin Tight",
   "description": "A professional skin health and skin cancer screening tool using AI vision analysis.",
-  "requestFramePermissions": ["camera", "geolocation"]
+  "requestFramePermissions": ["camera", "geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
