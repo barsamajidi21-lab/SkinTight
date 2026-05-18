@@ -192,24 +192,6 @@ const callAIVision = async (parts: any[], model: string = "gemini-3-flash-previe
   return await response.json();
 };
 
-// Test Firestore connection as required by guidelines
-async function testFirestoreConnection() {
-  try {
-    // Use a unique dummy document to test connectivity
-    await getDoc(doc(db, '_health_check_', 'heartbeat'));
-    console.log("Firestore connection verified successfully.");
-  } catch (error: any) {
-    if (error && error.message && error.message.includes('offline')) {
-      console.error("Firestore is offline. Check database configuration and network.");
-    } else if (error && error.message && error.message.includes('not-found')) {
-      console.error("Critical: Database ID not found. Ensure the configured database exists.");
-    } else {
-      console.error("Firestore connectivity test failed:", error);
-    }
-  }
-}
-testFirestoreConnection();
-
 // Helper for server timestamps to avoid repeating long path
 const getServerTimestamp = () => serverTimestamp();
 const getIncrement = (val: number) => increment(val);
@@ -4197,12 +4179,17 @@ function App() {
   // --- Connectivity Check ---
   useEffect(() => {
     const testConnection = async () => {
+      if (!db) {
+        console.error("Firestore db instance is not initialized.");
+        return;
+      }
       try {
         await getDocFromServer(doc(db, '_health_check_', 'heartbeat'));
         console.log("Firebase connection established.");
+        setIsOffline(false);
       } catch (error: any) {
-        if (error.message && (error.message.includes('the client is offline') || error.message.includes('Missing or insufficient permissions'))) {
-          // Heartbeat might fail if rules are blocking it, but we want to know if truly offline
+        console.warn("Firestore heartbeat check failed (this is often okay if rules block it):", error.message);
+        if (error.message && (error.message.includes('the client is offline'))) {
           if (!navigator.onLine) setIsOffline(true);
         }
       }
