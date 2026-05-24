@@ -24,8 +24,13 @@ async function startServer() {
   // API Routes
   app.post("/api/ai/generate", async (req, res) => {
     try {
-      const { prompt, parts, model: modelName = "gemini-3-flash-preview", config = {} } = req.body;
+      const { prompt, parts, model: modelName = "gemini-3.5-flash", config = {} } = req.body;
       
+      let mappedModel = modelName;
+      if (modelName === "gemini-3-flash-preview" || !modelName) {
+        mappedModel = "gemini-3.5-flash";
+      }
+
       let contents;
       if (parts) {
         contents = { parts };
@@ -34,7 +39,7 @@ async function startServer() {
       }
 
       const response = await genAI.models.generateContent({
-        model: modelName,
+        model: mappedModel,
         contents,
         config
       });

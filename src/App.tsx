@@ -166,7 +166,7 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 }
 
 // Client-side AI Helper
-const callAI = async (prompt: string, model: string = "gemini-3-flash-preview", config: any = {}) => {
+const callAI = async (prompt: string, model: string = "gemini-3.5-flash", config: any = {}) => {
   const response = await fetch("/api/ai/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -179,7 +179,14 @@ const callAI = async (prompt: string, model: string = "gemini-3-flash-preview", 
   return await response.json();
 };
 
-const callAIVision = async (parts: any[], model: string = "gemini-3-flash-preview", config: any = {}) => {
+const extractBase64FromDataUrl = (dataUrl: string): string => {
+  if (!dataUrl) return "";
+  const ix = dataUrl.indexOf(',');
+  if (ix === -1) return dataUrl; // It might be pure base64
+  return dataUrl.slice(ix + 1);
+};
+
+const callAIVision = async (parts: any[], model: string = "gemini-3.5-flash", config: any = {}) => {
   const response = await fetch("/api/ai/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -360,6 +367,7 @@ const styles = {
     tabContent: {
       flex: 1,
       width: '100%',
+      paddingTop: '78px',
       paddingBottom: '90px', // Space for nav bar
     },
     regionBadge: {
@@ -807,192 +815,446 @@ const styles = {
     const [loadingClinics, setLoadingClinics] = useState(false);
     const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
+    const [addressInput, setAddressInput] = useState("");
+    const [toastMessage, setToastMessage] = useState<string | null>(null);
+    const [toastType, setToastType] = useState<'info' | 'success' | 'warning'>('info');
 
-    const findClinics = (radius = 10000) => {
-      if (!navigator.geolocation) {
-        setStatusMessage("Geolocation is not supported by your browser");
-        return;
+    const showToast = (message: string, type: 'info' | 'success' | 'warning' = 'info') => {
+      setToastMessage(message);
+      setToastType(type);
+      setTimeout(() => {
+        setToastMessage(null);
+      }, 3500);
+    };
+
+    const getOpenStatus = (hours: string | null) => {
+      if (!hours) return { isOpen: null, closingTime: null, text: "Hours unlisted" };
+      try {
+        const now = new Date();
+        const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+        const currentDayStr = dayNames[now.getDay()];
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        const currentTimeVal = currentHour * 60 + currentMinute;
+
+        const dayRules = hours.split(';');
+        for (const rule of dayRules) {
+          const trimmedRule = rule.trim();
+          const dayMatch = trimmedRule.match(/^([A-Za-z,-]+)\s+([\d:]+)-([\d:]+)$/);
+          if (dayMatch) {
+            const daysPart = dayMatch[1];
+            const startStr = dayMatch[2];
+            const endStr = dayMatch[3];
+
+            let dayApplies = false;
+            if (daysPart.includes('-')) {
+              const [startDay, endDay] = daysPart.split('-');
+              const startIndex = dayNames.indexOf(startDay);
+              const endIndex = dayNames.indexOf(endDay);
+              const currentIndex = now.getDay();
+              if (startIndex <= endIndex) {
+                dayApplies = currentIndex >= startIndex && currentIndex <= endIndex;
+              } else {
+                dayApplies = currentIndex >= startIndex || currentIndex <= endIndex;
+              }
+            } else if (daysPart.includes(',')) {
+              dayApplies = daysPart.split(',').map(d => d.trim()).includes(currentDayStr);
+            } else {
+              dayApplies = daysPart === currentDayStr;
+            }
+
+            if (dayApplies) {
+              const [startH, startM] = startStr.split(':').map(Number);
+              const [endH, endM] = endStr.split(':').map(Number);
+              const startTimeVal = startH * 60 + startM;
+              const endTimeVal = endH * 60 + endM;
+
+              if (currentTimeVal >= startTimeVal && currentTimeVal < endTimeVal) {
+                const closingHour = endH > 12 ? endH - 12 : endH;
+                const ampm = endH >= 12 ? 'PM' : 'AM';
+                const formattedClosing = `${closingHour}:${endM.toString().padStart(2, '0')} ${ampm}`;
+                return { isOpen: true, closingTime: formattedClosing, text: `Open (Closes at ${formattedClosing})` };
+              } else {
+                return { isOpen: false, closingTime: null, text: `Closed` };
+              }
+            }
+          }
+        }
+        if (hours.toLowerCase().includes('24/7')) {
+          return { isOpen: true, closingTime: "24/7", text: "Open 24/7" };
+        }
+        return { isOpen: true, closingTime: null, text: `${hours}` };
+      } catch (e) {
+        return { isOpen: true, closingTime: null, text: `${hours}` };
       }
+    };
 
+    const findClinics = async (radius = 10000, customCoords?: { latitude: number; longitude: number }, isManualGPS = false) => {
       setLoadingClinics(true);
-      setStatusMessage("Detecting your location...");
-      
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        const { latitude, longitude } = position.coords;
-        setUserLocation([latitude, longitude]);
-        setStatusMessage("Finding nearest clinics...");
+      try {
+        let latitude: number;
+        let longitude: number;
+
+        if (customCoords) {
+          latitude = customCoords.latitude;
+          longitude = customCoords.longitude;
+          setUserLocation([latitude, longitude]);
+          setStatusMessage("Finding nearest clinics...");
+        } else {
+          setStatusMessage("Detecting your location...");
+          if (!navigator.geolocation) {
+            setStatusMessage("Geolocation is not supported. Please search using address manually.");
+            setLoadingClinics(false);
+            return;
+          }
+
+          if (!isManualGPS) {
+            // Automatic on-load mode: use fast, privacy-preserving IP-based location approximation
+            try {
+              setStatusMessage("Approximating local area via IP network...");
+              const ipRes = await fetch("https://ipapi.co/json/");
+              if (ipRes.ok) {
+                const ipData = await ipRes.json();
+                if (ipData && typeof ipData.latitude === 'number' && typeof ipData.longitude === 'number') {
+                  latitude = ipData.latitude;
+                  longitude = ipData.longitude;
+                  setUserLocation([latitude, longitude]);
+                  setStatusMessage(`Detected approximate location: ${ipData.city || 'local area'}. Finding nearest clinics...`);
+                  showToast(`Mapped clinics near your area: ${ipData.city || 'local area'}!`, "success");
+                } else {
+                  throw new Error("Invalid IP geo data");
+                }
+              } else {
+                throw new Error("IP Geolocation service returned non-OK status");
+              }
+            } catch (ipErr) {
+              console.warn("Fast IP Geolocation failed, trying standard browser GPS...", ipErr);
+              // Fallback to standard GPS try
+              try {
+                await new Promise<void>((resolve, reject) => {
+                  navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                      latitude = position.coords.latitude;
+                      longitude = position.coords.longitude;
+                      setUserLocation([latitude, longitude]);
+                      setStatusMessage("Finding nearest clinics...");
+                      resolve();
+                    },
+                    (err) => reject(err),
+                    { timeout: 7000 }
+                  );
+                });
+              } catch (gpsErr) {
+                // Hard fallback to default coordinates
+                latitude = 37.7749;
+                longitude = -122.4194;
+                setUserLocation([latitude, longitude]);
+                setStatusMessage("Defaulting location to San Francisco Bay Area (GPS/IP unavailable).");
+                showToast("Using default search zone. Try typing your city/zip!", "info");
+              }
+            }
+          } else {
+            // User explicitly clicked "My Location" button: Request actual GPS tracking
+            try {
+              setStatusMessage("Requesting GPS tracking...");
+              await new Promise<void>((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(
+                  (position) => {
+                    latitude = position.coords.latitude;
+                    longitude = position.coords.longitude;
+                    setUserLocation([latitude, longitude]);
+                    setStatusMessage("Finding nearest clinics...");
+                    resolve();
+                  },
+                  (err) => reject(err),
+                  { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+                );
+              });
+              showToast("GPS position acquired successfully!", "success");
+            } catch (err: any) {
+              console.error("Manual GPS tracking failed:", err);
+              let errorMsg = "Unable to acquire precise GPS coordinates.";
+              if (err.code === 1) {
+                errorMsg = "GPS blocked! Please unlock location access in the browser bar or key in address.";
+                showToast("Location permission blocked. Enable it in your browser address bar!", "warning");
+              } else if (err.code === 3) {
+                errorMsg = "GPS request timed out. Trying fast IP network fallback...";
+                showToast("GPS signal timed out. Attempting IP network fallback...", "info");
+              } else {
+                showToast("GPS tracking failed. Trying network approximation...", "info");
+              }
+              setStatusMessage(errorMsg);
+
+              // Fallback to IP Geolocation on manual failure
+              try {
+                const ipRes = await fetch("https://ipapi.co/json/");
+                if (ipRes.ok) {
+                  const ipData = await ipRes.json();
+                  if (ipData && typeof ipData.latitude === 'number' && typeof ipData.longitude === 'number') {
+                    latitude = ipData.latitude;
+                    longitude = ipData.longitude;
+                    setUserLocation([latitude, longitude]);
+                    setStatusMessage(`Using network approximate location: ${ipData.city || 'local area'}...`);
+                    showToast(`Mapped clinics near approximate location: ${ipData.city || 'local area'}`, "success");
+                  } else {
+                    throw new Error("Invalid IP geo data");
+                  }
+                } else {
+                  throw new Error("HTTP non-OK");
+                }
+              } catch (ipErr) {
+                // If both manual GPS and IP Geo fail, fallback to San Francisco
+                latitude = 37.7749;
+                longitude = -122.4194;
+                setUserLocation([latitude, longitude]);
+                setStatusMessage("Location detection timed out or disabled. Showing default area.");
+                showToast("Using default location area. Type city or zip below!", "info");
+              }
+            }
+          }
+        }
 
         if (!(window as any).L) return;
         const L = (window as any).L;
 
-        if (!mapInstance.current && mapRef.current) {
+        if (!mapInstance.current) {
+          if (!mapRef.current) {
+            console.warn("Map container is not ready yet.");
+            return;
+          }
           mapInstance.current = L.map(mapRef.current).setView([latitude, longitude], 13);
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
           }).addTo(mapInstance.current);
-        } else if (mapInstance.current) {
+        } else {
           mapInstance.current.setView([latitude, longitude], radius > 10000 ? 10 : 13);
+          // Clear older layers/markers safely
+          mapInstance.current.eachLayer((layer: any) => {
+            if (layer instanceof L.Marker || layer instanceof L.Circle) {
+              mapInstance.current.removeLayer(layer);
+            }
+          });
         }
 
-        // User Marker
+        if (!mapInstance.current) return;
+
+        // Target Area Marker
         L.circle([latitude, longitude], {
-          color: '#00B4D8',
-          fillColor: '#00B4D8',
-          fillOpacity: 0.1,
-          radius: 500, // 500 meters
-          weight: 2,
+          color: '#2dd4bf',
+          fillColor: '#2dd4bf',
+          fillOpacity: 0.05,
+          radius: 1500,
+          weight: 1,
           dashArray: '5, 5'
         }).addTo(mapInstance.current);
 
         L.marker([latitude, longitude], {
           icon: L.divIcon({
             className: 'user-location-marker',
-            html: '<div style="width: 20px; height: 20px; background: #00B4D8; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 10px #00B4D8;"></div>',
+            html: '<div style="width: 20px; height: 20px; background: #2dd4bf; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 15px rgba(45, 212, 191, 0.655); animation: pulse 3s infinite;"></div>',
             iconSize: [20, 20]
           })
-        }).addTo(mapInstance.current).bindPopup("You are here");
+        }).addTo(mapInstance.current).bindPopup("Current Search Hub");
 
-        try {
-          const query = `
-            [out:json];
-            (
-              node["amenity"="doctors"]["healthcare:speciality"="dermatology"](around:${radius}, ${latitude}, ${longitude});
-              way["amenity"="doctors"]["healthcare:speciality"="dermatology"](around:${radius}, ${latitude}, ${longitude});
-              node["healthcare"="clinic"](around:${radius}, ${latitude}, ${longitude});
-              node["amenity"="clinic"](around:${radius}, ${latitude}, ${longitude});
-              node["amenity"="hospital"](around:${radius}, ${latitude}, ${longitude});
-            );
-            out body;
-            >;
-            out skel qt;
-          `;
-          const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
-          const data = await response.json();
-          
-          let foundClinics = data.elements
-            .filter((e: any) => e.tags && (e.tags.name || e.tags['addr:street']))
-            .map((e: any) => ({
+        // Overpass skin/dermatologist queries
+        const query = `
+          [out:json];
+          (
+            node["amenity"="doctors"]["healthcare:speciality"="dermatology"](around:${radius}, ${latitude}, ${longitude});
+            way["amenity"="doctors"]["healthcare:speciality"="dermatology"](around:${radius}, ${latitude}, ${longitude});
+            node["healthcare"="clinic"](around:${radius}, ${latitude}, ${longitude});
+            node["amenity"="clinic"](around:${radius}, ${latitude}, ${longitude});
+            node["amenity"="hospital"](around:${radius}, ${latitude}, ${longitude});
+          );
+          out body;
+          >;
+          out skel qt;
+        `;
+        const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        let foundClinics = data.elements
+          .filter((e: any) => e.tags && (e.tags.name || e.tags['addr:street']))
+          .map((e: any) => {
+            const clat = e.lat || (e.center ? e.center.lat : latitude);
+            const clon = e.lon || (e.center ? e.center.lon : longitude);
+            const dist = calculateDistance(latitude, longitude, clat, clon);
+            return {
               id: e.id,
               name: e.tags.name || "Dermatology Clinic",
               address: e.tags['addr:street'] ? `${e.tags['addr:housenumber'] || ''} ${e.tags['addr:street']}, ${e.tags['addr:city'] || ''}` : "Address not available",
               phone: e.tags.phone || e.tags['contact:phone'] || null,
               website: e.tags.website || e.tags['contact:website'] || null,
               hours: e.tags.opening_hours || null,
-              lat: e.lat || (e.center ? e.center.lat : latitude),
-              lon: e.lon || (e.center ? e.center.lon : longitude),
-              distance: calculateDistance(latitude, longitude, e.lat || (e.center ? e.center.lat : latitude), e.lon || (e.center ? e.center.lon : longitude))
-            }))
-            .sort((a: any, b: any) => a.distance - b.distance)
-            .slice(0, 5);
+              rating: e.tags.rating || e.tags.score || null,
+              lat: clat,
+              lon: clon,
+              distance: dist,
+              distanceMiles: dist * 0.621371
+            };
+          })
+          .sort((a: any, b: any) => a.distance - b.distance)
+          .slice(0, 5);
 
-          if (foundClinics.length === 0 && radius === 10000) {
-            setStatusMessage("No specialized clinics found nearby. Expanding search to 50km...");
-            findClinics(50000);
-            return;
-          }
+        if (foundClinics.length === 0 && radius === 10000) {
+          setStatusMessage("No specialized clinics found nearby. Retrying 50km radius...");
+          findClinics(50000, { latitude, longitude });
+          return;
+        }
 
-          if (foundClinics.length === 0 && radius === 50000) {
-            setStatusMessage("No specialized clinics found within 50km. Showing general medical centers.");
-            const generalQuery = `
-              [out:json];
-              (
-                node["amenity"="doctors"](around:20000, ${latitude}, ${longitude});
-                node["healthcare"="clinic"](around:20000, ${latitude}, ${longitude});
-              );
-              out body;
-            `;
-            const genResponse = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(generalQuery)}`);
-            const genData = await genResponse.json();
-            foundClinics = genData.elements?.map((e: any) => ({
+        if (foundClinics.length === 0 && radius === 50000) {
+          setStatusMessage("No specialized clinics within 50km. Finding general practitioner clinics...");
+          const generalQuery = `
+            [out:json];
+            (
+              node["amenity"="doctors"](around:20000, ${latitude}, ${longitude});
+              node["healthcare"="clinic"](around:20000, ${latitude}, ${longitude});
+            );
+            out body;
+          `;
+          const genResponse = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(generalQuery)}`);
+          const genData = await genResponse.json();
+          foundClinics = genData.elements?.map((e: any) => {
+            const clat = e.lat || latitude;
+            const clon = e.lon || longitude;
+            const dist = calculateDistance(latitude, longitude, clat, clon);
+            return {
               id: e.id,
               name: e.tags.name || "Medical Center",
               address: e.tags['addr:street'] ? `${e.tags['addr:housenumber'] || ''} ${e.tags['addr:street']}` : "Address not available",
               phone: e.tags.phone || e.tags['contact:phone'] || null,
               website: e.tags.website || e.tags['contact:website'] || null,
               hours: e.tags.opening_hours || null,
-              lat: e.lat,
-              lon: e.lon,
-              distance: calculateDistance(latitude, longitude, e.lat, e.lon)
-            })).sort((a: any, b: any) => a.distance - b.distance).slice(0, 5);
-          }
+              rating: e.tags.rating || null,
+              lat: clat,
+              lon: clon,
+              distance: dist,
+              distanceMiles: dist * 0.621371
+            };
+          }).sort((a: any, b: any) => a.distance - b.distance).slice(0, 5) || [];
+        }
 
-          setClinics(foundClinics);
-          setStatusMessage(null);
+        setClinics(foundClinics);
+        setStatusMessage(null);
+        if (foundClinics.length > 0) {
+          showToast(`Mapped ${foundClinics.length} clinical centers successfully!`, "success");
+        } else {
+          showToast("No clinics found in this region.", "warning");
+        }
 
-          foundClinics.forEach((clinic: any) => {
-            const isSpecialized = clinic.name.toLowerCase().includes('derm') || clinic.name.toLowerCase().includes('skin');
-            const isHospital = clinic.name.toLowerCase().includes('hospital');
-            
-            // Add a sonar-style circle around the clinic
-            const circle = L.circle([clinic.lat, clinic.lon], {
-              color: isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8',
-              fillColor: isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8',
-              fillOpacity: 0.1,
-              radius: 200, // 200 meters
-              weight: 1,
-              className: 'sonar-circle'
-            }).addTo(mapInstance.current);
+        foundClinics.forEach((clinic: any) => {
+          const isSpecialized = clinic.name.toLowerCase().includes('derm') || clinic.name.toLowerCase().includes('skin');
+          const isHospital = clinic.name.toLowerCase().includes('hospital');
+          const status = getOpenStatus(clinic.hours);
+          
+          L.circle([clinic.lat, clinic.lon], {
+            color: isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8',
+            fillColor: isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8',
+            fillOpacity: 0.1,
+            radius: 200,
+            weight: 1,
+            className: 'sonar-circle'
+          }).addTo(mapInstance.current);
 
-            const marker = L.marker([clinic.lat, clinic.lon], {
-              icon: L.divIcon({
-                className: 'clinic-marker',
-                html: `
-                  <div style="position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
-                    <div style="position: absolute; inset: 0; background: ${isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8'}; border-radius: 50%; opacity: 0.3; animation: pulse 2s infinite;"></div>
-                    <div style="width: 12px; height: 12px; background: ${isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8'}; border: 2px solid white; border-radius: 50%; z-index: 1;"></div>
-                  </div>
-                `,
-                iconSize: [24, 24]
-              })
-            }).addTo(mapInstance.current);
-
-            marker.bindPopup(`
-              <div style="padding: 16px; min-width: 220px; font-family: 'Inter', sans-serif; background: #ffffff; border-radius: 12px;">
-                <div style="font-size: 10px; color: ${isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8'}; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em;">${isSpecialized ? 'Dermatology Specialist' : isHospital ? 'Hospital Facility' : 'Medical Center'}</div>
-                <div style="font-weight: 900; color: #0f172a; margin-bottom: 6px; font-size: 16px; line-height: 1.2;">${clinic.name}</div>
-                <div style="font-size: 12px; color: #64748b; margin-bottom: 12px; line-height: 1.4;">${clinic.address}</div>
-                
-                ${clinic.phone ? `
-                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: #334155; font-size: 12px; font-weight: 600;">
-                    <span style="color: #2dd4bf;">📞</span> ${clinic.phone}
-                  </div>
-                ` : ''}
-
-                ${clinic.hours ? `
-                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #334155; font-size: 11px;">
-                    <span style="color: #f59e0b;">🕒</span> ${clinic.hours}
-                  </div>
-                ` : ''}
-
-                <div style="display: flex; gap: 8px; margin-top: 12px;">
-                  <button onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${clinic.lat},${clinic.lon}')" style="flex: 1; background: #0f172a; color: white; border: none; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 10px; cursor: pointer; transition: opacity 0.2s;">
-                    DIRECTIONS
-                  </button>
-                  ${clinic.phone ? `
-                    <button onclick="window.location.href='tel:${clinic.phone}'" style="flex: 1; background: #2dd4bf; color: #060818; border: none; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 10px; cursor: pointer;">
-                      CALL NOW
-                    </button>
-                  ` : `
-                    <button style="flex: 1; background: #f1f5f9; color: #64748b; border: none; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 10px; cursor: not-allowed;">
-                      NO PHONE
-                    </button>
-                  `}
+          const marker = L.marker([clinic.lat, clinic.lon], {
+            icon: L.divIcon({
+              className: 'clinic-marker',
+              html: `
+                <div style="position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                  <div style="position: absolute; inset: 0; background: ${isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8'}; border-radius: 50%; opacity: 0.3; animation: pulse 2s infinite;"></div>
+                  <div style="width: 12px; height: 12px; background: ${isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8'}; border: 2px solid white; border-radius: 50%; z-index: 1;"></div>
                 </div>
-              </div>
-            `);
-          });
+              `,
+              iconSize: [24, 24]
+            })
+          }).addTo(mapInstance.current);
 
-        } catch (error) {
-          console.error("Error fetching clinics:", error);
-          setStatusMessage("Error fetching clinics. Please try again.");
-        } finally {
+          marker.bindPopup(`
+            <div style="padding: 16px; min-width: 240px; font-family: 'Inter', sans-serif; background: #ffffff; border-radius: 12px;">
+              <div style="font-size: 10px; color: ${isSpecialized ? '#2dd4bf' : isHospital ? '#ef4444' : '#38bdf8'}; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em;">${isSpecialized ? 'Skin Care Specialist' : isHospital ? 'Hospital Facility' : 'Medical Center'}</div>
+              <div style="font-weight: 900; color: #0f172a; margin-bottom: 6px; font-size: 16px; line-height: 1.2;">${clinic.name}</div>
+              <div style="font-size: 12px; color: #64748b; margin-bottom: 12px; line-height: 1.4;">${clinic.address}</div>
+              
+              <div style="font-size: 11px; margin-bottom: 8px; font-weight: 700; color: #475569;">
+                📍 ${clinic.distanceMiles.toFixed(1)} miles (${clinic.distance.toFixed(1)} km)
+              </div>
+
+              ${clinic.rating ? `
+                <div style="display: flex; align-items: center; gap: 4px; border-radius: 6px; background: rgba(245, 158, 11, 0.1); color: #f59e0b; font-size: 11px; padding: 4px 8px; width: fit-content; font-weight: bold; margin-bottom: 12px;">
+                  ⭐ ${clinic.rating} Google Rating
+                </div>
+              ` : ''}
+
+              ${status.isOpen !== null ? `
+                <div style="margin-bottom: 12px; font-size: 11px; font-weight: 800; color: ${status.isOpen ? '#10b981' : '#ef4444'}; display: flex; align-items: center; gap: 4px;">
+                  <span>●</span> ${status.text}
+                </div>
+              ` : ''}
+
+              ${clinic.phone ? `
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #334155; font-size: 12px; font-weight: 600;">
+                  <span>📞</span> ${clinic.phone}
+                </div>
+              ` : ''}
+
+              <div style="display: flex; gap: 8px; margin-top: 12px;">
+                <button onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${clinic.lat},${clinic.lon}')" style="flex: 1; background: #0f172a; color: white; border: none; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 10px; cursor: pointer;">
+                  DIRECTIONS
+                </button>
+                ${clinic.phone ? `
+                  <button onclick="window.location.href='tel:${clinic.phone}'" style="flex: 1; background: #2dd4bf; color: #060818; border: none; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 10px; cursor: pointer;">
+                    CALL
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          `);
+        });
+
+      } catch (error) {
+        console.error("Error fetching clinics:", error);
+        setStatusMessage("Error looking up clinics. Please try searching another spot.");
+        showToast("Error locating clinic hubs", "warning");
+      } finally {
+        setLoadingClinics(false);
+      }
+    };
+
+    const handleAddressSearch = async () => {
+      if (!addressInput.trim()) {
+        showToast("Please enter an address first!", "warning");
+        return;
+      }
+      setLoadingClinics(true);
+      setStatusMessage(`Locating "${addressInput}"...`);
+      showToast(`Locating "${addressInput}"...`, "info");
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addressInput)}&format=json&limit=1`, {
+          headers: {
+            'Accept-Language': 'en'
+          }
+        });
+        if (!response.ok) {
+          throw new Error("Failed to Geocode");
+        }
+        const data = await response.json();
+        if (data && data.length > 0) {
+          const { lat, lon, display_name } = data[0];
+          const primaryName = display_name.split(',')[0] || addressInput;
+          showToast(`Located ${primaryName}! Mapping results...`, "success");
+          setStatusMessage(`Found: ${display_name}. Mapping clinics...`);
+          await findClinics(10000, { latitude: parseFloat(lat), longitude: parseFloat(lon) });
+        } else {
+          showToast("Address not recognized. Try typing city or zip.", "warning");
+          setStatusMessage("Address not recognized. Try including a city or ZIP code.");
           setLoadingClinics(false);
         }
-      }, (error) => {
-        console.error("Geolocation error:", error);
-        setStatusMessage("Please enable location access to find clinics.");
+      } catch (err: any) {
+        console.error("Geocoding failed:", err);
+        showToast("Geocoding lookup failed. Using fallback location.", "warning");
+        setStatusMessage("Geocoding failed. Using server-side fallback.");
         setLoadingClinics(false);
-      });
+      }
     };
 
     useEffect(() => {
@@ -1007,25 +1269,122 @@ const styles = {
 
     return (
       <div className="page-container" style={styles.tabContent}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '24px', fontWeight: '800', margin: 0 }}>Clinic Finder</h2>
-          <button 
-            onClick={() => findClinics()}
-            style={{ padding: '8px 16px', borderRadius: '12px', background: '#00B4D8', border: 'none', color: 'white', fontSize: '14px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}
-          >
-            <MapPin size={16} />
-            Refresh
-          </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '950', margin: 0, color: '#f8fafc', letterSpacing: '0.04em', textTransform: 'uppercase' }} className="flex items-center gap-2">
+              <MapPinned size={20} className="text-teal-400" />
+              <span>Clinic Finder</span>
+            </h2>
+          </div>
+          
+          <div className="glass-card" style={{ padding: '20.5px', borderRadius: '24px', display: 'flex', flexDirection: 'column', gap: '14px', border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(30, 41, 59, 0.3)', backdropFilter: 'blur(12px)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Globe size={13} className="text-teal-400" />
+              <p className="text-xs text-teal-400 font-bold uppercase tracking-widest" style={{ margin: 0 }}>Location-Based Specialized Clinicians</p>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+              <div style={{ position: 'relative', width: '100%' }}>
+                <Search size={20} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                <input 
+                  type="text" 
+                  value={addressInput}
+                  onChange={(e) => setAddressInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddressSearch()}
+                  placeholder="Type city, zip, state, or address..."
+                  style={{
+                    width: '100%',
+                    padding: '16px 16px 16px 52px',
+                    borderRadius: '20px',
+                    background: 'rgba(15, 23, 42, 0.65)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: '#fff',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    outline: 'none',
+                    transition: 'all 0.3s ease',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.4)'
+                  }}
+                  className="focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20"
+                />
+              </div>
+              
+              <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                <button 
+                  onClick={handleAddressSearch}
+                  disabled={loadingClinics}
+                  style={{
+                    flex: 2,
+                    padding: '16px 24px',
+                    borderRadius: '20px',
+                    background: loadingClinics ? 'rgba(45, 212, 191, 0.15)' : 'linear-gradient(135deg, #2dd4bf 0%, #0ea5e9 100%)',
+                    border: 'none',
+                    color: loadingClinics ? '#94a3b8' : '#060818',
+                    fontSize: '15px',
+                    fontWeight: '900',
+                    cursor: loadingClinics ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    boxShadow: loadingClinics ? 'none' : '0 4px 18px rgba(45, 212, 191, 0.25)',
+                    transition: 'all 0.2s ease',
+                  }}
+                  className="hover:scale-[1.01] hover:brightness-110 active:scale-[0.98] focus:outline-none"
+                  id="clinicSearchButtonBtn"
+                >
+                  {loadingClinics ? (
+                    <>
+                      <RotateCcw size={18} className="animate-spin text-teal-400" />
+                      <span className="text-teal-400">Searching...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Search size={18} />
+                      <span style={{ letterSpacing: '0.04em', textTransform: 'uppercase' }}>Find Clinics</span>
+                    </>
+                  )}
+                </button>
+                
+                <button 
+                  onClick={() => { setAddressInput(''); findClinics(10000, undefined, true); }}
+                  disabled={loadingClinics}
+                  title="Use my current GPS position"
+                  style={{
+                    flex: 1,
+                    padding: '16px',
+                    borderRadius: '20px',
+                    background: 'rgba(45, 212, 191, 0.1)',
+                    border: '1px solid rgba(45, 212, 191, 0.25)',
+                    color: '#2dd4bf',
+                    cursor: loadingClinics ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: '850',
+                    transition: 'all 0.2s ease',
+                  }}
+                  className="hover:bg-teal-500/20 active:scale-95"
+                  id="clinicGPSButtonBtn"
+                >
+                  <MapPin size={18} />
+                  <span className="hidden sm:inline">My Location</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {statusMessage && (
-          <div style={{ padding: '12px 16px', background: 'rgba(0, 180, 216, 0.1)', border: '1px solid rgba(0, 180, 216, 0.2)', borderRadius: '12px', color: '#00B4D8', fontSize: '14px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Activity size={16} className="animate-pulse" />
-            {statusMessage}
+          <div style={{ padding: '12px 16px', background: 'rgba(45, 212, 191, 0.08)', border: '1px solid rgba(45, 212, 191, 0.15)', borderRadius: '12px', color: '#2dd4bf', fontSize: '13px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Activity size={16} className="animate-pulse text-teal-400" />
+            <span className="font-bold">{statusMessage}</span>
           </div>
         )}
 
-        <div style={{ position: 'relative', marginBottom: '20px' }}>
+        <div style={{ position: 'relative', marginBottom: '24px' }}>
           <div 
             ref={mapRef} 
             style={{ 
@@ -1038,67 +1397,165 @@ const styles = {
             }} 
           />
           {loadingClinics && (
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(6, 8, 24, 0.7)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 1000, borderRadius: '24px' }}>
-              <RotateCcw className="animate-spin" size={32} color="#00B4D8" />
-              <p style={{ marginTop: '12px', fontSize: '14px', fontWeight: '600' }}>Locating nearby clinics...</p>
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(6, 8, 24, 0.72)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 1000, borderRadius: '24px', backdropFilter: 'blur(3px)' }}>
+              <RotateCcw className="animate-spin" size={32} color="#2dd4bf" />
+              <p style={{ marginTop: '12px', fontSize: '14px', fontWeight: '800', color: '#2dd4bf', letterSpacing: '0.05em' }}>MAPPING CLINIC NETWORKS...</p>
             </div>
           )}
         </div>
 
         <div style={{ marginBottom: '20px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px' }}>Closest Clinics</h3>
+          <h3 style={{ fontSize: '15px', fontWeight: '900', marginBottom: '14px', color: '#f8fafc', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Closest Specialized Units</h3>
           {clinics.length === 0 && !loadingClinics ? (
-            <div style={{ padding: '20px', textAlign: 'center', background: 'rgba(255,255,255,0.03)', borderRadius: '20px' }}>
-              <p style={{ color: '#64748b', fontSize: '14px' }}>No clinics found in your area.</p>
+            <div style={{ padding: '30px', textAlign: 'center', background: 'rgba(255,255,255,0.03)', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.05)' }}>
+              <p style={{ color: '#64748b', fontSize: '14px', fontWeight: '700' }}>No localized clinic found in this search zone. Try typing another zip or city name!</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {clinics?.slice(0, 5).map(clinic => (
-                <div key={clinic.id} className="glass-card" style={{ padding: '20px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: '900', fontSize: '17px', color: '#fff', marginBottom: '4px' }}>{clinic.name}</div>
-                      <div style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.4' }}>{clinic.address}</div>
-                    </div>
-                    <div style={{ padding: '6px 12px', background: 'rgba(45, 212, 191, 0.1)', borderRadius: '100px', fontSize: '12px', fontWeight: '900', color: '#2dd4bf' }}>
-                      {clinic.distance.toFixed(1)} km
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
-                    {clinic.phone && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#fff', fontWeight: '700' }}>
-                        <Phone size={14} className="text-teal-400" /> {clinic.phone}
+              {clinics?.slice(0, 5).map(clinic => {
+                const isSpecialized = clinic.name.toLowerCase().includes('derm') || clinic.name.toLowerCase().includes('skin');
+                const status = getOpenStatus(clinic.hours);
+                return (
+                  <div key={clinic.id} className="glass-card" style={{ padding: '20px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', transition: 'all 0.25s ease' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div style={{ flex: 1, marginRight: '12px' }}>
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${isSpecialized ? 'bg-teal-500/10 text-teal-400' : 'bg-slate-500/10 text-slate-400'}`}>
+                            {isSpecialized ? 'Skin Care Specialist' : 'Clinic / Hospital Unit'}
+                          </span>
+                          {clinic.rating && (
+                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md flex items-center gap-1">
+                              ⭐ {clinic.rating} Google Rating
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontWeight: '900', fontSize: '17px', color: '#fff', marginBottom: '4px' }}>{clinic.name}</div>
+                        <div style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.4' }}>{clinic.address}</div>
                       </div>
-                    )}
-                    {clinic.hours && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#94a3b8' }}>
-                        <Clock size={14} className="text-amber-400" /> {clinic.hours}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                        <div style={{ padding: '6px 14px', background: 'rgba(45, 212, 191, 0.1)', borderRadius: '100px', fontSize: '12px', fontWeight: '900', color: '#2dd4bf' }}>
+                          {clinic.distanceMiles.toFixed(1)} mi
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '700' }}>
+                          ({clinic.distance.toFixed(1)} km)
+                        </div>
                       </div>
-                    )}
-                  </div>
+                    </div>
 
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button 
-                      onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${clinic.lat},${clinic.lon}`)}
-                      style={{ flex: 1, padding: '12px', borderRadius: '14px', background: '#fff', color: '#0f172a', fontWeight: '900', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                    >
-                      <MapPin size={16} /> DIRECTIONS
-                    </button>
-                    {clinic.phone && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginBottom: '16px' }}>
+                      {status.isOpen !== null && (
+                        <div className="flex items-center gap-1.5 text-xs font-extrabold" style={{ color: status.isOpen ? '#10b981' : '#f43f5e' }}>
+                          <span className="text-[10px]">●</span> {status.text}
+                        </div>
+                      )}
+                      
+                      {clinic.phone && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#e2e8f0', fontWeight: '700' }}>
+                          <Phone size={14} className="text-teal-400" /> {clinic.phone}
+                        </div>
+                      )}
+                      
+                      {clinic.hours && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#94a3b8' }}>
+                          <Clock size={14} className="text-amber-400" /> {clinic.hours}
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '10px' }}>
                       <button 
-                        onClick={() => window.location.href = `tel:${clinic.phone}`}
-                        style={{ flex: 1, padding: '12px', borderRadius: '14px', background: 'rgba(45, 212, 191, 0.1)', border: '1px solid rgba(45, 212, 191, 0.2)', color: '#2dd4bf', fontWeight: '900', fontSize: '12px' }}
+                        onClick={() => {
+                          showToast(`Routing map directions to ${clinic.name}...`, 'success');
+                          window.open(`https://www.google.com/maps/dir/?api=1&destination=${clinic.lat},${clinic.lon}`);
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: '13px',
+                          borderRadius: '14px',
+                          background: '#fff',
+                          color: '#0f172a',
+                          fontWeight: '900',
+                          fontSize: '12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 8px rgba(255,255,255,0.08)',
+                          border: 'none',
+                          transition: 'all 0.2s'
+                        }}
+                        className="hover:bg-slate-100 active:scale-95"
                       >
-                        CALL CLINIC
+                        <MapPin size={16} /> DIRECTIONS
                       </button>
-                    )}
+                      
+                      {clinic.phone && (
+                        <button 
+                          onClick={() => {
+                            showToast(`Opening dialer for ${clinic.name}...`, 'success');
+                            window.location.href = `tel:${clinic.phone}`;
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: '13px',
+                            borderRadius: '14px',
+                            background: 'rgba(45, 212, 191, 0.1)',
+                            border: '1px solid rgba(45, 212, 191, 0.25)',
+                            color: '#2dd4bf',
+                            fontWeight: '900',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                          className="hover:bg-teal-400/20 active:scale-95"
+                        >
+                          CALL CLINIC
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
+
+        <AnimatePresence>
+          {toastMessage && (
+            <div style={{ position: 'fixed', bottom: '24px', left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 9999, pointerEvents: 'none' }}>
+              <motion.div 
+                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 15, scale: 0.9 }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '14px 24px',
+                  borderRadius: '16px',
+                  background: 'rgba(6, 8, 24, 0.95)',
+                  border: toastType === 'success' ? '1px solid #2dd4bf' : toastType === 'warning' ? '1px solid #f43f5e' : '1px solid rgba(255,255,255,0.1)',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.5), 0 0 15px rgba(45, 212, 191, 0.15)',
+                  color: '#fff',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  backdropFilter: 'blur(12px)',
+                  pointerEvents: 'auto'
+                }}
+              >
+                <div style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: toastType === 'success' ? '#2dd4bf' : toastType === 'warning' ? '#f43f5e' : '#38bdf8',
+                  boxShadow: toastType === 'success' ? '0 0 8px #2dd4bf' : toastType === 'warning' ? '0 0 8px #f43f5e' : '0 0 8px #38bdf8'
+                }} />
+                <span>{toastMessage}</span>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     );
   };
@@ -1606,6 +2063,198 @@ const AboutPage = () => {
   );
 };
 
+const DermAnalysisLoader = () => {
+  const messages = [
+    "🔍 Skin Tight is scanning those patterns...",
+    "🪄 Give Skin Tight a few seconds!",
+    "🤖 Our AI is doing its job...",
+    "🎨 Matching shapes, colors, and textures...",
+    "✨ Preparing your wellness insights...",
+    "🚀 Almost there, running final checks..."
+  ];
+
+  const tips = [
+    "80% of visible skin aging is caused by UV rays. Wear SPF daily!",
+    "Melanomas can appear anywhere—even under nails or soles of feet.",
+    "Checking your skin monthly is easier if you take photos in the same lighting.",
+    "Learn the ABCDEs of skin awareness: Asymmetry, Border irregularity, Color, Diameter, and Evolving.",
+    "Consult a dermatologist if you notice any spots changing in size, shape, or color."
+  ];
+
+  const [msgIndex, setMsgIndex] = useState(0);
+  const [tipIndex, setTipIndex] = useState(0);
+
+  useEffect(() => {
+    const msgInterval = setInterval(() => {
+      setMsgIndex((prev) => (prev + 1) % messages.length);
+    }, 2800);
+
+    const tipInterval = setInterval(() => {
+      setTipIndex((prev) => (prev + 1) % tips.length);
+    }, 5000);
+
+    return () => {
+      clearInterval(msgInterval);
+      clearInterval(tipInterval);
+    };
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        background: 'rgba(6, 8, 24, 0.98)',
+        backdropFilter: 'blur(16px)',
+        zIndex: 9999,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+        color: '#f8fafc'
+      }}
+    >
+      <div className="w-full max-w-md flex flex-col items-center text-center space-y-8">
+        
+        {/* Animated Scanner Visual */}
+        <div style={{ position: 'relative', width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          
+          {/* Outer Rotating Cyber Ring */}
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 10, ease: 'linear' }}
+            style={{
+              position: 'absolute',
+              width: '160px',
+              height: '160px',
+              borderRadius: '50%',
+              border: '2px dashed rgba(45, 212, 191, 0.3)',
+              boxShadow: '0 0 20px rgba(45, 212, 191, 0.15)'
+            }}
+          />
+
+          {/* Glowing Pulse Ring */}
+          <motion.div
+            animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0.8, 0.4] }}
+            transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+            style={{
+              position: 'absolute',
+              width: '130px',
+              height: '130px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%)',
+              border: '1px solid rgba(14, 165, 233, 0.3)'
+            }}
+          />
+
+          {/* Central Target Spot (Scanning Frame) */}
+          <div style={{
+            position: 'relative',
+            width: '100px',
+            height: '100px',
+            borderRadius: '24px',
+            border: '2px solid rgba(255, 255, 255, 0.1)',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(255, 255, 255, 0.03)'
+          }}>
+            {/* Corner Bracket decorations */}
+            <div style={{ position: 'absolute', top: '8px', left: '8px', width: '12px', height: '12px', borderTop: '2px solid #2dd4bf', borderLeft: '2px solid #2dd4bf' }} />
+            <div style={{ position: 'absolute', top: '8px', right: '8px', width: '12px', height: '12px', borderTop: '2px solid #2dd4bf', borderRight: '2px solid #2dd4bf' }} />
+            <div style={{ position: 'absolute', bottom: '8px', left: '8px', width: '12px', height: '12px', borderBottom: '2px solid #2dd4bf', borderLeft: '2px solid #2dd4bf' }} />
+            <div style={{ position: 'absolute', bottom: '8px', right: '8px', width: '12px', height: '12px', borderBottom: '2px solid #2dd4bf', borderRight: '2px solid #2dd4bf' }} />
+
+            {/* Microscopic Lens Eye */}
+            <motion.div
+              animate={{ scale: [0.95, 1.05, 0.95] }}
+              transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+            >
+              <Dna size={40} className="text-teal-400" />
+            </motion.div>
+
+            {/* Glowing Scan Line Effect */}
+            <motion.div
+              animate={{ y: [-40, 40, -40] }}
+              transition={{ repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
+              style={{
+                position: 'absolute',
+                left: 0,
+                width: '100%',
+                height: '4px',
+                background: 'linear-gradient(90deg, transparent, #2dd4bf, transparent)',
+                boxShadow: '0 0 10px #2dd4bf'
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Carousel messages */}
+        <div style={{ height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={msgIndex}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.4 }}
+              style={{
+                fontSize: '18px',
+                fontWeight: '800',
+                color: '#fff',
+                letterSpacing: '-0.01em',
+                lineHeight: '1.4'
+              }}
+            >
+              {messages[msgIndex]}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+
+        {/* Informative / Wellness tips container */}
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.03)',
+          border: '1px solid rgba(255, 255, 255, 0.06)',
+          borderRadius: '24px',
+          padding: '20px',
+          width: '100%'
+        }}>
+          <h4 className="text-[10px] font-black uppercase text-teal-400 tracking-widest mb-2 flex items-center justify-center gap-1.5">
+            <Sun size={12} /> <span>Skin Wellness Tip</span>
+          </h4>
+          <div style={{ height: '54px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={tipIndex}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                className="text-xs text-slate-300 font-medium leading-relaxed"
+              >
+                {tips[tipIndex]}
+              </motion.p>
+            </AnimatePresence>
+          </div>
+        </div>
+
+        <p className="text-[10px] text-slate-500 font-mono tracking-wide mt-2">
+          SCAN ENGINE V3.5 • SECURE CONNECTION
+        </p>
+
+      </div>
+    </motion.div>
+  );
+};
+
 const RoutinePage = ({ 
   protocol, 
   loadingProtocol, 
@@ -1886,11 +2535,11 @@ const LegalModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void 
           </section>
           <section>
             <h3 className="text-teal-400 font-black uppercase tracking-widest mb-3">Terms of Service</h3>
-            <p>By using Skin Tight, you agree that you are at least 18 years old and understand that this app is in beta testing. You agree that the creators of Skin Tight are not liable for any health outcomes related to the use of this software.</p>
+            <p>By using Skin Tight, if you are under 18 years old, you confirm that you have permission from a parent or guardian to use this app and understand that this app is in beta testing. You agree that the creators of Skin Tight are not liable for any health outcomes related to the use of this software.</p>
           </section>
           <section>
             <h3 className="text-teal-400 font-black uppercase tracking-widest mb-3">Privacy Policy</h3>
-            <p>Your privacy is critical. We use Firebase for secure authentication and data storage. Your skin photos are processed by Google Gemini AI for analysis. We do not sell your personal health data to third parties.</p>
+            <p>Your privacy is critical. Certain account information and scan history may be stored using secure third-party services such as Firebase. Uploaded images may be processed by AI systems such as Google Gemini to generate analysis results. We take reasonable steps to help protect user information. We do not sell your personal health data to third parties.</p>
           </section>
         </div>
         <div className="p-6 border-t border-white/10">
@@ -1957,7 +2606,7 @@ const SideMenu = ({
           style={{ 
             position: 'absolute', 
             top: '20px', 
-            right: '20px', 
+            left: '20px', 
             background: 'transparent', 
             border: 'none', 
             cursor: 'pointer',
@@ -1968,30 +2617,18 @@ const SideMenu = ({
           <X size={32} />
         </button>
 
-        {currentUser && (
-          <div style={{ marginBottom: '32px', padding: '0 20px' }}>
-            <div 
-              id="menuAvatarCircle"
-              style={{ 
-                width: '64px', 
-                height: '64px', 
-                borderRadius: '20px', 
-                background: fullUserData?.profileColor || 'linear-gradient(135deg, #2dd4bf 0%, #0ea5e9 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '16px',
-                boxShadow: '0 10px 20px rgba(0,0,0,0.2)',
-                fontSize: '24px',
-                fontWeight: '900',
-                color: 'white'
-              }}>
-                {fullUserData?.fullName ? fullUserData.fullName.charAt(0).toUpperCase() : (fullUserData?.username?.[0]?.toUpperCase() || 'U')}
-            </div>
-            <div style={{ fontWeight: '800', fontSize: '20px', color: '#f8fafc' }}>{fullUserData?.displayName || 'Skin Tight User'}</div>
-            <div style={{ fontSize: '14px', color: '#94a3b8' }}>{currentUser?.email || fullUserData?.email || 'N/A'}</div>
+        {/* Brand Header */}
+        <div style={{ padding: '0 20px', marginBottom: '32px', marginTop: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '36px', height: '36px', borderRadius: '10px',
+            background: 'rgba(45, 212, 191, 0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: '1px solid rgba(45, 212, 191, 0.2)'
+          }}>
+            <Dna size={18} color="#2dd4bf" />
           </div>
-        )}
+          <span style={{ fontSize: '18px', fontWeight: '900', color: '#f8fafc', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Skin Tight</span>
+        </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {menuItems.map(item => (
@@ -2219,9 +2856,9 @@ const tagUserScanCompleted = () => {
   }
   
   if (auth.currentUser) {
-    updateDoc(doc(db, "users", auth.currentUser.uid), {
+    setDoc(doc(db, "users", auth.currentUser.uid), {
       lastScanCompletedAt: getServerTimestamp()
-    }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${auth.currentUser?.uid}`));
+    }, { merge: true }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${auth.currentUser?.uid}`));
   }
 };
 
@@ -2243,7 +2880,22 @@ const checkAndShowScanReminder = () => {
     }).catch(err => handleFirestoreError(err, OperationType.GET, `users/${user.uid}/cycles/${cycleKey}`));
 };
 
-const AI_SYSTEM_PROMPT = `You are a specialist AI skin cancer screening assistant. Your ONLY purpose is to help users identify suspicious skin lesions, moles, spots or growths that may indicate skin cancer or pre-cancerous conditions. You do NOT provide general skincare advice, beauty recommendations, anti-aging tips, cosmetic suggestions or general dermatology advice unrelated to skin cancer risk. If a user asks about anything outside of skin cancer screening, detection, prevention or monitoring, respond with: 'This app is specifically designed for skin cancer screening and monitoring. For general skincare advice please consult a dermatologist or skincare professional.' Always focus on: suspicious lesion analysis, ABCDE criteria assessment, skin cancer type identification, UV damage risk, monitoring frequency recommendations, and when to see a dermatologist urgently. Cover the entire body surface — not just the face. Any part of the skin on any body area can develop skin cancer and deserves equal attention.`;
+const AI_SYSTEM_PROMPT = `You are an AI skin wellness and screening support assistant. Your purpose is to help users analyze skin photos to support ongoing visual tracking and self-awareness of skin wellness.
+
+CRITICAL SAFETY AND LEGAL RULES:
+1. NEVER sound like you are giving a medical diagnosis, definitive clinical assessment, or health guarantee. Avoid any certainty, diagnostic language, or promising any accuracy in the visual screening.
+2. ALWAYS encourage active self-monitoring, monthly self-checks, and scheduling a professional consultation with a licensed or board-certified dermatologist.
+3. NEVER use definitive phrases such as:
+   - "no signs of skin cancer"
+   - "you are safe"
+   - "dangerous moles"
+   - "no cancer detected"
+4. INSTEAD, ALWAYS use softer wellness-focused and non-definitive phrases such as:
+   - "No obvious visual warning signs were detected"
+   - "The AI did not detect clear visual patterns commonly associated with high-risk lesions"
+   - "Low visual concern based on the uploaded images"
+   - "Monitor for changes and consult a dermatologist if concerned"
+5. Do NOT provide general beauty or cosmetic recommendations. If asked, state that this is an informational wellness support tool for skin screening. Cover the entire body surface and outline potential patterns to watch for without diagnostic certainty. Only suggest further evaluation or continued monitoring.`;
 
 // --- Types ---
 interface AnalysisResult {
@@ -2626,10 +3278,41 @@ async function loadHowToImprove() {
       handleFirestoreError(err, OperationType.GET, `users/${user.uid}`);
       return;
     }
-    const profile = userDoc.data();
+    
+    let profile = userDoc?.exists() ? userDoc.data() : null;
     
     if (!profile) {
-      throw new Error("User profile not found. Please ensure you've completed your registration and try logging in again.");
+      // Auto-create basic profile if missing from Firestore, keeping the system 100% robust
+      try {
+        const defaultProfile = {
+          fullName: user.displayName || user.email?.split('@')[0] || "User",
+          username: (user.email?.split('@')[0] || "user_" + user.uid.slice(0, 5)).toLowerCase(),
+          email: user.email || "",
+          ageRange: "25-34",
+          fitzpatrickType: 2,
+          profileColor: "#2dd4bf",
+          skinScore: 100,
+          streakDays: 0,
+          createdAt: new Date().toISOString(),
+          scansCompleted: 0
+        };
+        await setDoc(doc(db, "users", user.uid), defaultProfile);
+        profile = defaultProfile;
+      } catch (createErr) {
+        console.error("Auto-creation of fallback profile failed:", createErr);
+        if (contentEl) {
+          contentEl.innerHTML = `
+            <div style="text-align:center;padding:32px 16px;color:#f43f5e;font-family:'Inter',sans-serif;">
+              <div style="font-size:36px;margin-bottom:12px;">👤</div>
+              <div style="font-weight:900;font-size:16px;margin-bottom:8px;color:#ffffff;text-transform:uppercase;letter-spacing:0.04em;">Profile Setup Required</div>
+              <p style="font-size:13px;color:#94a3b8;line-height:1.5;margin:0 auto;max-width:320px;">
+                User profile not found. Please ensure you have completed your profile setup or registration, and log in again to sync skin credentials.
+              </p>
+            </div>
+          `;
+        }
+        return;
+      }
     }
 
     // Check cache
@@ -2660,7 +3343,13 @@ async function loadHowToImprove() {
     const currentScore = profile.skinScore || 100;
     const scanHistoryText = recentScans.map(s => `- ${s.region} (${s.risk} risk, scanned on ${new Date(s.date).toLocaleDateString()})`).join("\n");
        
-    const prompt = `You are a skin cancer prevention specialist. Based on this user profile give them a personalized action plan to improve their skin health score and minimize skin cancer risk.
+    const prompt = `You are an AI skin wellness and prevention support assistant. Based on this user profile give them a personalized actionable support checklist to encourage self-monitoring habits and skin wellness.
+    
+CRITICAL SAFETY AND LEGAL RULES:
+1. NEVER sound like you are giving a medical diagnosis, definitive clinical assessment, or health guarantee. Avoid any certainty, diagnostic language, or promising any accuracy.
+2. ALWAYS encourage active self-monitoring, monthly self-checks, and scheduling a professional consultation with a licensed or board-certified dermatologist.
+3. NEVER use definitive phrases such as: "no signs of skin cancer", "you are safe", "dangerous moles", "no cancer detected".
+4. INSTEAD, ALWAYS use softer wellness-focused and non-definitive phrases such as: "No obvious visual warning signs were detected", "The AI did not detect clear visual patterns commonly associated with high-risk lesions", "Low visual concern based on the uploaded images", "Monitor for changes and consult a dermatologist if concerned".
 
 User profile:
 - Current SkinScore: ${currentScore} out of 100
@@ -2670,24 +3359,24 @@ User profile:
 - Most recent scan risk level: ${recentScans.length > 0 ? recentScans[0].risk : "none"}
 - Total scans completed: ${profile.scansCompleted || 0}
 
-Generate exactly 5 specific actionable steps this person can take RIGHT NOW to improve their score and reduce skin cancer risk. Each step must be directly relevant to their skin type and risk level.
+Generate exactly 5 specific actionable wellness steps this person can take RIGHT NOW to improve their self-monitoring score and prioritize skin care. Each step must be directly relevant to their Fitzpatrick skin type and risk level.
  
 Format your response as JSON only with this structure:
 {
-  "headline": "one motivating sentence for this specific person",
+  "headline": "one motivating non-definitive wellness sentence for this specific person",
   "steps": [
     {
       "icon": "emoji",
       "title": "short action title max 5 words",
-      "description": "specific instruction max 20 words",
+      "description": "specific non-definitive instruction max 20 words",
       "impact": "low" or "medium" or "high"
     }
   ]
 }
 
-Focus only on skin cancer prevention. No general beauty or cosmetic advice. No filler content. Be direct and specific.`;
+Focus only on skin wellness and screening prevention. No general beauty or cosmetic advice. No filler content. Be direct and specific.`;
 
-    const responseData = await callAI(prompt, "gemini-3-flash-preview", {
+    const responseData = await callAI(prompt, "gemini-3.5-flash", {
       responseMimeType: "application/json"
     });
 
@@ -2706,10 +3395,10 @@ Focus only on skin cancer prevention. No general beauty or cosmetic advice. No f
     
     // Save to cache
     try {
-      await updateDoc(doc(db, "users", user.uid), {
+      await setDoc(doc(db, "users", user.uid), {
         howToImproveCache: result,
         howToImproveGeneratedAt: getServerTimestamp()
-      });
+      }, { merge: true });
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `users/${user.uid}`);
     }
@@ -3246,8 +3935,28 @@ Focus only on skin cancer prevention. No general beauty or cosmetic advice. No f
           <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
             <Activity size={18} className="text-cyan-400" /> Risk Trend Analysis
           </h3>
-          <div style={{ height: '200px', width: '100%' }}>
-            <canvas ref={chartRef}></canvas>
+          <div style={{ height: '200px', width: '100%', position: 'relative' }}>
+            {scans.length === 0 ? (
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(15, 23, 42, 0.4)',
+                borderRadius: '20px',
+                border: '1px dashed rgba(255,255,255,0.05)',
+                padding: '20px',
+                textAlign: 'center'
+              }}>
+                <Activity size={32} color="#475569" style={{ marginBottom: '12px' }} />
+                <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#f8fafc', marginBottom: '6px' }}>No Data Available</h4>
+                <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0, maxWidth: '280px', lineHeight: '1.4' }}>Complete virtual scans of your skin areas to display a risk level over time analysis chart.</p>
+              </div>
+            ) : (
+              <canvas ref={chartRef}></canvas>
+            )}
           </div>
         </div>
 
@@ -3287,18 +3996,36 @@ Focus only on skin cancer prevention. No general beauty or cosmetic advice. No f
           </div>
           <div className="text-[10px] font-bold text-slate-500 uppercase mb-2">Previously Scanned</div>
           <div className="flex flex-wrap gap-2">
-            {Array.from(new Set(scans?.map(s => s.bodyRegion))).map(region => {
-              const latestScan = scans?.find(s => s.bodyRegion === region);
-              const riskColor = latestScan?.result.risk_level === 'high' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 
-                               latestScan?.result.risk_level === 'moderate' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 
-                               'bg-slate-500/20 text-slate-400 border-white/10';
-              return (
-                <div key={region} className={`px-4 py-2 rounded-xl text-xs font-bold border ${riskColor} flex items-center gap-2`}>
-                  {region}
-                </div>
-              );
-            })}
-            {scans.length === 0 && <p className="text-xs text-slate-500 italic">No history yet.</p>}
+            {scans.length === 0 ? (
+              <div style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: 'rgba(15, 23, 42, 0.2)',
+                borderRadius: '16px',
+                color: '#94a3b8',
+                fontSize: '12px',
+                fontWeight: '600',
+                border: '1px solid rgba(255,255,255,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <Info size={14} className="text-slate-500" />
+                <span>No data (No scans completed yet)</span>
+              </div>
+            ) : (
+              Array.from(new Set(scans?.map(s => s.bodyRegion))).map(region => {
+                const latestScan = scans?.find(s => s.bodyRegion === region);
+                const riskColor = latestScan?.result.risk_level === 'high' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 
+                                 latestScan?.result.risk_level === 'moderate' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 
+                                 'bg-slate-500/20 text-slate-400 border-white/10';
+                return (
+                  <div key={region} className={`px-4 py-2 rounded-xl text-xs font-bold border ${riskColor} flex items-center gap-2`}>
+                    {region}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
         
@@ -3377,7 +4104,7 @@ We collect photos you upload for analysis and information you provide in the int
 Your data is used solely to provide the skin analysis service and improve the app's functionality. We do not sell your personal data to third parties.
 
 3. Data Storage
-Data is stored locally on your device and may be processed on secure servers. We implement industry-standard security measures to protect your information.
+Certain account information and scan history may be stored using secure third-party services such as Firebase. Uploaded images may be processed by AI systems such as Google Gemini to generate analysis results. We take reasonable steps to help protect user information.
 
 4. Third-Party Services
 We use AI services (like Google Gemini) to process images. These services are bound by their own privacy policies regarding data handling.
@@ -4717,9 +5444,9 @@ function App() {
           setHighUvDays(prev => {
             const next = prev + 1;
             if (currentUser) {
-              updateDoc(doc(db, "users", currentUser.uid), {
+              setDoc(doc(db, "users", currentUser.uid), {
                 highUvDays: next
-              }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${currentUser?.uid}`));
+              }, { merge: true }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${currentUser?.uid}`));
             }
             return next;
           });
@@ -4764,7 +5491,7 @@ function App() {
     try {
       const response = await callAIVision(
         [
-          { inlineData: { mimeType: "image/jpeg", data: photo.split(',')[1] } },
+          { inlineData: { mimeType: "image/jpeg", data: extractBase64FromDataUrl(photo) } },
           { text: "Look at this image. Is it a clear close-up photo of a skin lesion or skin area? Rate the image quality as: GOOD (clear, well-lit, close-up, lesion visible), POOR (blurry, dark, too far away, or lesion not clearly visible), or NOT_SKIN (this is not a photo of skin). Respond with only one word: GOOD, POOR, or NOT_SKIN." }
         ]
       );
@@ -4906,11 +5633,11 @@ function App() {
   };
 
   const updateSkinScoreInFirestore = (userId: string, newScore: number) => {
-    updateDoc(doc(db, "users", userId), {
+    setDoc(doc(db, "users", userId), {
       skinScore: newScore,
       lastScanDate: getServerTimestamp(),
       scansCompleted: getIncrement(1)
-    }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${userId}`));
+    }, { merge: true }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${userId}`));
   };
 
   const loadScanHistory = async (userId?: string) => {
@@ -5012,7 +5739,7 @@ function App() {
       const imageParts = photos.map(p => ({
         inlineData: {
           mimeType: "image/jpeg",
-          data: p.split(',')[1],
+          data: extractBase64FromDataUrl(p),
         },
       }));
 
@@ -5050,9 +5777,9 @@ Respond ONLY with valid JSON with these fields:
 - cancer_type_indicators: short string identifying indicators of BCC, SCC, or Melanoma if any.
 - comparison_notes: If multiple photos provided, note any differences or stability.
 - action_card: One of three specific strings:
-  1. "No immediate action needed. Monitor this spot monthly and see a dermatologist for your annual check." (for low risk)
-  2. "Schedule a dermatologist appointment within the next 4-6 weeks. Not urgent but do not ignore it." (for moderate risk)
-  3. "See a dermatologist as soon as possible — within 1-2 weeks. Do not wait." (for high risk)
+  1. "Low visual concern based on the uploaded images. Monitor for changes and consult a dermatologist if concerned." (for low risk)
+  2. "No obvious visual warning signs were detected, but scheduled professional evaluation is recommended. Consider scheduling a dermatology consultation within 4-6 weeks for further review." (for moderate risk)
+  3. "Observation patterns suggest professional assessment is warranted. Please consult a dermatologist as soon as possible (ideally within 1-2 weeks) for a clinical evaluation." (for high risk)
 - suggestions: array of action items (will be saved).
 - urgency: string recommendation (will be saved).
 - data_quality_note: string.
@@ -5063,7 +5790,7 @@ Respond ONLY with valid JSON with these fields:
           ...imageParts,
           { text: prompt }
         ],
-        "gemini-3-flash-preview",
+        "gemini-3.5-flash",
         { responseMimeType: "application/json" }
       );
       
@@ -5111,11 +5838,11 @@ Respond ONLY with valid JSON with these fields:
           setLastFullWeekCompletionDate(nowIso);
 
           if (currentUser) {
-            updateDoc(doc(db, "users", currentUser.uid), {
+            setDoc(doc(db, "users", currentUser.uid), {
               nextScanDate: nextDateStr,
               cycleProgress: updatedProgress,
               lastFullWeekCompletionDate: nowIso
-            }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${currentUser?.uid}`));
+            }, { merge: true }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${currentUser?.uid}`));
           }
         }
       }
@@ -5142,9 +5869,9 @@ Respond ONLY with valid JSON with these fields:
         };
         
         if (currentUser) {
-          updateDoc(doc(db, "users", currentUser.uid), {
+          setDoc(doc(db, "users", currentUser.uid), {
             streakData: updated
-          }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${currentUser?.uid}`));
+          }, { merge: true }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${currentUser?.uid}`));
         }
         
         return updated;
@@ -5154,9 +5881,9 @@ Respond ONLY with valid JSON with these fields:
       const newScore = calculateSkinScore(jsonResult);
       setSkinScore(newScore);
       if (currentUser) {
-        updateDoc(doc(db, "users", currentUser.uid), {
+        setDoc(doc(db, "users", currentUser.uid), {
           skinScore: newScore
-        }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${currentUser?.uid}`));
+        }, { merge: true }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${currentUser?.uid}`));
       }
       setScoreHistory(prev => {
         const updated = [...prev, { date: new Date().toISOString(), score: newScore }];
@@ -5208,9 +5935,9 @@ Respond ONLY with valid JSON with these fields:
         setBodyDots(prev => {
           const updated = [...prev, newDot];
           if (currentUser) {
-            updateDoc(doc(db, "users", currentUser.uid), {
+            setDoc(doc(db, "users", currentUser.uid), {
               bodyDots: updated
-            }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${currentUser?.uid}`));
+            }, { merge: true }).catch(err => handleFirestoreError(err, OperationType.UPDATE, `users/${currentUser?.uid}`));
           }
           return updated;
         });
@@ -5265,10 +5992,10 @@ Respond ONLY with valid JSON with these fields:
   const saveProfile = async () => {
     if (!currentUser) return;
     try {
-      await updateDoc(doc(db, "users", currentUser.uid), {
+      await setDoc(doc(db, "users", currentUser.uid), {
         fullName: tempProfile.fullName,
         profileColor: tempProfile.profileColor
-      });
+      }, { merge: true });
       setUserProfile(tempProfile);
       setFullUserData((prev: any) => ({
         ...prev,
@@ -5307,7 +6034,7 @@ STRICT LENGTH LIMITS:
 - nextExamSchedule: ONE clear sentence with a specific timeframe. (High risk: 2 weeks, Moderate: 4-6 weeks, Low: 6-12 months).
 Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"], "priorityCheckAreas": ["string"], "warningSigns": ["string"], "nextExamSchedule": "string" }`;
 
-      const responseData = await callAI(prompt, "gemini-3-flash-preview", { responseMimeType: "application/json" });
+      const responseData = await callAI(prompt, "gemini-3.5-flash", { responseMimeType: "application/json" });
 
       const protocolData = JSON.parse(responseData.text || '{}');
       const newProtocol = {
@@ -5494,6 +6221,9 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
   return (
     <ErrorBoundary>
       <>
+        <AnimatePresence>
+          {loading && <DermAnalysisLoader />}
+        </AnimatePresence>
         <div className="app-wrapper" style={{ ...styles.container, background: '#060818' }}>
       {isOffline && (
         <div style={{ 
@@ -5812,7 +6542,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               </motion.div>
             </div>
 
-            {recentScan && (
+            {recentScan ? (
               <div className="glass-card p-8 rounded-3xl mb-6 border border-cyan-500/20 cursor-pointer hover:bg-white/5 transition-all text-center" onClick={() => { setSelectedScanId(recentScan.id); setActiveTab('timeline'); }}>
                 <div className="flex flex-col items-center mb-6">
                   <h3 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-2 mb-2">
@@ -5849,6 +6579,20 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                   <div className="mt-4 flex items-center gap-2 text-teal-400 font-bold text-xs uppercase tracking-widest">
                     View Full Result <ChevronRight size={14} />
                   </div>
+                </div>
+              </div>
+            ) : (
+              <div className="glass-card p-6 rounded-3xl mb-6 border border-white/5 text-center">
+                <div className="flex flex-col items-center mb-4">
+                  <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-2">
+                    <History size={16} /> <span>Scan History</span>
+                  </h3>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#f8fafc' }}>No Scans Completed Yet</h4>
+                  <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                    You haven't scanned any spots yet. Tap **Start New Scan** above to complete your first AI skin assessment.
+                  </p>
                 </div>
               </div>
             )}
