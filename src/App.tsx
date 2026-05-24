@@ -182,8 +182,25 @@ const callAI = async (prompt: string, model: string = "gemini-3.5-flash", config
 const extractBase64FromDataUrl = (dataUrl: string): string => {
   if (!dataUrl) return "";
   const ix = dataUrl.indexOf(',');
-  if (ix === -1) return dataUrl; // It might be pure base64
-  return dataUrl.slice(ix + 1);
+  let base64Clean = ix === -1 ? dataUrl : dataUrl.slice(ix + 1);
+  
+  // Trim whitespaces
+  base64Clean = base64Clean.trim();
+  
+  // Remove any non-base64 characters safely
+  base64Clean = base64Clean.replace(/[^a-zA-Z0-9+/=]/g, '');
+  
+  // Ensure the base64 length is a multiple of 4
+  const mod = base64Clean.length % 4;
+  if (mod === 2) {
+    base64Clean += "==";
+  } else if (mod === 3) {
+    base64Clean += "=";
+  } else if (mod === 1) {
+    base64Clean = base64Clean.slice(0, -1);
+  }
+  
+  return base64Clean;
 };
 
 const callAIVision = async (parts: any[], model: string = "gemini-3.5-flash", config: any = {}) => {

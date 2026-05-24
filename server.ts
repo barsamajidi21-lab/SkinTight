@@ -33,7 +33,29 @@ async function startServer() {
 
       let contents;
       if (parts) {
-        contents = { parts };
+        // Sanitize inlineData data base64 strings if present to avoid "The string did not match the expected pattern."
+        const sanitizedParts = parts.map((part: any) => {
+          if (part && part.inlineData && typeof part.inlineData.data === 'string') {
+            let data = part.inlineData.data.trim().replace(/[^a-zA-Z0-9+/=]/g, '');
+            const mod = data.length % 4;
+            if (mod === 2) {
+              data += "==";
+            } else if (mod === 3) {
+              data += "=";
+            } else if (mod === 1) {
+              data = data.slice(0, -1);
+            }
+            return {
+              ...part,
+              inlineData: {
+                ...part.inlineData,
+                data
+              }
+            };
+          }
+          return part;
+        });
+        contents = { parts: sanitizedParts };
       } else {
         contents = prompt;
       }
