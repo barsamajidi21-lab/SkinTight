@@ -36,20 +36,19 @@ async function startServer() {
         // Sanitize inlineData data base64 strings if present to avoid "The string did not match the expected pattern."
         const sanitizedParts = parts.map((part: any) => {
           if (part && part.inlineData && typeof part.inlineData.data === 'string') {
-            let data = part.inlineData.data.trim().replace(/[^a-zA-Z0-9+/=]/g, '');
-            const mod = data.length % 4;
-            if (mod === 2) {
-              data += "==";
-            } else if (mod === 3) {
-              data += "=";
-            } else if (mod === 1) {
-              data = data.slice(0, -1);
-            }
+            // Strip data URL prefixes if they accidentally got passed to the server
+            const base64Raw = part.inlineData.data.includes(',')
+              ? part.inlineData.data.split(',')[1]
+              : part.inlineData.data;
+
+            // Use Node's built-in Buffer to automatically heal any incomplete/invalid base64
+            const cleanBase64 = Buffer.from(base64Raw.trim(), 'base64').toString('base64');
+            
             return {
               ...part,
               inlineData: {
                 ...part.inlineData,
-                data
+                data: cleanBase64
               }
             };
           }
