@@ -172,11 +172,20 @@ const callAI = async (prompt: string, model: string = "gemini-3.5-flash", config
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt, model, config }),
   });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "AI Generation failed");
+  const text = await response.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    throw new Error(
+      `API Gateway returned an invalid response. Code: ${response.status}. ` +
+      `If you've just deployed to Vercel, please verify that you have added your GEMINI_API_KEY environment variable in your Vercel Dashboard, and check your Vercel deployment logs.`
+    );
   }
-  return await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "AI Generation failed");
+  }
+  return data;
 };
 
 const extractBase64FromDataUrl = (dataUrl: string): string => {
@@ -209,11 +218,20 @@ const callAIVision = async (parts: any[], model: string = "gemini-3.5-flash", co
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ parts, model, config }),
   });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "AI Vision Analysis failed");
+  const text = await response.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    throw new Error(
+      `API Gateway returned an invalid response. Code: ${response.status}. ` +
+      `If you've just deployed to Vercel, please verify that you have added your GEMINI_API_KEY environment variable in your Vercel Dashboard, and check your Vercel deployment logs.`
+    );
   }
-  return await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "AI Vision Analysis failed");
+  }
+  return data;
 };
 
 // Helper for server timestamps to avoid repeating long path
