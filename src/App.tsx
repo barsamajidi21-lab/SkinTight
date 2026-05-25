@@ -2081,10 +2081,10 @@ const AboutPage = () => {
         {/* IMPORTANT DISCLAIMER */}
         <motion.div variants={itemVariants} className="p-6 rounded-2xl bg-amber-500/5 border border-amber-500/10">
           <h2 className="text-sm font-bold text-amber-500 mb-3 flex items-center gap-2">
-            <AlertTriangle size={18} /> Important Notice
+            <AlertTriangle size={18} /> Medical Disclaimer
           </h2>
-          <p className="text-xs text-amber-200/60 leading-relaxed">
-            Skin Tight is an AI-powered tool. Not a medical device. Always consult a dermatologist for diagnoses. Seek medical help for rapid changes.
+          <p className="text-xs text-amber-200/60 leading-relaxed text-left">
+            Skin Tight is an AI-powered wellness and educational tool designed to help users monitor visible skin changes over time. Skin Tight is NOT a medical device and does NOT provide medical diagnoses, treatment plans, prescriptions, or professional medical advice. Always consult a licensed dermatologist.
           </p>
         </motion.div>
 
@@ -2549,36 +2549,71 @@ const EducationCard = ({ result, onClose }: { result: any, onClose: () => void }
 
     const OverdueBanner = () => null; // Removed as requested
 
-const LegalModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
+const LegalModal = ({ 
+  isOpen, 
+  onClose, 
+  initialType = 'disclaimer' 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  initialType?: 'terms' | 'privacy' | 'disclaimer' | null;
+}) => {
+  const [activeTab, setActiveTab] = useState<'disclaimer' | 'terms' | 'privacy'>('disclaimer');
+
+  useEffect(() => {
+    if (initialType) {
+      setActiveTab(initialType);
+    }
+  }, [initialType]);
+
   if (!isOpen) return null;
+
+  const getContent = () => {
+    if (activeTab === 'disclaimer') return MEDICAL_DISCLAIMER_TEXT;
+    if (activeTab === 'terms') return TERMS_AND_CONDITIONS;
+    return PRIVACY_POLICY;
+  };
+
   return (
     <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl" onClick={onClose} />
       <motion.div 
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative w-full max-w-full glass-card rounded-3xl overflow-hidden flex flex-col max-h-[80vh]"
+        className="relative w-full max-w-lg glass-card rounded-3xl overflow-hidden flex flex-col max-h-[80vh]"
       >
         <div className="p-6 border-b border-white/10 flex justify-between items-center">
-          <h2 className="text-xl font-black text-white">Legal Information</h2>
+          <h2 className="text-xl font-black text-white">Legal & Policies</h2>
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl"><X size={24} /></button>
         </div>
-        <div className="p-6 overflow-y-auto space-y-8 text-sm text-slate-300 leading-relaxed">
-          <section>
-            <h3 className="text-teal-400 font-black uppercase tracking-widest mb-3">Medical Disclaimer</h3>
-            <p>Skin Tight is NOT a medical device. It does NOT provide medical diagnoses. The AI assessments are for educational and monitoring purposes only. Always consult a licensed board-certified dermatologist for any skin concerns. Never delay seeking medical advice because of something you read in this app.</p>
-          </section>
-          <section>
-            <h3 className="text-teal-400 font-black uppercase tracking-widest mb-3">Terms of Service</h3>
-            <p>By using Skin Tight, if you are under 18 years old, you confirm that you have permission from a parent or guardian to use this app and understand that this app is in beta testing. You agree that the creators of Skin Tight are not liable for any health outcomes related to the use of this software.</p>
-          </section>
-          <section>
-            <h3 className="text-teal-400 font-black uppercase tracking-widest mb-3">Privacy Policy</h3>
-            <p>Your privacy is critical. Certain account information and scan history may be stored using secure third-party services such as Firebase. Uploaded images may be processed by AI systems such as Google Gemini to generate analysis results. We take reasonable steps to help protect user information. We do not sell your personal health data to third parties.</p>
-          </section>
+        
+        {/* Modern Tabs */}
+        <div className="flex border-b border-white/10 bg-white/2">
+          {(['disclaimer', 'terms', 'privacy'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-4 text-xs font-black uppercase tracking-widest transition-colors ${
+                activeTab === tab 
+                  ? 'text-teal-400 border-b-2 border-teal-400 bg-teal-500/5' 
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              {tab === 'disclaimer' ? 'Disclaimer' : tab === 'terms' ? 'Terms' : 'Privacy'}
+            </button>
+          ))}
         </div>
-        <div className="p-6 border-t border-white/10">
-          <button onClick={onClose} className="w-full py-4 bg-teal-500 text-slate-900 font-black rounded-2xl">I Understand</button>
+
+        <div className="p-6 overflow-y-auto flex-1 text-sm text-slate-300 leading-relaxed max-h-[50vh]">
+          <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }} className="text-slate-300 text-xs text-left">
+            {getContent()}
+          </pre>
+        </div>
+
+        <div className="p-6 border-t border-white/10 bg-white/2">
+          <button onClick={onClose} className="w-full py-4 bg-teal-500 text-slate-900 font-black rounded-2xl shadow-lg shadow-teal-500/20 active:scale-95 transition-transform">
+            I Understand
+          </button>
         </div>
       </motion.div>
     </div>
@@ -4108,55 +4143,146 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
   };
 
 // --- Legal Text Constants ---
-const TERMS_AND_CONDITIONS = `Terms & Conditions
-Last Updated: April 8, 2026
+const MEDICAL_DISCLAIMER_TEXT = `MEDICAL DISCLAIMER
+Last Updated: May 24, 2026
+
+Skin Tight is an AI-powered wellness and educational tool designed to help users monitor visible skin changes over time. Skin Tight is NOT a medical device and does NOT provide medical diagnoses, treatment plans, prescriptions, or professional medical advice.
+
+The AI-generated assessments are informational only and may be inaccurate, incomplete, or incorrect. Results can be affected by factors such as image quality, lighting conditions, camera resolution, skin tone variations, and incomplete user information.
+
+Skin Tight does not guarantee the detection, prevention, or prediction of skin cancer or any other medical condition. Terms such as “low risk,” “moderate risk,” or “high risk” are automated AI-generated wellness indicators and are not medical conclusions.
+
+Always consult a licensed dermatologist or qualified healthcare professional for any medical concerns regarding your skin. Never ignore, delay, or replace professional medical advice because of information provided by this application.
+
+If you notice rapid skin changes, bleeding lesions, painful growths, or any urgent medical symptoms, seek professional medical attention immediately.`;
+
+const TERMS_AND_CONDITIONS = `TERMS & CONDITIONS
+Last Updated: May 24, 2026
 
 1. Acceptance of Terms
-By accessing or using this application, you agree to be bound by these Terms & Conditions. If you do not agree, you must not use the app.
+By accessing or using Skin Tight, you agree to comply with and be legally bound by these Terms & Conditions. If you do not agree with these terms, you must stop using the application immediately.
+
 
 2. Description of Service
-This application provides AI-powered skin analysis tools intended for general informational and wellness purposes only. The app is not a medical device and does not provide medical diagnoses, treatment, or professional medical advice.
+Skin Tight provides AI-powered skin wellness monitoring and educational analysis tools intended for personal informational use only. The application does not provide medical diagnoses or professional healthcare services.
 
-3. Not Medical Advice
-THE CONTENT PROVIDED BY THIS APP IS NOT A SUBSTITUTE FOR PROFESSIONAL MEDICAL ADVICE, DIAGNOSIS, OR TREATMENT. ALWAYS SEEK THE ADVICE OF YOUR PHYSICIAN OR OTHER QUALIFIED HEALTH PROVIDER WITH ANY QUESTIONS YOU MAY HAVE REGARDING A MEDICAL CONDITION.
 
-4. User Responsibilities
-You are responsible for the quality of images uploaded. Poor quality images may result in inaccurate analysis. You agree to use the app only for its intended purpose.
+3. Eligibility
+You must be at least 18 years old to use Skin Tight independently.
 
-5. Limitation of Liability
-To the maximum extent permitted by law, the developers of this app shall not be liable for any direct, indirect, incidental, or consequential damages resulting from the use or inability to use the service.
+Users between 13 and 17 years old may only use the app with permission and supervision from a parent or legal guardian.
 
-6. Changes to Terms
-We reserve the right to modify these terms at any time. Continued use of the app constitutes acceptance of the updated terms.`;
+Children under 13 are prohibited from using the application.
 
-const PRIVACY_POLICY = `Privacy Policy
-Last Updated: April 8, 2026
+
+4. Beta Software Notice
+You acknowledge that Skin Tight may still contain bugs, inaccuracies, interruptions, delays, or incomplete features. The service is provided on an “AS IS” and “AS AVAILABLE” basis without warranties of any kind.
+
+We do not guarantee uninterrupted operation, perfect accuracy, or error-free performance.
+
+
+5. User Responsibilities
+You agree to use the application responsibly and only for lawful personal wellness purposes.
+
+You are responsible for:
+
+● Providing accurate information when using the app
+● Uploading clear and appropriate images
+● Reviewing AI-generated information carefully
+● Seeking professional medical advice when needed
+
+You agree not to:
+
+● Upload explicit, illegal, harmful, or copyrighted content without permission
+● Upload photos of other individuals without their consent
+● Attempt to misuse, hack, disrupt, or reverse engineer the platform
+
+
+6. Limitation of Liability
+To the maximum extent permitted by law, Skin Tight, its creators, developers, affiliates, and service providers shall not be liable for any direct, indirect, incidental, special, or consequential damages resulting from:
+
+● Use of the application
+● Inability to use the application
+● Reliance on AI-generated assessments
+● Delayed or missed medical treatment
+● Inaccurate or incomplete analysis results
+Use of the application is entirely at your own risk.
+
+
+7. Intellectual Property
+All branding, software, designs, graphics, logos, AI workflows, and platform content associated with Skin Tight are protected by intellectual property laws and may not be copied or redistributed without permission.
+
+
+8. Changes to Terms
+We reserve the right to update or modify these Terms & Conditions at any time. Continued use of the application after updates means you accept the revised terms.
+
+
+9. Governing Law
+These Terms & Conditions shall be governed by the laws of the State of Georgia, United States, without regard to conflict-of-law principles.`;
+
+const PRIVACY_POLICY = `PRIVACY POLICY
+Last Updated: May 24, 2026
 
 1. Information We Collect
-We collect photos you upload for analysis and information you provide in the intake forms. This data is processed by AI models to provide wellness insights.
+When using Skin Tight, we may collect:
 
-2. How We Use Information
-Your data is used solely to provide the skin analysis service and improve the app's functionality. We do not sell your personal data to third parties.
+● Account information such as email address and username
+● Images voluntarily uploaded for skin analysis
+● Skin wellness tracking information and scan history
+● Device and usage information necessary for app functionality
 
-3. Data Storage
-Certain account information and scan history may be stored using secure third-party services such as Firebase. Uploaded images may be processed by AI systems such as Google Gemini to generate analysis results. We take reasonable steps to help protect user information.
 
-4. Third-Party Services
-We use AI services (like Google Gemini) to process images. These services are bound by their own privacy policies regarding data handling.
+2. How Your Information Is Used
+Your information is used only to:
 
-5. Your Rights
-You can delete your data at any time by clearing the app's local storage or deleting the application.
+● Provide AI-generated skin wellness assessments
+● Store scan history and progress tracking
+● Improve app functionality and user experience
+● Maintain account security and authentication
+We do not sell or rent your personal information or uploaded images to advertisers or data brokers.
 
-6. Consent
-By using the app, you consent to the collection and processing of your data as described in this policy.`;
 
-const DISCLAIMER_TEXT = `Disclaimer: This application is an AI-powered wellness and informational tool only. It is NOT a medical device and does NOT provide medical advice, diagnosis, or treatment. Always consult with a healthcare professional for any medical concerns.`;
+3. AI Image Processing
+Uploaded images may be securely processed by third-party AI providers, including Google Gemini, in order to generate analysis results.
+
+Images are analyzed solely for visible skin-related features and are not used for facial recognition, identity verification, surveillance, or biometric identification purposes.
+
+
+4. Data Storage & Security
+User data and account information may be stored using secure cloud infrastructure providers such as Firebase.
+
+We use reasonable technical and organizational safeguards to help protect user information. However, no online service can guarantee absolute security.
+
+
+5. Children’s Privacy
+Skin Tight does not knowingly collect information from children under 13 years old.
+
+If we discover that a child under 13 has submitted personal information or images without verified parental consent, we will remove the data as quickly as reasonably possible.
+
+
+6. International Data Transfers
+By using Skin Tight, you understand that your data may be processed or stored on servers located in different countries through trusted third-party infrastructure providers.
+
+
+7. Your Rights & Data Deletion
+You may request deletion of your account and associated data at any time.
+
+For privacy questions or deletion requests, contact:
+
+support.skintight@gmail.com
+
+
+8. Changes to This Privacy Policy
+We may update this Privacy Policy periodically. Continued use of the application after updates means you accept the revised policy.`;
+
+const DISCLAIMER_TEXT = `MEDICAL DISCLAIMER: Skin Tight is NOT a medical device and does NOT provide medical diagnoses, treatment plans, prescriptions, or professional medical advice. The assessments are educational/informational only. Always consult a licensed dermatologist.`;
 
 // --- Onboarding Screen Component ---
 const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
+  const [agreedDisclaimer, setAgreedDisclaimer] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [agreedPrivacy, setAgreedPrivacy] = useState(false);
-  const [expandedSection, setExpandedSection] = useState<'terms' | 'privacy' | null>(null);
+  const [expandedSection, setExpandedSection] = useState<'disclaimer' | 'terms' | 'privacy' | null>('disclaimer');
 
   return (
     <div style={{
@@ -4197,11 +4323,38 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
           </div>
           <h1 style={{ fontSize: '32px', fontWeight: '800', marginBottom: '12px', letterSpacing: '-0.02em' }}>Welcome</h1>
           <p style={{ color: '#94a3b8', lineHeight: '1.6', fontSize: '16px' }}>
-            Your AI-powered wellness and informational skin analysis tool. Let's get started by reviewing our policies.
+            Your AI-powered wellness and informational skin analysis tool. Let's get started by reviewing our medical disclaimer and policies.
           </p>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
+          {/* Medical Disclaimer Section */}
+          <div style={{ border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '16px', overflow: 'hidden' }}>
+            <button 
+              onClick={() => setExpandedSection(expandedSection === 'disclaimer' ? null : 'disclaimer')}
+              style={{
+                width: '100%', padding: '16px', display: 'flex', justifyContent: 'space-between',
+                alignItems: 'center', background: 'rgba(255, 255, 255, 0.02)', border: 'none',
+                color: '#f8fafc', cursor: 'pointer', fontWeight: '600'
+              }}
+            >
+              <span>Medical Disclaimer</span>
+              {expandedSection === 'disclaimer' ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            </button>
+            <AnimatePresence>
+              {expandedSection === 'disclaimer' && (
+                <motion.div 
+                  initial={{ height: 0 }}
+                  animate={{ height: '200px' }}
+                  exit={{ height: 0 }}
+                  style={{ overflowY: 'auto', padding: '0 16px 16px', fontSize: '13px', color: '#94a3b8', lineHeight: '1.6' }}
+                >
+                  <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{MEDICAL_DISCLAIMER_TEXT}</pre>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           {/* Terms Section */}
           <div style={{ border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '16px', overflow: 'hidden' }}>
             <button 
@@ -4259,6 +4412,29 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
           <div 
+            onClick={() => setAgreedDisclaimer(!agreedDisclaimer)}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '14px' }}
+          >
+            <div style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '6px',
+              border: `2px solid ${agreedDisclaimer ? '#2dd4bf' : 'rgba(255,255,255,0.2)'}`,
+              background: agreedDisclaimer ? '#2dd4bf' : 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              flexShrink: 0
+            }}>
+              {agreedDisclaimer && <Check size={16} color="#020617" strokeWidth={4} />}
+            </div>
+            <span style={{ color: agreedDisclaimer ? '#f8fafc' : '#94a3b8', transition: 'color 0.2s' }}>
+              I agree to the Medical Disclaimer
+            </span>
+          </div>
+
+          <div 
             onClick={() => setAgreedTerms(!agreedTerms)}
             style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '14px' }}
           >
@@ -4306,18 +4482,18 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
         </div>
 
         <button
-          disabled={!agreedTerms || !agreedPrivacy}
+          disabled={!agreedDisclaimer || !agreedTerms || !agreedPrivacy}
           onClick={onComplete}
           style={{
             width: '100%',
             padding: '16px',
             borderRadius: '16px',
             border: 'none',
-            background: agreedTerms && agreedPrivacy ? '#2dd4bf' : 'rgba(255, 255, 255, 0.05)',
-            color: agreedTerms && agreedPrivacy ? '#020617' : '#475569',
+            background: agreedDisclaimer && agreedTerms && agreedPrivacy ? '#2dd4bf' : 'rgba(255, 255, 255, 0.05)',
+            color: agreedDisclaimer && agreedTerms && agreedPrivacy ? '#020617' : '#475569',
             fontWeight: '800',
             fontSize: '16px',
-            cursor: agreedTerms && agreedPrivacy ? 'pointer' : 'not-allowed',
+            cursor: agreedDisclaimer && agreedTerms && agreedPrivacy ? 'pointer' : 'not-allowed',
             transition: 'all 0.3s ease'
           }}
         >
@@ -6634,7 +6810,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
 
             <div style={styles.disclaimerBanner} className="glass-card shimmer-overlay">
               <AlertCircle size={20} color="#f59e0b" style={{ flexShrink: 0 }} />
-              <p>This is an AI screening tool, not a medical diagnosis. Consult a licensed dermatologist for professional evaluation.</p>
+              <p>Skin Tight is NOT a medical device and does NOT provide medical diagnoses. Always consult a licensed dermatologist.</p>
             </div>
 
             {showEduCard && result && (
@@ -6831,6 +7007,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
 
       <LegalModal 
         isOpen={!!showLegalModal} 
+        initialType={showLegalModal}
         onClose={() => setShowLegalModal(null)} 
       />
 
