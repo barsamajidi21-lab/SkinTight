@@ -40,9 +40,100 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
       if ('serviceWorker' in navigator) {
+        let refreshing = false;
+
+        // Custom update banner styles and presentation logic
+        function showRefreshBanner() {
+          if (document.getElementById('pwa-refresh-banner')) return;
+          
+          const banner = document.createElement('div');
+          banner.id = 'pwa-refresh-banner';
+          banner.style.position = 'fixed';
+          banner.style.top = '24px';
+          banner.style.left = '50%';
+          banner.style.transform = 'translate(-50%, -20px)';
+          banner.style.zIndex = '99999';
+          banner.style.background = 'rgba(6, 8, 24, 0.95)';
+          banner.style.border = '1px solid rgba(45, 212, 191, 0.3)';
+          banner.style.padding = '14px 28px';
+          banner.style.borderRadius = '18px';
+          banner.style.color = '#f8fafc';
+          banner.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif';
+          banner.style.fontSize = '14px';
+          banner.style.fontWeight = '600';
+          banner.style.display = 'flex';
+          banner.style.alignItems = 'center';
+          banner.style.gap = '12px';
+          banner.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.6), 0 0 30px rgba(45, 212, 191, 0.15)';
+          banner.style.backdropFilter = 'blur(16px)';
+          banner.style.webkitBackdropFilter = 'blur(16px)';
+          banner.style.opacity = '0';
+          banner.style.transition = 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+          
+          // Custom Spinner svg wrapper
+          const spinner = document.createElement('div');
+          spinner.style.width = '18px';
+          spinner.style.height = '18px';
+          spinner.style.border = '2.5px solid rgba(45, 212, 191, 0.2)';
+          spinner.style.borderTopColor = '#2dd4bf';
+          spinner.style.borderRadius = '50%';
+          spinner.style.animation = 'pwa-spin 0.8s linear infinite';
+          
+          const spinStyle = document.createElement('style');
+          spinStyle.id = 'pwa-spin-style';
+          spinStyle.innerHTML = `
+            @keyframes pwa-spin {
+              to { transform: rotate(360deg); }
+            }
+          `;
+          document.head.appendChild(spinStyle);
+          
+          const text = document.createElement('span');
+          text.innerText = 'New version available — refreshing…';
+          text.style.letterSpacing = '-0.01em';
+          
+          banner.appendChild(spinner);
+          banner.appendChild(text);
+          document.body.appendChild(banner);
+          
+          // Trigger reflow to initiate entry animation
+          banner.offsetHeight;
+          banner.style.opacity = '1';
+          banner.style.transform = 'translate(-50%, 0)';
+        }
+
+        // Listener to handle immediate worker update activate -> refresh trigger
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          
+          // Only auto-reload if the page was previously controlled by a service worker
+          // (meaning it's an update, not the initial service worker registering)
+          if (navigator.serviceWorker.controller) {
+            refreshing = true;
+            showRefreshBanner();
+            setTimeout(() => {
+              window.location.reload();
+            }, 1800);
+          }
+        });
+
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('Service worker registered.', reg))
+            .then(reg => {
+              console.log('Service worker registered.', reg);
+              
+              // 1. Periodically query Vercel server for Service Worker updates (every 2 minutes)
+              setInterval(() => {
+                reg.update().catch(err => console.debug('Periodic sw update check skipped:', err));
+              }, 120 * 1000);
+
+              // 2. Proactively check for newer versions when page is focused or visible
+              document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                  reg.update().catch(err => console.debug('Focus-driven sw update check skipped:', err));
+                }
+              });
+            })
             .catch(err => console.log('Service worker registration failed.', err));
         });
       }
