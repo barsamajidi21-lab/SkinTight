@@ -165,6 +165,91 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   // Do not throw to prevent app crashes, handle in UI
 }
 
+// Robust self-healing JSON parser for AI outputs
+const safeParseAIJSON = (rawText: string): any => {
+  if (!rawText) return null;
+  
+  // 1. Clean markdown code blocks if present
+  let clean = rawText.replace(/```json|```/g, "").trim();
+  
+  // 2. Locate the first { and the last } to extract JSON block safely ignored extraneous text
+  const firstBrace = clean.indexOf('{');
+  const lastBrace = clean.lastIndexOf('}');
+  
+  if (firstBrace !== -1) {
+    if (lastBrace !== -1 && lastBrace > firstBrace) {
+      clean = clean.slice(firstBrace, lastBrace + 1);
+    } else {
+      clean = clean.slice(firstBrace);
+    }
+  }
+
+  // 3. Attempt regular JSON parse first
+  try {
+    return JSON.parse(clean);
+  } catch (e) {
+    console.warn("[JSON Healing] Standard JSON parse failed, attempting structural reconstruction:", e);
+  }
+
+  // 4. Reconstruction of truncated or cut-off JSON (such as missing output tokens)
+  let healed = clean;
+  
+  let openBraces = 0;
+  let openBrackets = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = 0; i < healed.length; i++) {
+    const char = healed[i];
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (char === '\\') {
+      escape = true;
+      continue;
+    }
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (!inString) {
+      if (char === '{') openBraces++;
+      else if (char === '}') openBraces--;
+      else if (char === '[') openBrackets++;
+      else if (char === ']') openBrackets--;
+    }
+  }
+
+  // Auto-close open quote
+  if (inString) {
+    healed += '"';
+  }
+  
+  // Trim dangling commas, colons, or open bracket markers at the end
+  healed = healed.trim();
+  while (healed.endsWith(',') || healed.endsWith(':') || healed.endsWith('[')) {
+    healed = healed.slice(0, -1).trim();
+  }
+
+  // Auto-append missing closing brackets/braces in reverse order
+  while (openBrackets > 0) {
+    healed += ']';
+    openBrackets--;
+  }
+  while (openBraces > 0) {
+    healed += '}';
+    openBraces--;
+  }
+
+  try {
+    return JSON.parse(healed);
+  } catch (err) {
+    console.error("[JSON Healing] Failed to reconstruct AI response JSON:", err);
+    throw new Error("AI analysis response was interrupted or incomplete. Please try again.");
+  }
+};
+
 // Client-side AI Helper
 const callAI = async (prompt: string, model: string = "gemini-3.5-flash", config: any = {}) => {
   const response = await fetch("/api/ai/generate", {
@@ -3466,8 +3551,7 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
       throw new Error("AI response was empty or blocked by safety filters.");
     }
 
-    const clean = aiText.replace(/```json|```/g, "").trim();
-    const result = JSON.parse(clean);
+    const result = safeParseAIJSON(aiText);
     
     if (!result.steps || !Array.isArray(result.steps)) {
       throw new Error("Invalid action plan format received from AI.");
@@ -6037,7 +6121,7 @@ Respond ONLY with valid JSON with these fields:
       const text = responseData.text;
       if (!text) throw new Error("Empty response from AI");
       
-      const jsonResult = JSON.parse(text) as AnalysisResult;
+      const jsonResult = safeParseAIJSON(text) as AnalysisResult;
       setResult(jsonResult);
 
       // Calculate Next Scan Date (Weekly Rotation)
@@ -6276,7 +6360,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
 
       const responseData = await callAI(prompt, "gemini-3.5-flash", { responseMimeType: "application/json" });
 
-      const protocolData = JSON.parse(responseData.text || '{}');
+      const protocolData = safeParseAIJSON(responseData.text || '{}');
       const newProtocol = {
         dailyUVProtection: protocolData.dailyUVProtection || [],
         monthlySelfExam: protocolData.monthlySelfExam || [],
