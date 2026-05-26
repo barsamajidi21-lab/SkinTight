@@ -4282,7 +4282,7 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
   const [agreedDisclaimer, setAgreedDisclaimer] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [agreedPrivacy, setAgreedPrivacy] = useState(false);
-  const [expandedSection, setExpandedSection] = useState<'disclaimer' | 'terms' | 'privacy' | null>('disclaimer');
+  const [expandedSection, setExpandedSection] = useState<'disclaimer' | 'terms' | 'privacy' | null>(null);
 
   return (
     <div style={{
