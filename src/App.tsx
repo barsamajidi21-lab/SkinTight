@@ -4154,7 +4154,9 @@ Skin Tight does not guarantee the detection, prevention, or prediction of skin c
 
 Always consult a licensed dermatologist or qualified healthcare professional for any medical concerns regarding your skin. Never ignore, delay, or replace professional medical advice because of information provided by this application.
 
-If you notice rapid skin changes, bleeding lesions, painful growths, or any urgent medical symptoms, seek professional medical attention immediately.`;
+If you notice rapid skin changes, bleeding lesions, painful growths, or any urgent medical symptoms, seek professional medical attention immediately.
+
+Skin Tight is not intended for emergency use. If you believe you may have a serious or life-threatening medical condition, contact emergency services or seek immediate professional medical care.`;
 
 const TERMS_AND_CONDITIONS = `TERMS & CONDITIONS
 Last Updated: May 24, 2026
@@ -4196,6 +4198,8 @@ You agree not to:
 ● Upload explicit, illegal, harmful, or copyrighted content without permission
 ● Upload photos of other individuals without their consent
 ● Attempt to misuse, hack, disrupt, or reverse engineer the platform
+
+You retain responsibility for all images and content you upload through the application. By uploading content, you confirm that you have the legal right and permission to use and submit such content.
 
 
 6. Limitation of Liability
