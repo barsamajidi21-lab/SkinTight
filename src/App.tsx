@@ -4221,8 +4221,25 @@ All branding, software, designs, graphics, logos, AI workflows, and platform con
 We reserve the right to update or modify these Terms & Conditions at any time. Continued use of the application after updates means you accept the revised terms.
 
 
-9. Governing Law
-These Terms & Conditions shall be governed by the laws of the State of Georgia, United States, without regard to conflict-of-law principles.`;
+9. Governing Law and Dispute Resolution
+These Terms & Conditions and any dispute or claim arising out of or in connection with them shall be governed by, and construed in accordance with, the laws of the State of Georgia, United States, without regard to its conflict-of-law principles. 
+
+Any dispute, controversy, or claim arising out of, relating to, or in connection with this application, including the breach, termination, enforcement, interpretation, or validity of these Terms, shall be settled exclusively by binding, individual arbitration in the State of Georgia. 
+
+BY AGREEING TO THESE TERMS, YOU EXPLICITLY WAIVE YOUR RIGHT TO A TRIAL BY JURY. YOU AGREE THAT YOU MAY BRING CLAIMS AGAINST SKIN TIGHT AND ITS CREATORS ONLY IN YOUR INDIVIDUAL CAPACITY, AND NOT AS A PLAINTIFF OR CLASS MEMBER IN ANY PURPORTED CLASS, COLLECTIVE, OR REPRESENTATIVE PROCEEDING.
+
+10. Indemnification
+You agree to defend, indemnify, and hold harmless Skin Tight, its creators, developers, affiliates, contractors, and third-party service providers from and against any and all claims, damages, obligations, losses, liabilities, costs, debts, and expenses (including but not limited to reasonable attorneys' fees) arising from: 
+(i) your misuse of and access to the application; 
+(ii) your violation of any term of these Terms & Conditions; 
+(iii) your violation of any third-party right, including without limitation any copyright, property, privacy, or publicity right; or 
+(iv) any claim that the content or images you uploaded caused damage to a third party.
+
+11. Third-Party AI Services & System Limitations
+Skin Tight relies on third-party infrastructure and generative artificial intelligence systems, specifically Google Gemini, to process images and generate wellness indicators. You acknowledge and agree that Skin Tight does not control these third-party systems. Consequently, we are not liable for any service interruptions, data processing delays, algorithmic errors, or security vulnerabilities originating from these third-party platforms.
+
+12. Severability and Entire Agreement
+These Terms & Conditions, along with the Privacy Policy and Medical Disclaimer, constitute the entire agreement between you and Skin Tight. If any provision of these Terms is found to be unlawful, void, or for any reason unenforceable by a court of competent jurisdiction or arbitrator, then that provision shall be deemed severable from these Terms and shall not affect the validity and enforceability of any remaining provisions.`;
 
 const PRIVACY_POLICY = `PRIVACY POLICY
 Last Updated: May 24, 2026
@@ -4269,11 +4286,9 @@ By using Skin Tight, you understand that your data may be processed or stored on
 
 
 7. Your Rights & Data Deletion
-You may request deletion of your account and associated data at any time.
+You retain the right to access, review, or request the permanent deletion of your account and associated data at any time. Upon receiving a verifiable deletion request via support.skintight@gmail.com, we will permanently purge your personal data, profile info, and uploaded images from our active production databases within a reasonable timeframe, not to exceed thirty (30) days, subject to any legal data retention obligations. 
 
-For privacy questions or deletion requests, contact:
-
-support.skintight@gmail.com
+Please note that while data is removed immediately from active systems, residual copies may temporarily persist in secure, encrypted cloud backups (such as Firebase backup cycles) for a limited duration before being completely overwritten.
 
 
 8. Changes to This Privacy Policy
