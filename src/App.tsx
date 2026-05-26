@@ -2575,43 +2575,53 @@ const LegalModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[3000] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl" onClick={onClose} />
       <motion.div 
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="relative w-full max-w-lg glass-card rounded-3xl overflow-hidden flex flex-col max-h-[80vh]"
+        initial={{ opacity: 0, y: 50, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        className="relative w-full h-[92dvh] sm:h-auto sm:max-h-[85vh] sm:max-w-lg glass-card rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col"
       >
-        <div className="p-6 border-b border-white/10 flex justify-between items-center">
-          <h2 className="text-xl font-black text-white">Legal & Policies</h2>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl"><X size={24} /></button>
+        <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-white/10 flex justify-between items-center bg-white/[0.01]">
+          <h2 className="text-base sm:text-lg font-black text-white tracking-tight">Legal & Policies</h2>
+          <button 
+            onClick={onClose} 
+            className="p-1.5 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-colors"
+            style={{ minHeight: '44px', minWidth: '44px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
         </div>
         
-        {/* Modern Tabs */}
-        <div className="flex border-b border-white/10 bg-white/2">
+        {/* Modern Tabs with safe mobile formatting and proper spacing */}
+        <div className="flex gap-4 sm:gap-8 px-4 sm:px-6 border-b border-white/10 bg-white/[0.01]">
           {(['disclaimer', 'terms', 'privacy'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-4 text-xs font-black uppercase tracking-widest transition-colors ${
+              className={`flex-1 py-3 text-[10px] sm:text-xs font-black uppercase tracking-wider transition-colors relative ${
                 activeTab === tab 
-                  ? 'text-teal-400 border-b-2 border-teal-400 bg-teal-500/5' 
-                  : 'text-slate-500 hover:text-slate-300'
+                  ? 'text-teal-400' 
+                  : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              {tab === 'disclaimer' ? 'Disclaimer' : tab === 'terms' ? 'Terms' : 'Privacy'}
+              <span>{tab === 'disclaimer' ? 'Disclaimer' : tab === 'terms' ? 'Terms' : 'Privacy'}</span>
+              {activeTab === tab && (
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-teal-400 rounded-full" />
+              )}
             </button>
           ))}
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1 text-sm text-slate-300 leading-relaxed max-h-[50vh]">
-          <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }} className="text-slate-300 text-xs text-left">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 text-xs sm:text-sm text-slate-300 leading-relaxed min-h-0 bg-slate-950/20">
+          <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }} className="text-slate-300 text-xs sm:text-sm text-left">
             {getContent()}
           </pre>
         </div>
 
-        <div className="p-6 border-t border-white/10 bg-white/2">
-          <button onClick={onClose} className="w-full py-4 bg-teal-500 text-slate-900 font-black rounded-2xl shadow-lg shadow-teal-500/20 active:scale-95 transition-transform">
+        <div className="p-4 sm:p-6 border-t border-white/10 bg-white/[0.01]">
+          <button onClick={onClose} className="w-full py-3.5 bg-teal-500 text-slate-900 font-black rounded-xl sm:rounded-2xl shadow-lg shadow-teal-500/20 active:scale-95 transition-transform text-xs sm:text-sm uppercase tracking-wider font-black">
             I Understand
           </button>
         </div>
