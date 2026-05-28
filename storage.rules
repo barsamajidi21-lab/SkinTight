@@ -1,0 +1,41 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Default-deny all paths by default to avoid accidental exposure
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    // Checks if the user is authenticated in Firebase
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Checks if the authenticated user owns the specific folder path
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // --- Core Scan Image Rules ---
+    // Enforces hierarchical storage organization inside user-specific folders:
+    // Path model: users/{userId}/scans/{fileName} or any nested path under users/{userId}/
+    match /users/{userId}/{allPaths=**} {
+      
+      // Only authenticated owners can retrieve or list files.
+      // This enforces private access and instantly blocks deleted accounts once their auth token is revoked.
+      allow read, list: if isOwner(userId);
+      
+      // Only authenticated owners can write or upload files under their folder.
+      allow create, update: if isOwner(userId)
+        // Size Limits: Enforce a strict max limit of 5MB per upload to protect storage quotas
+        && request.resource.size < 5 * 1024 * 1024
+        // File Type Restrictions: Only allow standard, safe image types commonly used on mobile & web
+        && request.resource.contentType.matches('image/(jpeg|jpg|png|webp)');
+
+      // Only the authenticated folder owner can remove files.
+      allow delete: if isOwner(userId);
+    }
+  }
+}

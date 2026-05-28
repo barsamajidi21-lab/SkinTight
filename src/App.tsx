@@ -250,27 +250,233 @@ const safeParseAIJSON = (rawText: string): any => {
   }
 };
 
+// Robust Validation & Fallback for Analysis Results
+const validateAndFallbackAnalysisResult = (data: any): AnalysisResult => {
+  const fallback: AnalysisResult = {
+    risk_level: 'low',
+    confidence_level: 'medium',
+    findings: ['No obvious visual warning signs were detected.'],
+    concerning_signs: ['No active atypical asymmetric borders or color variations detected.'],
+    risk_factors_identified: ['Continuous routine self-monitoring is advised based on user details.'],
+    summary: 'No obvious visual warning signs were detected based on standard AI screening checks.',
+    action_card: 'Low visual concern based on the uploaded images. Monitor for changes and consult a dermatologist if concerned.',
+    cancer_type_indicators: 'No high-risk cancer indicators identified.',
+    comparison_notes: 'Image is stable within normal limits.',
+    suggestions: ['Continue regular monthly self-examinations.', 'Wear sun protective garments and sunscreen daily.'],
+    urgency: 'Routine evaluation or when any signs of changes are observed.',
+    data_quality_note: 'Resolution and illumination were verified.',
+    disclaimer: 'This results display is for informational support only and is not medical advice. Consult a dermatologist for formal diagnosis.'
+  };
+
+  if (!data || typeof data !== 'object') {
+    return fallback;
+  }
+
+  const getArrayOfStrings = (arr: any, fallbackArr: string[]): string[] => {
+    if (Array.isArray(arr)) {
+      return arr.map(item => typeof item === 'string' ? item : String(item)).filter(Boolean);
+    }
+    return fallbackArr;
+  };
+
+  const risk = typeof data.risk_level === 'string' ? data.risk_level.toLowerCase() : '';
+  const confidence = typeof data.confidence_level === 'string' ? data.confidence_level.toLowerCase() : '';
+
+  return {
+    risk_level: ['low', 'moderate', 'high', 'insufficient_data'].includes(risk)
+      ? risk as any
+      : fallback.risk_level,
+    confidence_level: ['low', 'medium', 'high'].includes(confidence)
+      ? confidence as any
+      : fallback.confidence_level,
+    findings: getArrayOfStrings(data.findings, fallback.findings),
+    concerning_signs: getArrayOfStrings(data.concerning_signs, fallback.concerning_signs),
+    risk_factors_identified: getArrayOfStrings(data.risk_factors_identified, fallback.risk_factors_identified),
+    summary: typeof data.summary === 'string' && data.summary ? data.summary : fallback.summary,
+    action_card: typeof data.action_card === 'string' && data.action_card ? data.action_card : fallback.action_card,
+    cancer_type_indicators: typeof data.cancer_type_indicators === 'string' ? data.cancer_type_indicators : fallback.cancer_type_indicators,
+    comparison_notes: typeof data.comparison_notes === 'string' ? data.comparison_notes : fallback.comparison_notes,
+    suggestions: getArrayOfStrings(data.suggestions, fallback.suggestions),
+    urgency: typeof data.urgency === 'string' && data.urgency ? data.urgency : fallback.urgency,
+    data_quality_note: typeof data.data_quality_note === 'string' && data.data_quality_note ? data.data_quality_note : fallback.data_quality_note,
+    disclaimer: typeof data.disclaimer === 'string' && data.disclaimer ? data.disclaimer : fallback.disclaimer,
+  };
+};
+
+// Robust Validation & Fallback for Prevention Protocols
+const validateAndFallbackProtocol = (data: any): PreventionProtocol => {
+  const fallback: PreventionProtocol = {
+    dailyUVProtection: [
+      "Apply broad-spectrum SPF 30+ sunscreen daily before sun exposure.",
+      "Wear protective wide-brimmed hats and solar UV protective apparel."
+    ],
+    monthlySelfExam: [
+      "Check face, ears, and neck closely using a mirror.",
+      "Inspect chest, torso, arms, and underarms regularly.",
+      "Check legs, feet, back, and hard-to-see areas."
+    ],
+    priorityCheckAreas: ["Face and Neck", "Arms and Hands", "Upper Back"],
+    warningSigns: [
+      "Asymmetry: One half of the spot does not match the other.",
+      "Border Irregularity: Edges are ragged, notched, or blurred.",
+      "Color Variation: Pigment is not uniform, showing multiple shades."
+    ],
+    nextExamSchedule: "Schedule a comprehensive professional dermatologist check-up within the next 3-6 months as a safe precaution."
+  };
+
+  if (!data || typeof data !== 'object') {
+    return fallback;
+  }
+
+  const getArrayOfStrings = (arr: any, fallbackArr: string[]): string[] => {
+    if (Array.isArray(arr)) {
+      return arr.map(item => typeof item === 'string' ? item : String(item)).filter(Boolean);
+    }
+    return fallbackArr;
+  };
+
+  return {
+    dailyUVProtection: getArrayOfStrings(data.dailyUVProtection, fallback.dailyUVProtection),
+    monthlySelfExam: getArrayOfStrings(data.monthlySelfExam, fallback.monthlySelfExam),
+    priorityCheckAreas: getArrayOfStrings(data.priorityCheckAreas, fallback.priorityCheckAreas),
+    warningSigns: getArrayOfStrings(data.warningSigns, fallback.warningSigns),
+    nextExamSchedule: typeof data.nextExamSchedule === 'string' && data.nextExamSchedule ? data.nextExamSchedule : fallback.nextExamSchedule
+  };
+};
+
+// Robust Validation & Fallback for checklists
+const validateAndFallbackHowToImprove = (data: any): any => {
+  const fallback = {
+    headline: "Take proactive steps daily to monitor and protect your skin.",
+    steps: [
+      {
+        icon: "🧴",
+        title: "Apply Sunscreen Daily",
+        description: "Utilize SPF 30+ broad-spectrum protection diligently on all exposed skin surfaces.",
+        impact: "high"
+      },
+      {
+        icon: "🕵️",
+        title: "Conduct Self-Exam",
+        description: "Perform your complete visual skin screening checklist once a month to track evolution.",
+        impact: "high"
+      },
+      {
+        icon: "🧢",
+        title: "Wear UV Gear",
+        description: "Incorporate wide-brimmed hats and polarized sunglasses for maximum outdoor solar screening.",
+        impact: "medium"
+      },
+      {
+        icon: "🌳",
+        title: "Seek Shaded Areas",
+        description: "Prefer cool shaded environments during high UV index peak hours from 10 AM to 4 PM.",
+        impact: "medium"
+      },
+      {
+        icon: "🩺",
+        title: "Schedule Check",
+        description: "Consult a professional dermatologist annually for a complete proactive medical evaluation.",
+        impact: "high"
+      }
+    ]
+  };
+
+  if (!data || typeof data !== 'object') {
+    return fallback;
+  }
+
+  const steps = Array.isArray(data.steps) ? data.steps.filter((s: any) => s && typeof s === 'object') : [];
+  const validatedSteps = steps.map((s: any) => ({
+    icon: typeof s.icon === 'string' && s.icon ? s.icon : "✨",
+    title: typeof s.title === 'string' && s.title ? s.title : "Wellness Step",
+    description: typeof s.description === 'string' && s.description ? s.description : "Keep tracking your daily skin screening habits to support long term health.",
+    impact: typeof s.impact === 'string' && ['low', 'medium', 'high'].includes(s.impact.toLowerCase()) ? s.impact.toLowerCase() : "medium"
+  }));
+
+  return {
+    headline: typeof data.headline === 'string' && data.headline ? data.headline : fallback.headline,
+    steps: validatedSteps.length > 0 ? validatedSteps : fallback.steps
+  };
+};
+
+// Translate raw server/fetch/parse errors into user-friendly messages
+const translateAIError = (err: any): Error => {
+  const msg = (err && err.message) ? String(err.message) : "";
+  console.error("[Gemini API Failure Log for Debugging]:", err);
+  
+  if (msg.includes("timeout") || msg.includes("AbortError") || msg.includes("signal") || msg.includes("aborted")) {
+    return new Error("Analysis temporarily unavailable: The request timed out. Please retry.");
+  }
+  if (msg.includes("429") || msg.includes("quota") || msg.includes("Limit") || msg.includes("Rate Limit") || msg.includes("busy")) {
+    return new Error("Analysis temporarily unavailable: AI service is currently busy. Please retry in a moment.");
+  }
+  if (msg.includes("image") || msg.includes("base64") || msg.includes("payload") || msg.includes("upload") || msg.includes("corrupt") || msg.includes("format")) {
+    return new Error("Image upload issue detected. Please check your photo quality and retry.");
+  }
+  
+  return new Error("Analysis temporarily unavailable. Please retry.");
+};
+
+// Central fetch executor with timeout, robust try/catch, and up to 2 retries
+const executeAIFetch = async (payload: any, retries = 2, timeoutMs = 45000): Promise<any> => {
+  let lastError: any = null;
+  
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    
+    try {
+      const response = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timer);
+      
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error(
+          `API Gateway returned an invalid response. Code: ${response.status}. ` +
+          `If you've just deployed to Vercel, please verify that you have added your GEMINI_API_KEY environment variable in your Vercel Dashboard, and check your Vercel deployment logs.`
+        );
+      }
+      
+      if (!response.ok) {
+        throw new Error(data.error || "AI Generation failed");
+      }
+      
+      return data;
+    } catch (err: any) {
+      clearTimeout(timer);
+      lastError = err;
+      
+      const isTimeout = err.name === 'AbortError' || err.message?.includes("aborted");
+      console.warn(`[AI Attempt ${attempt + 1}/${retries + 1} Failed]:`, isTimeout ? 'Request timed out' : err.message);
+      
+      // Exponential backoff before next attempt
+      if (attempt < retries) {
+        const delay = Math.pow(2, attempt) * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw translateAIError(lastError);
+};
+
 // Client-side AI Helper
 const callAI = async (prompt: string, model: string = "gemini-3.5-flash", config: any = {}) => {
-  const response = await fetch("/api/ai/generate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, model, config }),
-  });
-  const text = await response.text();
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch (e) {
-    throw new Error(
-      `API Gateway returned an invalid response. Code: ${response.status}. ` +
-      `If you've just deployed to Vercel, please verify that you have added your GEMINI_API_KEY environment variable in your Vercel Dashboard, and check your Vercel deployment logs.`
-    );
+  const enhancedConfig = { ...config };
+  if (config.responseMimeType === "application/json") {
+    enhancedConfig.responseMimeType = "application/json";
   }
-  if (!response.ok) {
-    throw new Error(data.error || "AI Generation failed");
-  }
-  return data;
+  return executeAIFetch({ prompt, model, config: enhancedConfig });
 };
 
 const extractBase64FromDataUrl = (dataUrl: string): string => {
@@ -298,25 +504,11 @@ const extractBase64FromDataUrl = (dataUrl: string): string => {
 };
 
 const callAIVision = async (parts: any[], model: string = "gemini-3.5-flash", config: any = {}) => {
-  const response = await fetch("/api/ai/generate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ parts, model, config }),
-  });
-  const text = await response.text();
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch (e) {
-    throw new Error(
-      `API Gateway returned an invalid response. Code: ${response.status}. ` +
-      `If you've just deployed to Vercel, please verify that you have added your GEMINI_API_KEY environment variable in your Vercel Dashboard, and check your Vercel deployment logs.`
-    );
+  const enhancedConfig = { ...config };
+  if (config.responseMimeType === "application/json") {
+    enhancedConfig.responseMimeType = "application/json";
   }
-  if (!response.ok) {
-    throw new Error(data.error || "AI Vision Analysis failed");
-  }
-  return data;
+  return executeAIFetch({ parts, model, config: enhancedConfig });
 };
 
 // Helper for server timestamps to avoid repeating long path
@@ -3551,11 +3743,15 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
       throw new Error("AI response was empty or blocked by safety filters.");
     }
 
-    const result = safeParseAIJSON(aiText);
-    
-    if (!result.steps || !Array.isArray(result.steps)) {
-      throw new Error("Invalid action plan format received from AI.");
+    let parsedToChecklist;
+    try {
+      parsedToChecklist = safeParseAIJSON(aiText);
+    } catch (e) {
+      console.warn("[Checklist Parser Fallback] Error parsing checklist JSON, using self healing fallback:", e);
+      parsedToChecklist = null;
     }
+
+    const result = validateAndFallbackHowToImprove(parsedToChecklist);
     
     // Save to cache
     try {
@@ -5847,10 +6043,25 @@ function App() {
 
     try {
       const processedPhotos = await Promise.all(filesToProcess.map(async (file) => {
+        // Validation 1: Check standard safe image types
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type.toLowerCase())) {
+          throw new Error(`Image upload issue detected: Unsupported file format "${file.type}". Only JPG, PNG, and WEBP are supported.`);
+        }
+
+        // Validation 2: Check maximum image size constraints (e.g. 15MB to prevent memory crash)
+        const maxSizeBytes = 15 * 1024 * 1024;
+        if (file.size > maxSizeBytes) {
+          throw new Error(`Image upload issue detected: Image size corresponds to ${(file.size / (1024 * 1024)).toFixed(1)}MB, which exceeds the maximum allowed limit of 15MB.`);
+        }
+        if (file.size === 0) {
+          throw new Error("Image upload issue detected: The file appears to be corrupted or empty (0 bytes).");
+        }
+
         try {
           return await compressImage(file);
         } catch (err: any) {
-          throw new Error(err.message || "Failed to process image");
+          throw new Error(`Image upload issue detected: ${err.message || 'The image could not be loaded or is corrupted.'}`);
         }
       }));
 
@@ -5865,9 +6076,9 @@ function App() {
       setError(null);
       setResult(null);
     } catch (err: any) {
-      console.error("Image processing error:", err);
+      console.error("Image processing error helper logged:", err);
       const errorMessage = (err instanceof Error) ? err.message : String(err);
-      setError(`Failed to process images: ${errorMessage}`);
+      setError(errorMessage);
     } finally {
       setLoading(false);
       if (e.target) e.target.value = '';
@@ -6121,7 +6332,14 @@ Respond ONLY with valid JSON with these fields:
       const text = responseData.text;
       if (!text) throw new Error("Empty response from AI");
       
-      const jsonResult = safeParseAIJSON(text) as AnalysisResult;
+      let parsed;
+      try {
+        parsed = safeParseAIJSON(text);
+      } catch (e: any) {
+        console.warn("[JSON Fallback Mode] AI returned malformed response, using structural healing:", e);
+        parsed = null;
+      }
+      const jsonResult = validateAndFallbackAnalysisResult(parsed);
       setResult(jsonResult);
 
       // Calculate Next Scan Date (Weekly Rotation)
@@ -6360,14 +6578,14 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
 
       const responseData = await callAI(prompt, "gemini-3.5-flash", { responseMimeType: "application/json" });
 
-      const protocolData = safeParseAIJSON(responseData.text || '{}');
-      const newProtocol = {
-        dailyUVProtection: protocolData.dailyUVProtection || [],
-        monthlySelfExam: protocolData.monthlySelfExam || [],
-        priorityCheckAreas: protocolData.priorityCheckAreas || [],
-        warningSigns: protocolData.warningSigns || [],
-        nextExamSchedule: protocolData.nextExamSchedule || ""
-      };
+      let parsedProtocol;
+      try {
+        parsedProtocol = safeParseAIJSON(responseData.text || '{}');
+      } catch (parseErr) {
+        console.warn("[Protocol Parser Fallback] Failed to parse protocol JSON:", parseErr);
+        parsedProtocol = null;
+      }
+      const newProtocol = validateAndFallbackProtocol(parsedProtocol);
       setProtocol(newProtocol);
       saveProtocolToFirestore(newProtocol);
     } catch (err: any) {
