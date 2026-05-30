@@ -79,6 +79,8 @@ import {
   Heart
 } from 'lucide-react';
 
+import { BLOG_ARTICLES, BLOG_DISCLAIMER } from './data/blogData';
+
 import { db, auth } from './lib/firebase';
 import { 
   collection, 
@@ -2195,7 +2197,7 @@ const WelcomePage = ({ onComplete }: { onComplete: () => void }) => {
 
         <motion.div variants={itemVariants} style={{ textAlign: 'center', marginBottom: '16px' }}>
           <h2 style={{ fontSize: '30px', fontWeight: '900', marginBottom: '2px', lineHeight: 1.1 }}>Catch It Early.</h2>
-          <p style={{ fontSize: '14px', color: '#94a3b8', lineHeight: 1.4 }}>AI skin screening.</p>
+          <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.4, maxWidth: '280px', margin: '0 auto' }}>AI skin screening &amp; skin change tracking tool. Scan suspicious skin spots and enable proactive mole monitoring.</p>
         </motion.div>
 
         <motion.div variants={itemVariants} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '16px' }}>
@@ -2319,7 +2321,17 @@ const AboutPage = () => {
             <SparklesIcon size={18} className="text-teal-400" /> Our Mission
           </h2>
           <p className="text-sm text-slate-400 leading-relaxed">
-            Skin cancer is the most common cancer in the world, affecting 1 in 5 people. However, when caught early, survival rates exceed 98%. Skin Tight is built to help you monitor suspicious spots using AI screening, ensuring you stay ahead of your skin health.
+            Skin cancer is the most common cancer in the world, affecting 1 in 5 people. However, when caught early, recovery and survival rates exceed 98%. Skin Tight is a dedicated skin health app created to promote early skin awareness and foster global skin cancer awareness. Our proactive skin assessment tool allows users to scan suspicious skin spots and leverage advanced AI skin monitoring, ensuring they maintain control over their skin wellness.
+          </p>
+        </motion.div>
+
+        {/* WHY SKIN TIGHT EXISTS SECTION */}
+        <motion.div variants={itemVariants} className="glass-card p-6 rounded-2xl border border-white/5">
+          <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <Dna size={18} className="text-teal-400" /> Why Skin Tight Exists
+          </h2>
+          <p className="text-sm text-slate-400 leading-relaxed">
+            Many skin conditions develop gradually and can be easy to overlook. Skin Tight was created as an advanced skin health app to help people become more aware of visible skin changes by providing an easy way to monitor spots over time. Our goal is to encourage proactive skin awareness, facilitate reliable skin change tracking, and support informed conversations with dermatologist monitoring and licensed healthcare professionals.
           </p>
         </motion.div>
 
@@ -2371,6 +2383,273 @@ const AboutPage = () => {
           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">© 2025 Skin Tight. All rights reserved.</p>
         </motion.div>
       </motion.div>
+    </div>
+  );
+};
+
+const LearnPage = ({
+  selectedArticleSlug,
+  setSelectedArticleSlug
+}: {
+  selectedArticleSlug: string | null;
+  setSelectedArticleSlug: (slug: string | null) => void;
+}) => {
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
+  // Synchronize article schema metadata
+  useEffect(() => {
+    if (selectedArticleSlug) {
+      const article = BLOG_ARTICLES.find(a => a.slug === selectedArticleSlug);
+      if (article) {
+        let script = document.getElementById('jsonld-article-schema') as HTMLScriptElement;
+        if (!script) {
+          script = document.createElement('script');
+          script.id = 'jsonld-article-schema';
+          script.type = 'application/ld+json';
+          document.head.appendChild(script);
+        }
+        script.text = JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          "headline": article.title,
+          "description": article.excerpt,
+          "datePublished": "2026-05-30",
+          "dateModified": "2026-05-30",
+          "author": {
+            "@type": "Organization",
+            "name": "Skin Tight",
+            "url": "https://skintightai.com"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Skin Tight",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://skintightai.com/theone.jpg"
+            }
+          },
+          "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": `https://skintightai.com/learn/${article.slug}`
+          }
+        });
+      }
+    } else {
+      const script = document.getElementById('jsonld-article-schema');
+      if (script) script.remove();
+    }
+    return () => {
+      const script = document.getElementById('jsonld-article-schema');
+      if (script) script.remove();
+    };
+  }, [selectedArticleSlug]);
+
+  const activeArticle = useMemo(() => {
+    if (!selectedArticleSlug) return null;
+    return BLOG_ARTICLES.find(a => a.slug === selectedArticleSlug) || null;
+  }, [selectedArticleSlug]);
+
+  return (
+    <div className="page-container" style={styles.tabContent}>
+      <style>{`
+        .article-content h3 {
+          font-size: 1.35rem;
+          font-weight: 800;
+          color: #ffffff;
+          margin-top: 1.75rem;
+          margin-bottom: 0.75rem;
+          line-height: 1.4;
+        }
+        .article-content h4 {
+          font-size: 1.15rem;
+          font-weight: 700;
+          color: #e2e8f0;
+          margin-top: 1.5rem;
+          margin-bottom: 0.5rem;
+          line-height: 1.4;
+        }
+        .article-content h5 {
+          font-size: 1rem;
+          font-weight: 700;
+          color: #2dd4bf;
+          margin-top: 1.25rem;
+          margin-bottom: 0.25rem;
+        }
+        .article-content p {
+          margin-bottom: 1.15rem;
+          color: #c8d2e6;
+          line-height: 1.7;
+          font-size: 14px;
+        }
+        .article-content ul {
+          list-style-type: none;
+          padding-left: 0.5rem;
+          margin-bottom: 1.25rem;
+        }
+        .article-content li {
+          margin-bottom: 0.5rem;
+          position: relative;
+          padding-left: 1.25rem;
+          color: #c8d2e6;
+          font-size: 14px;
+          line-height: 1.6;
+        }
+        .article-content li::before {
+          content: "•";
+          color: #2dd4bf;
+          font-weight: bold;
+          position: absolute;
+          left: 0;
+          top: 0;
+        }
+        .article-content strong {
+          color: #f8fafc;
+          font-weight: 800;
+        }
+      `}</style>
+
+      {activeArticle ? (
+        // DETAIL VIEW
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="w-full space-y-6 pb-32"
+        >
+          {/* Back button */}
+          <motion.button
+            variants={itemVariants}
+            onClick={() => setSelectedArticleSlug(null)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/5 text-teal-400 font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-white/10 active:scale-95 transition-all cursor-pointer mt-4"
+          >
+            <ArrowLeft size={14} /> Back to Academy
+          </motion.button>
+
+          {/* Article Header info */}
+          <motion.div variants={itemVariants} className="space-y-3 pt-2">
+            <span className="px-3 py-1 bg-teal-500/10 border border-teal-500/20 text-teal-400 text-[10px] font-black uppercase tracking-widest rounded-full">
+              {activeArticle.category}
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight">
+              {activeArticle.title}
+            </h1>
+            <div className="flex items-center gap-4 text-xs text-slate-500 font-medium">
+              <span className="flex items-center gap-1"><Clock size={12} /> {activeArticle.readTime}</span>
+              <span>•</span>
+              <span>Published {activeArticle.publishDate}</span>
+            </div>
+          </motion.div>
+
+          <hr className="border-white/5" />
+
+          {/* Body Content */}
+          <motion.div 
+            variants={itemVariants}
+            className="article-content"
+            dangerouslySetInnerHTML={{ __html: activeArticle.content }}
+          />
+
+          {/* Read Again / Back Button */}
+          <motion.div variants={itemVariants} className="pt-6 border-t border-white/5 text-center">
+            <button
+              onClick={() => {
+                setSelectedArticleSlug(null);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-teal-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl sm:rounded-2xl shadow-lg shadow-teal-500/20 active:scale-95 transition-all cursor-pointer"
+            >
+              <BookOpen size={14} /> View All Guidelines
+            </button>
+          </motion.div>
+
+          {/* REQUIRED BLOG DISCLAIMER */}
+          <motion.div variants={itemVariants} className="p-6 rounded-2xl bg-amber-500/5 border border-amber-500/10 mt-8">
+            <h2 className="text-sm font-bold text-amber-500 mb-2 flex items-center gap-2">
+              <AlertTriangle size={18} /> Education Disclaimer
+            </h2>
+            <p className="text-xs text-amber-200/60 leading-relaxed text-left">
+              {BLOG_DISCLAIMER}
+            </p>
+          </motion.div>
+        </motion.div>
+      ) : (
+        // DIRECTORY VIEW
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="w-full space-y-8 pb-32"
+        >
+          {/* Header intro */}
+          <motion.div variants={itemVariants} className="flex flex-col items-center text-center pt-8">
+            <div className="w-16 h-16 rounded-2xl bg-teal-500/10 flex items-center justify-center mb-4 border border-teal-500/20 shadow-2xl shadow-teal-500/10">
+              <BookOpen size={30} color="#2dd4bf" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-white mb-2 tracking-tight">Skin Health Academy</h1>
+            <p className="text-xs sm:text-sm text-teal-400 font-medium uppercase tracking-widest mb-3">Learn • Monitor • Protect</p>
+            <p className="text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
+              Welcome to the Skin Tight learning center. Our educational resources are designed to help you build early skin awareness, understand suspicious skin changes, and master personal self-checks to stay in complete control of your skin wellness.
+            </p>
+          </motion.div>
+
+          {/* List section */}
+          <motion.div variants={itemVariants} className="space-y-4">
+            <h2 className="text-xs font-black text-slate-500 uppercase tracking-widest pl-2">Featured Guidelines</h2>
+            <div className="grid grid-cols-1 gap-4">
+              {BLOG_ARTICLES.map((article) => (
+                <div
+                  key={article.slug}
+                  onClick={() => {
+                    setSelectedArticleSlug(article.slug);
+                    window.scrollTo({ top: 0, behavior: 'auto' });
+                  }}
+                  className="glass-card p-6 rounded-2xl border border-white/5 active:scale-[0.98] hover:bg-white/[0.03] transition-all cursor-pointer flex flex-col justify-between gap-4 text-left"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-0.5 bg-teal-500/10 border border-teal-500/20 text-teal-400 text-[9px] font-black uppercase tracking-widest rounded-full">
+                        {article.category}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-bold">{article.readTime}</span>
+                    </div>
+                    <h3 className="text-base font-bold text-white group-hover:text-teal-400 transition-colors">
+                      {article.title}
+                    </h3>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      {article.excerpt}
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                    <span className="text-[10px] text-slate-500 font-medium">Published {article.publishDate}</span>
+                    <span className="text-[10px] text-teal-400 font-black uppercase tracking-widest flex items-center gap-1">
+                      Read Article <ChevronRight size={12} />
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* REQUIRED BLOG DISCLAIMER */}
+          <motion.div variants={itemVariants} className="p-6 rounded-2xl bg-amber-500/5 border border-amber-500/10">
+            <h2 className="text-sm font-bold text-amber-500 mb-2 flex items-center gap-2">
+              <AlertTriangle size={18} /> Academy Disclaimer
+            </h2>
+            <p className="text-xs text-amber-200/60 leading-relaxed text-left">
+              {BLOG_DISCLAIMER}
+            </p>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 };
@@ -2931,6 +3210,7 @@ const SideMenu = ({
       { id: 'profile', label: 'My Profile', icon: UserCircle },
     ] : []),
     { id: 'clinic', label: 'Find Dermatologists', icon: MapPinned },
+    { id: 'learn', label: 'Skin Health Academy', icon: BookOpen },
     { id: 'welcome', label: 'About Skin Tight', icon: Info },
     ...(!currentUser ? [
       { id: 'auth', label: 'Sign In / Join', icon: UserPlus },
@@ -4939,7 +5219,11 @@ const AuthPage = ({ onAuthSuccess, onSkip }: { onAuthSuccess: (user: any) => voi
           skinScore: 100,
           streakDays: 0,
           createdAt: getServerTimestamp(),
-          scansCompleted: 0
+          scansCompleted: 0,
+          agreedToTermsAt: getServerTimestamp(),
+          agreedToPrivacyAt: getServerTimestamp(),
+          agreedToDisclaimerAt: getServerTimestamp(),
+          onboardingAgreedAt: getServerTimestamp()
         });
       } catch (err) {
         handleFirestoreError(err, OperationType.WRITE, `users/${userCredential.user.uid}`);
@@ -5396,7 +5680,8 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 
 function App() {
   // --- Navigation State ---
-  const [activeTab, setActiveTab] = useState<'home' | 'scan' | 'timeline' | 'routine' | 'plans' | 'profile' | 'clinic' | 'welcome' | 'auth'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'scan' | 'timeline' | 'routine' | 'plans' | 'profile' | 'clinic' | 'welcome' | 'auth' | 'learn'>('home');
+  const [selectedArticleSlug, setSelectedArticleSlug] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [notifications, setNotifications] = useState<{ id: string; text: string; type: 'warning' | 'info' | 'alert'; read: boolean; date: string }[]>([]);
@@ -5422,6 +5707,111 @@ function App() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // --- Dynamic SEO Page Title Effect ---
+  useEffect(() => {
+    switch (activeTab) {
+      case 'home':
+        document.title = 'Skin Tight – AI Skin Monitoring & Skin Cancer Awareness Tool';
+        break;
+      case 'scan':
+        document.title = 'AI Skin Analysis & Skin Screening | Skin Tight';
+        break;
+      case 'timeline':
+        document.title = 'Timeline & Schedule | Skin Tight';
+        break;
+      case 'routine':
+        document.title = 'Skin Self-Check & Prevention Habits | Skin Tight';
+        break;
+      case 'plans':
+        document.title = 'Skin Risk Assessment & Monitoring Plans | Skin Tight';
+        break;
+      case 'profile':
+        document.title = 'Profile | Skin Tight';
+        break;
+      case 'clinic':
+        document.title = 'Find Dermatologists | Skin Tight';
+        break;
+      case 'welcome':
+        document.title = 'About Skin Tight – Early Skin Awareness & Mole Tracking';
+        break;
+      case 'auth':
+        document.title = 'Sign In or Join | Skin Tight';
+        break;
+      case 'learn':
+        if (selectedArticleSlug) {
+          const article = BLOG_ARTICLES.find(a => a.slug === selectedArticleSlug);
+          if (article) {
+            document.title = `${article.title} | Skin Tight Academy`;
+          } else {
+            document.title = 'Skin Health Academy – Skin Screening & Mole Tracking | Skin Tight';
+          }
+        } else {
+          document.title = 'Skin Health Academy – Skin Screening & Mole Tracking | Skin Tight';
+        }
+        break;
+      default:
+        document.title = 'Skin Tight – AI Skin Monitoring & Skin Cancer Awareness Tool';
+        break;
+    }
+  }, [activeTab, selectedArticleSlug]);
+ 
+  // --- Deep Linking & Path Parsing on Mount ---
+  useEffect(() => {
+    const handleUrlPath = () => {
+      const path = window.location.pathname;
+      if (path.startsWith('/learn') || path.startsWith('/blog')) {
+        setActiveTab('learn');
+        const parts = path.split('/');
+        const slug = parts[parts.length - 1];
+        if (slug && slug !== 'learn' && slug !== 'blog') {
+          const exists = BLOG_ARTICLES.some(a => a.slug === slug);
+          if (exists) {
+            setSelectedArticleSlug(slug);
+          } else {
+            setSelectedArticleSlug(null);
+          }
+        } else {
+          setSelectedArticleSlug(null);
+        }
+      } else if (path === '/clinic') {
+        setActiveTab('clinic');
+      } else if (path === '/about') {
+        setActiveTab('welcome');
+      } else if (path === '/routine') {
+        setActiveTab('routine');
+      } else if (path === '/plans') {
+        setActiveTab('plans');
+      }
+    };
+ 
+    handleUrlPath();
+    window.addEventListener('popstate', handleUrlPath);
+    return () => window.removeEventListener('popstate', handleUrlPath);
+  }, []);
+ 
+  // --- Synchronize Tab State with URL Path for Deep Linking and SEO ---
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    let expectedPath = '/';
+    if (activeTab === 'learn') {
+      expectedPath = selectedArticleSlug ? `/learn/${selectedArticleSlug}` : '/learn';
+    } else if (activeTab === 'clinic') {
+      expectedPath = '/clinic';
+    } else if (activeTab === 'welcome') {
+      expectedPath = '/about';
+    } else if (activeTab === 'routine') {
+      expectedPath = '/routine';
+    } else if (activeTab === 'plans') {
+      expectedPath = '/plans';
+    } else if (activeTab === 'home') {
+      expectedPath = '/';
+    }
+ 
+    if (currentPath !== expectedPath) {
+      window.history.pushState(null, '', expectedPath);
+    }
+  }, [activeTab, selectedArticleSlug]);
 
   // --- Connectivity Check ---
   useEffect(() => {
@@ -6944,14 +7334,17 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 margin: 0,
                 lineHeight: '1.1'
               }} >Catch It Early.</h1>
+              <div style={{ position: 'relative', zIndex: 1, marginTop: '6px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: '#2dd4bf', letterSpacing: '1.5px', textTransform: 'uppercase' }}>AI Skin Screening &amp; Monitoring</span>
+              </div>
               <p style={{ 
-                fontSize: '16px', 
+                fontSize: '15px', 
                 color: '#94a3b8', 
                 margin: '8px 0 0',
                 position: 'relative',
                 zIndex: 1,
                 lineHeight: '1.5'
-              }}>Scan suspicious spots. Track changes. Know when to act.</p>
+              }}>Scan suspicious spots, track changes, and know when to act. Skin Tight enables dynamic AI skin analysis, mole tracking, and proactive skin cancer awareness.</p>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '24px', width: '100%', gap: '16px' }}>
@@ -7139,6 +7532,49 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               </div>
             )}
 
+            {/* Skin Health Academy - Internal Links Selection */}
+            <div className="glass-card p-6 rounded-3xl mb-6 border border-white/5 space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+                <BookOpen size={18} className="text-teal-400" />
+                <h3 className="text-sm font-black text-white tracking-wide uppercase">Skin Health Academy</h3>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Stay informed on skin wellness. Read our clinical guides and learn to track suspicious visual developments:
+              </p>
+              <div className="space-y-2">
+                {[
+                  { title: "Understanding the ABCDE Rule for Moles", slug: "abcde-rule-for-moles" },
+                  { title: "How to Monitor Skin Changes Over Time", slug: "how-to-monitor-skin-changes" },
+                  { title: "Early Signs of Skin Cancer: What to Watch For", slug: "early-signs-of-skin-cancer" }
+                ].map((link, idx) => (
+                  <div 
+                    key={idx}
+                    onClick={() => {
+                      setSelectedArticleSlug(link.slug);
+                      setActiveTab('learn');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="flex justify-between items-center p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-teal-500/10 hover:border-teal-500/20 active:scale-98 transition-all cursor-pointer text-left"
+                  >
+                    <span className="text-xs text-slate-300 font-bold hover:text-white transition-colors">{link.title}</span>
+                    <ChevronRight size={14} className="text-teal-400 ml-2 flex-shrink-0" />
+                  </div>
+                ))}
+              </div>
+              <div className="text-center pt-2">
+                <button
+                  onClick={() => {
+                    setSelectedArticleSlug(null);
+                    setActiveTab('learn');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="text-xs text-teal-400 font-black uppercase tracking-wider hover:underline cursor-pointer"
+                >
+                  View All Guidelines ({BLOG_ARTICLES.length})
+                </button>
+              </div>
+            </div>
+
             <div style={styles.disclaimerBanner} className="glass-card shimmer-overlay">
               <AlertCircle size={20} color="#f59e0b" style={{ flexShrink: 0 }} />
               <p>Skin Tight is NOT a medical device and does NOT provide medical diagnoses. Always consult a licensed dermatologist.</p>
@@ -7201,6 +7637,12 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
         {activeTab === 'clinic' && <ClinicFinder />}
 
         {activeTab === 'welcome' && <AboutPage />}
+        {activeTab === 'learn' && (
+          <LearnPage 
+            selectedArticleSlug={selectedArticleSlug}
+            setSelectedArticleSlug={setSelectedArticleSlug}
+          />
+        )}
 
         <AnimatePresence>
           {selectedScanId && scans.find(s => s.id === selectedScanId) && (

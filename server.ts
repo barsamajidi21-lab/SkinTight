@@ -79,6 +79,44 @@ async function startServer() {
     }
   });
 
+  // Dynamic Sitemap.xml Route for Search Engine Crawler Updates
+  app.get("/sitemap.xml", (req, res) => {
+    res.header("Content-Type", "application/xml");
+    
+    const publicPaths = [
+      "",
+      "about",
+      "clinic",
+      "routine",
+      "plans",
+      "learn",
+      "learn/early-signs-of-skin-cancer",
+      "learn/suspicious-mole-warning-signs",
+      "learn/when-to-see-a-dermatologist",
+      "learn/abcde-rule-for-moles",
+      "learn/how-to-monitor-skin-changes"
+    ];
+    
+    const host = "https://skintightai.com";
+    const currentDate = new Date().toISOString().split('T')[0];
+    
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+    
+    publicPaths.forEach(p => {
+      const pathSegment = p ? `/${p}` : "";
+      xml += `  <url>\n`;
+      xml += `    <loc>${host}${pathSegment}</loc>\n`;
+      xml += `    <lastmod>${currentDate}</lastmod>\n`;
+      xml += `    <changefreq>weekly</changefreq>\n`;
+      xml += `    <priority>${p === "" ? "1.0" : "0.8"}</priority>\n`;
+      xml += `  </url>\n`;
+    });
+    
+    xml += `</urlset>`;
+    res.send(xml);
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
