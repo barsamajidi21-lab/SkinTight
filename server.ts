@@ -61,8 +61,8 @@ async function startServer() {
 
       let response;
       let lastError: any = null;
-      const maxRetries = 3;
-      const retryDelayMs = 1500;
+      const maxRetries = 4;
+      const retryDelayMs = 1200;
 
       // Ensure safety settings are configured to prevent false-positives
       const enhancedConfig = {
@@ -78,13 +78,17 @@ async function startServer() {
 
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          // If the primary model suffers from demand issues, try a stable fallback on retry attempts
+          // Robust rotation sequence across highly capable model families to bypass localized timeouts/API limits
           let currentModel = mappedModel;
-          if (attempt === 2 && mappedModel === "gemini-3.5-flash") {
+          if (attempt === 2) {
             currentModel = "gemini-2.5-flash";
-            console.log(`[Backup Failover]: Switching to ${currentModel} on attempt 2`);
-          } else if (attempt === 3 && mappedModel === "gemini-3.5-flash") {
-            currentModel = "gemini-3.5-flash"; // retry primary
+            console.log(`[Backup Failover 1]: Rotating to stable candidate "${currentModel}" on attempt 2`);
+          } else if (attempt === 3) {
+            currentModel = "gemini-flash-latest";
+            console.log(`[Backup Failover 2]: Rotating to production candidate "${currentModel}" on attempt 3`);
+          } else if (attempt === 4) {
+            currentModel = "gemini-3.1-flash-lite";
+            console.log(`[Backup Failover 3]: Rotating to lightweight candidate "${currentModel}" on attempt 4`);
           }
 
           response = await genAI.models.generateContent({
@@ -101,9 +105,9 @@ async function startServer() {
           }
         } catch (err: any) {
           lastError = err;
-          console.warn(`[Server AI Attempt ${attempt}/${maxRetries} Failed]:`, err.message || err);
+          console.warn(`[Server AI Attempt ${attempt}/${maxRetries} Failed on model]:`, err.message || err);
           if (attempt < maxRetries) {
-            const delay = retryDelayMs * Math.pow(2, attempt - 1);
+            const delay = retryDelayMs * Math.pow(1.5, attempt - 1);
             await new Promise(resolve => setTimeout(resolve, delay));
           }
         }
