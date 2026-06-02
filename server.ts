@@ -59,11 +59,59 @@ async function startServer() {
         contents = prompt;
       }
 
-      const response = await genAI.models.generateContent({
-        model: mappedModel,
-        contents,
-        config
-      });
+      let response;
+      let lastError: any = null;
+      const maxRetries = 3;
+      const retryDelayMs = 1500;
+
+      // Ensure safety settings are configured to prevent false-positives
+      const enhancedConfig = {
+        ...config,
+        safetySettings: [
+          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "BLOCK_NONE" }
+        ]
+      };
+
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          // If the primary model suffers from demand issues, try a stable fallback on retry attempts
+          let currentModel = mappedModel;
+          if (attempt === 2 && mappedModel === "gemini-3.5-flash") {
+            currentModel = "gemini-2.5-flash";
+            console.log(`[Backup Failover]: Switching to ${currentModel} on attempt 2`);
+          } else if (attempt === 3 && mappedModel === "gemini-3.5-flash") {
+            currentModel = "gemini-3.5-flash"; // retry primary
+          }
+
+          response = await genAI.models.generateContent({
+            model: currentModel,
+            contents,
+            config: enhancedConfig
+          });
+          
+          if (response && response.text) {
+            lastError = null;
+            break;
+          } else {
+            throw new Error("AI returned empty text");
+          }
+        } catch (err: any) {
+          lastError = err;
+          console.warn(`[Server AI Attempt ${attempt}/${maxRetries} Failed]:`, err.message || err);
+          if (attempt < maxRetries) {
+            const delay = retryDelayMs * Math.pow(2, attempt - 1);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+      }
+
+      if (lastError) {
+        throw lastError;
+      }
 
       const text = response.text;
 
