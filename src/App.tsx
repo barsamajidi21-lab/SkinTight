@@ -473,7 +473,7 @@ const executeAIFetch = async (payload: any, retries = 2, timeoutMs = 45000): Pro
 };
 
 // Client-side AI Helper
-const callAI = async (prompt: string, model: string = "gemini-3.5-flash", config: any = {}) => {
+const callAI = async (prompt: string, model: string = "gemini-2.5-flash", config: any = {}) => {
   const enhancedConfig = { ...config };
   if (config.responseMimeType === "application/json") {
     enhancedConfig.responseMimeType = "application/json";
@@ -505,7 +505,7 @@ const extractBase64FromDataUrl = (dataUrl: string): string => {
   return base64Clean;
 };
 
-const callAIVision = async (parts: any[], model: string = "gemini-3.5-flash", config: any = {}) => {
+const callAIVision = async (parts: any[], model: string = "gemini-2.5-flash", config: any = {}) => {
   const enhancedConfig = { ...config };
   if (config.responseMimeType === "application/json") {
     enhancedConfig.responseMimeType = "application/json";
@@ -4013,7 +4013,7 @@ Format your response as JSON only with this structure:
 
 Focus only on skin wellness and screening prevention. No general beauty or cosmetic advice. No filler content. Be direct and specific.`;
 
-    const responseData = await callAI(prompt, "gemini-3.5-flash", {
+    const responseData = await callAI(prompt, "gemini-2.5-flash", {
       responseMimeType: "application/json"
     });
 
@@ -6715,7 +6715,7 @@ Respond ONLY with valid JSON with these fields:
           ...imageParts,
           { text: prompt }
         ],
-        "gemini-3.5-flash",
+        "gemini-2.5-flash",
         { responseMimeType: "application/json" }
       );
       
@@ -6966,7 +6966,7 @@ STRICT LENGTH LIMITS:
 - nextExamSchedule: ONE clear sentence with a specific timeframe. (High risk: 2 weeks, Moderate: 4-6 weeks, Low: 6-12 months).
 Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"], "priorityCheckAreas": ["string"], "warningSigns": ["string"], "nextExamSchedule": "string" }`;
 
-      const responseData = await callAI(prompt, "gemini-3.5-flash", { responseMimeType: "application/json" });
+      const responseData = await callAI(prompt, "gemini-2.5-flash", { responseMimeType: "application/json" });
 
       let parsedProtocol;
       try {

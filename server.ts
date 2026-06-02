@@ -24,11 +24,11 @@ async function startServer() {
   // API Routes
   app.post("/api/ai/generate", async (req, res) => {
     try {
-      const { prompt, parts, model: modelName = "gemini-3.5-flash", config = {} } = req.body;
+      const { prompt, parts, model: modelName = "gemini-2.5-flash", config = {} } = req.body;
       
       let mappedModel = modelName;
-      if (modelName === "gemini-3-flash-preview" || !modelName) {
-        mappedModel = "gemini-3.5-flash";
+      if (modelName === "gemini-3-flash-preview" || modelName === "gemini-3.5-flash" || !modelName) {
+        mappedModel = "gemini-2.5-flash";
       }
 
       let contents;
@@ -78,17 +78,17 @@ async function startServer() {
 
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          // Robust rotation sequence across highly capable model families to bypass localized timeouts/API limits
+          // Robust rotation sequence across stable & lightweight model families to bypass localized timeouts/API limits
           let currentModel = mappedModel;
           if (attempt === 2) {
-            currentModel = "gemini-2.5-flash";
-            console.log(`[Backup Failover 1]: Rotating to stable candidate "${currentModel}" on attempt 2`);
+            currentModel = "gemini-3.1-flash-lite";
+            console.log(`[Backup Failover 1]: Rotating to lightweight candidate "${currentModel}" on attempt 2`);
           } else if (attempt === 3) {
-            currentModel = "gemini-flash-latest";
-            console.log(`[Backup Failover 2]: Rotating to production candidate "${currentModel}" on attempt 3`);
+            currentModel = "gemini-2.5-flash";
+            console.log(`[Backup Failover 2]: Retrying stable candidate "${currentModel}" on attempt 3`);
           } else if (attempt === 4) {
             currentModel = "gemini-3.1-flash-lite";
-            console.log(`[Backup Failover 3]: Rotating to lightweight candidate "${currentModel}" on attempt 4`);
+            console.log(`[Backup Failover 3]: Retrying lightweight candidate "${currentModel}" on attempt 4`);
           }
 
           response = await genAI.models.generateContent({
