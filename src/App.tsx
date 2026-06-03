@@ -2025,6 +2025,9 @@ const ScanPage = ({
                   <h3 className="font-bold">Analysis Error</h3>
                 </div>
                 <p className="text-sm text-red-200/80">{error}</p>
+                <p className="text-xs text-slate-400 mt-3 border-t border-red-500/20 pt-2">
+                  Your uploaded photos, intake questionnaire, and selected parameters are fully preserved in active memory. You can safely try again by clicking the <strong>Analyze Skin</strong> button below when the service becomes available.
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
