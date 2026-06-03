@@ -81,7 +81,8 @@ import {
 
 import { BLOG_ARTICLES, BLOG_DISCLAIMER } from './data/blogData';
 
-import { db, auth } from './lib/firebase';
+import { db, auth, storage } from './lib/firebase';
+import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { 
   collection, 
   doc, 
@@ -6519,7 +6520,7 @@ function App() {
     });
   };
 
-  const saveScanToFirestore = (scanData: any) => {
+  const saveScanToFirestore = async (scanData: any) => {
     const user = auth.currentUser;
     if (!user) {
       console.error("No user logged in — cannot save scan");
@@ -6528,20 +6529,56 @@ function App() {
     
     setSaveStatus('idle');
     
-    addDoc(collection(db, "users", user.uid, "scans"), {
-      date: getServerTimestamp(),
-      riskLevel: scanData.result.risk_level,
-      confidence: scanData.result.confidence_level,
-      findings: scanData.result.findings,
-      concerningSigns: scanData.result.concerning_signs,
-      suggestions: scanData.result.suggestions,
-      urgency: scanData.result.urgency,
-      bodyRegion: scanData.bodyRegion,
-      skinScore: scanData.skinScore,
-      intakeData: scanData.intake,
-      photoBase64: scanData.photos[0] || null,
-      result: scanData.result
-    }).then(function(docRef: any) {
+    const uploadedUrls: string[] = [];
+    console.log(`[Firebase Storage Tooling] Initiating upload flow for user "${user.uid}"...`);
+    console.log(`[Firebase Storage Tooling] Target bucket from config: "${(storage as any).app?.options?.storageBucket || 'gen-lang-client-0650598239.firebasestorage.app'}"`);
+    console.log(`[Firebase Storage Tooling] Total images to upload in queue: ${scanData.photos?.length || 0}`);
+    
+    if (scanData.photos && scanData.photos.length > 0) {
+      for (let i = 0; i < scanData.photos.length; i++) {
+        const photo = scanData.photos[i];
+        if (photo && photo.startsWith('data:')) {
+          try {
+            const fileName = `${Date.now()}_img_${i}.jpg`;
+            const storagePath = `users/${user.uid}/scans/${fileName}`;
+            console.log(`[Firebase Storage Tooling] Preparing to upload image #${i + 1} to storage path: "${storagePath}"`);
+            const fileRef = storageRef(storage, storagePath);
+            
+            console.log(`[Firebase Storage Tooling] Uploading image #${i + 1} (base64 string size: ${photo.length} characters) using "data_url" format...`);
+            const uploadResult = await uploadString(fileRef, photo, 'data_url');
+            console.log(`[Firebase Storage Tooling] Upload successful for image #${i + 1}! Metadata ref:`, uploadResult.ref.fullPath);
+            
+            const downloadUrl = await getDownloadURL(uploadResult.ref);
+            console.log(`[Firebase Storage Tooling] Download URL retrieved for image #${i + 1}: ${downloadUrl}`);
+            uploadedUrls.push(downloadUrl);
+          } catch (uploadError: any) {
+            console.error(`[Firebase Storage Tooling] FAILED to upload image #${i + 1} to Storage. Falling back to local data/base64 representation:`, uploadError);
+            uploadedUrls.push(photo);
+          }
+        } else if (photo) {
+          console.log(`[Firebase Storage Tooling] Image #${i + 1} is already a URL or non-base64 format, preserving as-is.`);
+          uploadedUrls.push(photo);
+        }
+      }
+    }
+
+    try {
+      const docRef = await addDoc(collection(db, "users", user.uid, "scans"), {
+        date: getServerTimestamp(),
+        riskLevel: scanData.result.risk_level,
+        confidence: scanData.result.confidence_level,
+        findings: scanData.result.findings,
+        concerningSigns: scanData.result.concerning_signs,
+        suggestions: scanData.result.suggestions,
+        urgency: scanData.result.urgency,
+        bodyRegion: scanData.bodyRegion,
+        skinScore: scanData.skinScore,
+        intakeData: scanData.intake,
+        photoBase64: null, // Avoid base64 bloat in Firestore
+        photos: uploadedUrls, // Store GCS download URLs
+        result: scanData.result
+      });
+      
       console.log("Scan saved to Firestore with ID:", docRef.id);
       tagUserScanCompleted();
       updateSkinScoreInFirestore(user.uid, scanData.skinScore);
@@ -6550,11 +6587,11 @@ function App() {
       loadMostRecentScan();
       // Clear status after 5 seconds
       setTimeout(() => setSaveStatus('idle'), 5000);
-    }).catch(function(error: any) {
+    } catch (error: any) {
       handleFirestoreError(error, OperationType.CREATE, `users/${user.uid}/scans`);
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 5000);
-    });
+    }
   };
 
   const updateSkinScoreInFirestore = (userId: string, newScore: number) => {
