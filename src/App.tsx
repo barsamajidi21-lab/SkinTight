@@ -418,7 +418,7 @@ const translateAIError = (err: any): Error => {
     return new Error("Image upload issue detected. Please check your photo quality and retry.");
   }
   
-  return new Error("Analysis temporarily unavailable. Please retry.");
+  return new Error(`Analysis temporarily unavailable: ${msg || "Unknown error"}. Please retry.`);
 };
 
 // Central fetch executor with timeout, robust try/catch, and up to 2 retries
