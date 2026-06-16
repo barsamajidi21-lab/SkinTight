@@ -2161,90 +2161,127 @@ const WelcomePage = ({ onComplete }: { onComplete: () => void }) => {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.2 }
+      transition: { staggerChildren: 0.1 }
     }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 15 },
     visible: { opacity: 1, y: 0 }
   };
 
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#060818',
+      background: 'radial-gradient(circle at top right, #0b112c 0%, #020412 100%)',
       color: '#f8fafc',
-      padding: '24px 24px',
+      padding: '32px 24px',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'flex-start',
-      alignItems: 'stretch'
+      alignItems: 'center',
+      fontFamily: 'Inter, sans-serif'
     }}>
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        style={{ width: '100%' }}
+        style={{ width: '100%', maxWidth: '480px' }}
       >
-        <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '12px' }}>
+        {/* Animated Brand Header */}
+        <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px' }}>
           <div style={{
-            width: '60px', height: '60px', borderRadius: '18px',
-            background: 'rgba(45, 212, 191, 0.1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginBottom: '4px', border: '1px solid rgba(45, 212, 191, 0.2)',
+            width: '64px', height: '64px', borderRadius: '20px',
+            background: 'rgba(45, 212, 191, 0.15)',
+            display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center',
+            marginBottom: '12px', border: '1px solid rgba(45, 212, 191, 0.3)',
           }}>
-            <Dna size={30} color="#2dd4bf" className="animate-pulse" />
+            <ShieldCheck size={32} color="#2dd4bf" className="animate-pulse" />
           </div>
-          <h1 style={{ fontSize: '11px', fontWeight: '900', color: '#2dd4bf', letterSpacing: '2px', textTransform: 'uppercase' }}>Skin Tight</h1>
+          <h1 style={{ fontSize: '12px', fontWeight: '900', color: '#2dd4bf', letterSpacing: '4px', textTransform: 'uppercase', marginBottom: '4px' }}>Skin Tight</h1>
+          <div style={{ fontSize: '28px', fontWeight: '950', textAlign: 'center', letterSpacing: '-0.03em', lineHeight: '1.1', color: '#ffffff' }}>Skin Trust & Accuracy</div>
         </motion.div>
 
-        <motion.div variants={itemVariants} style={{ textAlign: 'center', marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '30px', fontWeight: '900', marginBottom: '2px', lineHeight: 1.1 }}>Catch It Early.</h2>
-          <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.4, maxWidth: '280px', margin: '0 auto' }}>AI skin screening &amp; skin change tracking tool. Scan suspicious skin spots and enable proactive mole monitoring.</p>
+        {/* Lead Trust introduction text */}
+        <motion.div variants={itemVariants} style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <p style={{ fontSize: '14px', color: '#94a3b8', lineHeight: 1.5 }}>
+            Skin Tight delivers robust, advanced optical screening with complete security. Below is how we protect your health while providing unmatched accessibility.
+          </p>
         </motion.div>
 
-        <motion.div variants={itemVariants} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '16px' }}>
+        {/* Dynamic Trust Grid */}
+        <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '28px' }}>
+          
+          {/* Point 1: Cheap / Free Comparison */}
+          <div className="glass-card" style={{ display: 'flex', gap: '16px', padding: '18px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(14, 165, 233, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Zap size={20} color="#0ea5e9" />
+            </div>
+            <div>
+              <h4 style={{ fontWeight: '850', fontSize: '15px', color: '#f8fafc', marginBottom: '4px' }}>Instant & Cost-Free</h4>
+              <p style={{ fontSize: '12.5px', color: '#94a3b8', lineHeight: 1.4 }}>
+                Getting skin assessments shouldn't cost hundreds of dollars or require waiting months for an appointment. Skin Tight is <strong>100% free</strong> and gives you comprehensive screening metrics in under 60 seconds.
+              </p>
+            </div>
+          </div>
+
+          {/* Point 2: Trained on Thousands of Cases */}
+          <div className="glass-card" style={{ display: 'flex', gap: '16px', padding: '18px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(168, 85, 247, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Globe size={20} color="#a855f7" />
+            </div>
+            <div>
+              <h4 style={{ fontWeight: '850', fontSize: '15px', color: '#f8fafc', marginBottom: '4px' }}>Proven Clinic-Backed Data</h4>
+              <p style={{ fontSize: '12.5px', color: '#94a3b8', lineHeight: 1.4 }}>
+                The underlying image analysis engine runs on a state-of-the-art vision framework trained on <strong>thousands of verified dermatologist cases and medical data collections</strong>. This ensures high visual pattern matching accuracy.
+              </p>
+            </div>
+          </div>
+
+          {/* Point 3: Real user validation & tracking */}
+          <div className="glass-card" style={{ display: 'flex', gap: '16px', padding: '18px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(45, 212, 191, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Users size={20} color="#2dd4bf" />
+            </div>
+            <div>
+              <h4 style={{ fontWeight: '850', fontSize: '15px', color: '#f8fafc', marginBottom: '4px' }}>Trusted by Real Users</h4>
+              <p style={{ fontSize: '12.5px', color: '#94a3b8', lineHeight: 1.4 }}>
+                Real users turn to Skin Tight for personal screenings and visual body mole monitoring. It is a vital frontline tracking companion used to safely monitor changes over time.
+              </p>
+            </div>
+          </div>
+
+          {/* Point 4: High Security & Privacy */}
+          <div className="glass-card" style={{ display: 'flex', gap: '16px', padding: '18px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Lock size={20} color="#ef4444" />
+            </div>
+            <div>
+              <h4 style={{ fontWeight: '850', fontSize: '15px', color: '#f8fafc', marginBottom: '4px' }}>Private & Encrypted Protocols</h4>
+              <p style={{ fontSize: '12.5px', color: '#94a3b8', lineHeight: 1.4 }}>
+                Your uploads, histories, and personal dashboard statistics are heavily sandboxed. Only you have authorized read access to your skin documents.
+              </p>
+            </div>
+          </div>
+
+        </motion.div>
+
+        {/* Inline Numerical Proof metrics */}
+        <motion.div variants={itemVariants} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '24px' }}>
           {[
-            { label: '1 in 5', text: 'Risk' },
-            { label: '98%', text: 'Survival' },
-            { label: '60s', text: 'Scan' }
+            { label: 'Thousands', text: 'Scans Handled' },
+            { label: '$0 Free', text: 'vs. $150+ Clinic' },
+            { label: '98%', text: 'Survival caught early' }
           ].map((stat, i) => (
-            <div key={i} className="glass-card" style={{ padding: '10px 4px', borderRadius: '16px', textAlign: 'center' }}>
-              <div style={{ fontWeight: '900', fontSize: '15px', color: '#f8fafc' }}>{stat.label}</div>
-              <div style={{ fontSize: '9px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 'bold' }}>{stat.text}</div>
+            <div key={i} className="glass-card" style={{ padding: '12px 6px', borderRadius: '16px', textAlign: 'center', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.03)' }}>
+              <div style={{ fontWeight: '950', fontSize: '13px', color: '#2dd4bf', marginBottom: '2px' }}>{stat.label}</div>
+              <div style={{ fontSize: '9px', color: '#64748b', textTransform: 'uppercase', fontWeight: '800' }}>{stat.text}</div>
             </div>
           ))}
         </motion.div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-          <motion.div variants={itemVariants}>
-            <h3 style={{ fontSize: '10px', fontWeight: '900', color: '#2dd4bf', marginBottom: '6px', textTransform: 'uppercase' }}>What we do:</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {['AI Analysis', 'Risk Assessment', 'Tracking'].map((point, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#cbd5e1' }}>
-                  <CheckCircle2 size={13} color="#2dd4bf" />
-                  <span>{point}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          <motion.div variants={itemVariants}>
-            <h3 style={{ fontSize: '10px', fontWeight: '900', color: '#ef4444', marginBottom: '6px', textTransform: 'uppercase' }}>We do NOT:</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {['Diagnose', 'Replace MD', 'Beauty Tip'].map((point, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#94a3b8' }}>
-                  <X size={13} color="#ef4444" />
-                  <span>{point}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-
-        <motion.p variants={itemVariants} style={{ fontSize: '10px', color: '#64748b', textAlign: 'center', lineHeight: 1.4, marginBottom: '16px' }}>
-          Beta tool for early identification. Not medical advice. Consult a dermatologist.
+        <motion.p variants={itemVariants} style={{ fontSize: '10.5px', color: '#475569', textAlign: 'center', lineHeight: 1.4, marginBottom: '24px' }}>
+          Reminder: AI skin wellness calculations are informational screening tools. They do not constitute official clinical medical diagnoses or replace dermatologist visits.
         </motion.p>
 
         <motion.button
@@ -2262,10 +2299,10 @@ const WelcomePage = ({ onComplete }: { onComplete: () => void }) => {
             fontWeight: '950',
             fontSize: '16px',
             cursor: 'pointer',
-            boxShadow: '0 8px 24px rgba(45, 212, 191, 0.2)'
+            boxShadow: '0 8px 30px rgba(45, 212, 191, 0.25)'
           }}
         >
-          Get Started
+          Start
         </motion.button>
       </motion.div>
     </div>
@@ -3209,9 +3246,9 @@ const SideMenu = ({
 }) => {
   const menuItems = [
     { id: 'home', label: 'Home', icon: Home },
+    { id: 'profile', label: 'My Profile', icon: UserCircle },
     ...(currentUser ? [
       { id: 'timeline', label: 'Timeline and Schedule', icon: Calendar },
-      { id: 'profile', label: 'My Profile', icon: UserCircle },
     ] : []),
     { id: 'clinic', label: 'Find Dermatologists', icon: MapPinned },
     { id: 'learn', label: 'Skin Health Academy', icon: BookOpen },
@@ -7387,17 +7424,63 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               }}>Scan suspicious spots, track changes, and know when to act. Skin Tight enables dynamic AI skin analysis, mole tracking, and proactive skin cancer awareness.</p>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '24px', width: '100%', gap: '16px' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(45, 212, 191, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <User size={32} color="#2dd4bf" />
-              </div>
-              <div>
-                <h2 style={{ fontSize: '28px', fontWeight: '900', lineHeight: '1.2' }}>
-                  <span>Hello</span>, <span style={{ color: '#2dd4bf' }}>{fullUserData?.fullName ? fullUserData.fullName.split(' ')[0] : fullUserData?.username || 'User'}</span> 👋
-                </h2>
-                <p style={{ color: '#94a3b8', fontSize: '16px', marginTop: '4px' }}>
-                  {scans.length === 0 ? <span>Start your first scan to begin tracking your skin health.</span> : <span>Your skin health at a glance</span>}
-                </p>
+            {/* Steps & How to Use Section */}
+            <div className="glass-card mb-6" style={{
+              background: 'rgba(30, 41, 59, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.03)',
+              borderRadius: '24px',
+              padding: '24px',
+              width: '100%',
+              marginTop: '12px'
+            }}>
+              <h3 style={{ fontSize: '11px', fontWeight: '900', color: '#a855f7', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#a855f7' }}></span> How Skin Tight Works
+              </h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {[
+                  {
+                    step: "1",
+                    title: "Snap or Upload Photo",
+                    desc: "Take a clear, close-up photo of any suspicious spots, moles, or lesions of concern.",
+                    color: "#a855f7"
+                  },
+                  {
+                    step: "2",
+                    title: "Analyze Instantly",
+                    desc: "Our dermatologist-trained AI checks risk factors, ABCDE indicators, and pattern symmetries.",
+                    color: "#8b5cf6"
+                  },
+                  {
+                    step: "3",
+                    title: "Track Developments",
+                    desc: "Compare pictures over time to monitor changes, build your timeline, and export reports.",
+                    color: "#6366f1"
+                  }
+                ].map((item, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      background: `rgba(${idx === 0 ? '168, 85, 247' : idx === 1 ? '139, 92, 246' : '99, 102, 241'}, 0.1)`,
+                      color: item.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: '900',
+                      fontSize: '12px',
+                      flexShrink: 0,
+                      border: `1px solid rgba(${idx === 0 ? '168, 85, 247' : idx === 1 ? '139, 92, 246' : '99, 102, 241'}, 0.2)`
+                    }}>
+                      {item.step}
+                    </div>
+                    <div>
+                      <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#f8fafc', marginBottom: '2px' }}>{item.title}</h4>
+                      <p style={{ fontSize: '12.5px', color: '#94a3b8', lineHeight: '1.4' }}>{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -7420,33 +7503,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
 
             <UVCard uvData={uvData} />
             
-            {skinScore > 0 && <SkinScoreGauge score={skinScore} />}
-            
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <button 
-                onClick={() => (window as any).loadHowToImprove()}
-                style={{
-                  background: 'rgba(45, 212, 191, 0.1)',
-                  border: '1px solid rgba(45, 212, 191, 0.2)',
-                  color: '#2dd4bf',
-                  padding: '10px 24px',
-                  borderRadius: '14px',
-                  fontSize: '14px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(45, 212, 191, 0.2)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(45, 212, 191, 0.1)'}
-              >
-                <SparklesIcon size={16} /> How to Improve
-              </button>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '24px', width: '100%', marginTop: '16px' }}>
               <motion.div 
                 id="newScanButtonHero"
                 className="glass-card" 
@@ -7455,16 +7512,16 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 whileTap={{ scale: 0.95 }}
                 animate={{ 
                   boxShadow: [
-                    '0 0 20px rgba(45, 212, 191, 0.4)',
-                    '0 0 40px rgba(14, 165, 233, 0.6)',
-                    '0 0 20px rgba(168, 85, 247, 0.4)',
-                    '0 0 20px rgba(45, 212, 191, 0.4)'
+                    '0 0 20px rgba(168, 85, 247, 0.5)',
+                    '0 0 40px rgba(139, 92, 246, 0.8)',
+                    '0 0 20px rgba(99, 102, 241, 0.5)',
+                    '0 0 20px rgba(168, 85, 247, 0.5)'
                   ],
                   border: [
-                    '2px solid rgba(45, 212, 191, 0.8)',
-                    '2px solid rgba(14, 165, 233, 0.8)',
-                    '2px solid rgba(168, 85, 247, 0.8)',
-                    '2px solid rgba(45, 212, 191, 0.8)'
+                    '2px solid rgba(168, 85, 247, 0.9)',
+                    '2px solid rgba(139, 92, 246, 0.9)',
+                    '2px solid rgba(99, 102, 241, 0.9)',
+                    '2px solid rgba(168, 85, 247, 0.9)'
                   ]
                 }}
                 transition={{ 
@@ -7482,24 +7539,24 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                   padding: '32px 24px',
                   borderRadius: '28px',
                   cursor: 'pointer',
-                  background: 'rgba(15, 23, 42, 0.6)',
+                  background: 'rgba(24, 18, 48, 0.8)',
                   backdropFilter: 'blur(20px)',
                   position: 'relative',
                   overflow: 'hidden'
                 }}
               >
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(45deg, rgba(45, 212, 191, 0.05) 0%, rgba(14, 165, 233, 0.05) 100%)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(45deg, rgba(168, 85, 247, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%)', pointerEvents: 'none' }} />
                 
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                   style={{ marginBottom: '16px' }}
                 >
-                  <Camera size={48} color="#2dd4bf" />
+                  <Camera size={48} color="#c084fc" />
                 </motion.div>
                 
                 <div style={{ fontWeight: '950', fontSize: '24px', marginBottom: '8px', color: '#f8fafc', letterSpacing: '-0.02em' }}>START NEW SCAN</div>
-                <div style={{ fontSize: '14px', color: '#94a3b8', fontWeight: 'bold' }}>Immediate AI Skin Analysis</div>
+                <div style={{ fontSize: '14px', color: '#c084fc', fontWeight: 'bold' }}>Immediate AI Skin Analysis</div>
                 
                 <motion.div 
                   animate={{ x: [-100, 300] }}
@@ -7714,103 +7771,239 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
         )}
         </AnimatePresence>
 
-        {activeTab === 'profile' && currentUser && (
-          <div className="page-container" style={styles.tabContent}>
+        {activeTab === 'profile' && (
+          <div className="page-container" style={{ ...styles.tabContent, paddingBottom: '100px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', marginBottom: '30px', width: '100%' }}>
               <h2 style={{ fontSize: '24px', fontWeight: '900', margin: 0, color: '#f8fafc', whiteSpace: 'nowrap', textAlign: 'center' }}>My Profile</h2>
             </div>
+
+            {/* Friendly Greeting Card */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '28px', width: '100%', gap: '16px' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(45, 212, 191, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid rgba(45, 212, 191, 0.2)' }}>
+                <User size={32} color="#2dd4bf" />
+              </div>
+              <div>
+                <h2 style={{ fontSize: '28px', fontWeight: '900', lineHeight: '1.2' }}>
+                  <span>Hello</span>, <span style={{ color: '#2dd4bf' }}>{currentUser ? (fullUserData?.fullName ? fullUserData.fullName.split(' ')[0] : fullUserData?.username || 'User') : 'Guest'}</span> 👋
+                </h2>
+                <p style={{ color: '#94a3b8', fontSize: '15px', marginTop: '4px' }}>
+                  {scans.length === 0 ? <span>Start your first scan to begin tracking your skin health.</span> : <span>Your skin health at a glance</span>}
+                </p>
+              </div>
+            </div>
+
+            {/* Score Gauge and How to Improve button if active */}
+            {skinScore > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '28px', width: '100%' }}>
+                <SkinScoreGauge score={skinScore} />
+                
+                <div style={{ textAlign: 'center', marginTop: '16px', marginBottom: '16px' }}>
+                  <button 
+                    onClick={() => (window as any).loadHowToImprove()}
+                    style={{
+                      background: 'rgba(45, 212, 191, 0.1)',
+                      border: '1px solid rgba(45, 212, 191, 0.2)',
+                      color: '#2dd4bf',
+                      padding: '10px 24px',
+                      borderRadius: '14px',
+                      fontSize: '14px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 4px 15px rgba(45, 212, 191, 0.1)'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(45, 212, 191, 0.2)'}
+                    onMouseOut={(e) => e.currentTarget.style.background = 'rgba(45, 212, 191, 0.1)'}
+                  >
+                    <SparklesIcon size={16} /> How to Improve
+                  </button>
+                </div>
+              </div>
+            )}
             
             {/* Personal Info Card */}
-            <div className="glass-card mb-6 relative overflow-hidden flex flex-col items-center">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-teal-500/10 to-transparent rounded-bl-full -mr-8 -mt-8" />
-              
-              <div className="flex flex-col items-center text-center w-full max-w-md mx-auto">
-                <div 
-                  style={{ 
-                    width: '110px', 
-                    height: '110px', 
-                    borderRadius: '50%', 
-                    background: userProfile.profileColor || '#2dd4bf',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '40px',
-                    fontWeight: '950',
-                    color: 'white',
-                    marginBottom: '24px',
-                    boxShadow: `0 15px 35px ${userProfile.profileColor || '#2dd4bf'}50`,
-                    border: '4px solid rgba(255,255,255,0.15)'
-                  }}
-                >
-                  {userProfile.fullName ? userProfile.fullName.charAt(0).toUpperCase() : (fullUserData?.username?.[0]?.toUpperCase() || 'U')}
-                </div>
+            {currentUser ? (
+              <div className="glass-card mb-6 relative overflow-hidden flex flex-col items-center">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-teal-500/10 to-transparent rounded-bl-full -mr-8 -mt-8" />
                 
-                <h3 className="text-3xl font-black text-white mb-1">
-                  {userProfile.fullName || (fullUserData?.username ? `@${fullUserData.username}` : 'SkinTight User')}
-                </h3>
-                {userProfile.fullName && fullUserData?.username && (
-                  <p className="text-teal-400 font-black text-sm mb-4 tracking-wider uppercase">@{fullUserData.username}</p>
-                )}
-                
-                <div className="flex items-center justify-center gap-2 text-slate-300 text-sm mb-8 bg-white/5 px-6 py-3 rounded-2xl border border-white/5 w-fit">
-                  <Mail size={16} className="text-teal-400" />
-                  <span className="font-bold">{currentUser?.email || fullUserData?.email || 'No email associated'}</span>
-                </div>
-
-                <div className="w-full space-y-6 mt-4">
-                  {/* Stats Row */}
-                  <div className="flex justify-center gap-4 mb-2">
-                    <div className="flex-1 p-4 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
-                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Scans</div>
-                      <div className="text-2xl font-black text-white">{scans.length}</div>
-                    </div>
-                    <div className="flex-1 p-4 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
-                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Skin Score</div>
-                      <div className="text-2xl font-black text-teal-400">{skinScore}%</div>
-                    </div>
+                <div className="flex flex-col items-center text-center w-full max-w-md mx-auto">
+                  <div 
+                    style={{ 
+                      width: '110px', 
+                      height: '110px', 
+                      borderRadius: '50%', 
+                      background: userProfile.profileColor || '#2dd4bf',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '40px',
+                      fontWeight: '950',
+                      color: 'white',
+                      marginBottom: '24px',
+                      boxShadow: `0 15px 35px ${(userProfile.profileColor || '#2dd4bf')}50`,
+                      border: '4px solid rgba(255,255,255,0.15)'
+                    }}
+                  >
+                    {userProfile.fullName ? userProfile.fullName.charAt(0).toUpperCase() : (fullUserData?.username?.[0]?.toUpperCase() || 'U')}
+                  </div>
+                  
+                  <h3 className="text-3xl font-black text-white mb-1">
+                    {userProfile.fullName || (fullUserData?.username ? `@${fullUserData.username}` : 'SkinTight User')}
+                  </h3>
+                  {userProfile.fullName && fullUserData?.username && (
+                    <p className="text-teal-400 font-black text-sm mb-4 tracking-wider uppercase">@{fullUserData.username}</p>
+                  )}
+                  
+                  <div className="flex items-center justify-center gap-2 text-slate-300 text-sm mb-8 bg-white/5 px-6 py-3 rounded-2xl border border-white/5 w-fit">
+                    <Mail size={16} className="text-teal-400" />
+                    <span className="font-bold">{currentUser?.email || fullUserData?.email || 'No email associated'}</span>
                   </div>
 
-                  <div className="p-6 rounded-[32px] bg-white/5 border border-white/10 text-center w-full">
-                    <div className="text-[11px] font-black text-teal-500 uppercase tracking-[0.3em] mb-4">AI Analysis Profile</div>
-                    
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="flex flex-wrap justify-center gap-3">
-                        <div className="px-5 py-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-black uppercase tracking-wider">
-                          Fitzpatrick Type {userProfile.fitzpatrick}
-                        </div>
-                        {fullUserData?.ethnicity && (
-                          <div className="px-5 py-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-black uppercase tracking-wider">
-                            {fullUserData.ethnicity}
-                          </div>
-                        )}
+                  <div className="w-full space-y-6 mt-4">
+                    {/* Stats Row */}
+                    <div className="flex justify-center gap-4 mb-2">
+                      <div className="flex-1 p-4 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Scans</div>
+                        <div className="text-2xl font-black text-white">{scans.length}</div>
                       </div>
+                      <div className="flex-1 p-4 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Skin Score</div>
+                        <div className="text-2xl font-black text-teal-400">{skinScore}%</div>
+                      </div>
+                    </div>
+
+                    <div className="p-6 rounded-[32px] bg-white/5 border border-white/10 text-center w-full">
+                      <div className="text-[11px] font-black text-teal-500 uppercase tracking-[0.3em] mb-4">AI Analysis Profile</div>
                       
-                      <div className="mt-2 px-4 max-w-sm mx-auto">
-                        <p className="text-[13px] text-slate-400 leading-relaxed font-medium">
-                          {(() => {
-                            const type = Number(userProfile.fitzpatrick);
-                            if (type === 1) return "Very fair skin, highly sensitive. Always burns, never tans. Significant UV protection required.";
-                            if (type === 2) return "Fair skin, high sensitivity. Usually burns, tans minimally. Frequent self-checks recommended.";
-                            if (type === 3) return "Creamy white to light brown. Sometimes mild burn, tans uniformly. Balanced protection needed.";
-                            if (type === 4) return "Olive or moderate brown. Rarely burns, tans easily. Lower (but present) risk profile.";
-                            if (type === 5) return "Dark brown skin. Very rarely burns, tans very easily. Focus on early detection.";
-                            if (type === 6) return "Deeply pigmented skin. Never burns. Highly resistant to sun damage, but check palms and soles.";
-                            return "Your personalized skin profile based on AI dermatological standards.";
-                          })()}
-                        </p>
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="flex flex-wrap justify-center gap-3">
+                          <div className="px-5 py-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-black uppercase tracking-wider">
+                            Fitzpatrick Type {userProfile.fitzpatrick}
+                          </div>
+                          {fullUserData?.ethnicity && (
+                            <div className="px-5 py-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-black uppercase tracking-wider">
+                              {fullUserData.ethnicity}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="mt-2 px-4 max-w-sm mx-auto">
+                          <p className="text-[13px] text-slate-400 leading-relaxed font-medium">
+                            {(() => {
+                              const type = Number(userProfile.fitzpatrick);
+                              if (type === 1) return "Very fair skin, highly sensitive. Always burns, never tans. Significant UV protection required.";
+                              if (type === 2) return "Fair skin, high sensitivity. Usually burns, tans minimally. Frequent self-checks recommended.";
+                              if (type === 3) return "Creamy white to light brown. Sometimes mild burn, tans uniformly. Balanced protection needed.";
+                              if (type === 4) return "Olive or moderate brown. Rarely burns, tans easily. Lower (but present) risk profile.";
+                              if (type === 5) return "Dark brown skin. Very rarely burns, tans very easily. Focus on early detection.";
+                              if (type === 6) return "Deeply pigmented skin. Never burns. Highly resistant to sun damage, but check palms and soles.";
+                              return "Your personalized skin profile based on AI dermatological standards.";
+                            })()}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="glass-card mb-6 relative overflow-hidden flex flex-col items-center">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-transparent rounded-bl-full -mr-8 -mt-8" />
+                
+                <div className="flex flex-col items-center text-center w-full max-w-md mx-auto">
+                  <div 
+                    style={{ 
+                      width: '110px', 
+                      height: '110px', 
+                      borderRadius: '50%', 
+                      background: '#7c3aed',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '40px',
+                      fontWeight: '950',
+                      color: 'white',
+                      marginBottom: '24px',
+                      boxShadow: `0 15px 35px rgba(124, 58, 237, 0.4)`,
+                      border: '4px solid rgba(255,255,255,0.15)'
+                    }}
+                  >
+                    G
+                  </div>
+                  
+                  <h3 className="text-3xl font-black text-white mb-2">
+                    Guest Explorer
+                  </h3>
+                  <p className="text-purple-400 font-extrabold text-xs mb-4 tracking-widest uppercase">Unregistered Device</p>
+                  
+                  <p className="text-sm text-slate-400 max-w-xs mb-6 leading-relaxed">
+                    Your diagnostic skin histories, custom UV safety score, and daily skincare tracking will be securely synced across your devices upon signup.
+                  </p>
 
-            <div style={{ textAlign: 'center', marginTop: '40px', padding: '20px', opacity: 0.5 }}>
-              <div style={{ fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Member Since</div>
-              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f8fafc', marginTop: '4px' }}>
-                {fullUserData?.createdAt ? (fullUserData.createdAt.toDate ? fullUserData.createdAt.toDate().toLocaleDateString() : new Date(fullUserData.createdAt).toLocaleDateString()) : 'Recently'}
+                  <button 
+                    onClick={() => setActiveTab('auth')}
+                    style={{
+                      background: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '16px',
+                      padding: '12px 28px',
+                      fontSize: '14px',
+                      fontWeight: '800',
+                      cursor: 'pointer',
+                      boxShadow: '0 8px 20px rgba(124, 58, 237, 0.3)',
+                      marginBottom: '24px'
+                    }}
+                  >
+                    Join Skin Tight &amp; Sync History
+                  </button>
+
+                  <div className="w-full space-y-6 mt-4">
+                    {/* Stats Row */}
+                    <div className="flex justify-center gap-4 mb-2">
+                      <div className="flex-1 p-4 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Scans</div>
+                        <div className="text-2xl font-black text-white">{scans.length}</div>
+                      </div>
+                      <div className="flex-1 p-4 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Skin Score</div>
+                        <div className="text-2xl font-black text-teal-400">{skinScore}%</div>
+                      </div>
+                    </div>
+
+                    <div className="p-6 rounded-[32px] bg-white/5 border border-white/10 text-center w-full">
+                      <div className="text-[11px] font-black text-teal-500 uppercase tracking-[0.3em] mb-4">AI Analysis Profile</div>
+                      
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="flex flex-wrap justify-center gap-3">
+                          <div className="px-5 py-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-black uppercase tracking-wider">
+                            Fitzpatrick Type {userProfile.fitzpatrick}
+                          </div>
+                        </div>
+                        
+                        <div className="mt-2 px-4 max-w-sm mx-auto">
+                          <p className="text-[13px] text-slate-400 leading-relaxed font-medium">
+                            Fitzpatrick Type 2: Fair skin, high sensitivity. Usually burns, tans minimally. Frequent self-checks recommended.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {currentUser && (
+              <div style={{ textAlign: 'center', marginTop: '40px', padding: '20px', opacity: 0.5 }}>
+                <div style={{ fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Member Since</div>
+                <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f8fafc', marginTop: '4px' }}>
+                  {fullUserData?.createdAt ? (fullUserData.createdAt.toDate ? fullUserData.createdAt.toDate().toLocaleDateString() : new Date(fullUserData.createdAt).toLocaleDateString()) : 'Recently'}
+                </div>
+              </div>
+            )}
           </div>
         )}
         
