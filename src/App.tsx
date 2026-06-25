@@ -2175,10 +2175,10 @@ const WelcomePage = ({ onComplete }: { onComplete: () => void }) => {
       minHeight: '100vh',
       background: 'radial-gradient(circle at top right, #0b112c 0%, #020412 100%)',
       color: '#f8fafc',
-      padding: '32px 24px',
+      padding: '24px 16px',
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'flex-start',
+      justifyContent: 'center',
       alignItems: 'center',
       fontFamily: 'Inter, sans-serif'
     }}>
@@ -2186,102 +2186,61 @@ const WelcomePage = ({ onComplete }: { onComplete: () => void }) => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        style={{ width: '100%', maxWidth: '480px' }}
+        style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '14px' }}
       >
-        {/* Animated Brand Header */}
-        <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px' }}>
+        {/* Compact Brand Header */}
+        <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           <div style={{
-            width: '64px', height: '64px', borderRadius: '20px',
+            width: '42px', height: '42px', borderRadius: '12px',
             background: 'rgba(45, 212, 191, 0.15)',
-            display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center',
-            marginBottom: '12px', border: '1px solid rgba(45, 212, 191, 0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: '8px', border: '1px solid rgba(45, 212, 191, 0.3)',
           }}>
-            <ShieldCheck size={32} color="#2dd4bf" className="animate-pulse" />
+            <ShieldCheck size={22} color="#2dd4bf" />
           </div>
-          <h1 style={{ fontSize: '12px', fontWeight: '900', color: '#2dd4bf', letterSpacing: '4px', textTransform: 'uppercase', marginBottom: '4px' }}>Skin Tight</h1>
-          <div style={{ fontSize: '28px', fontWeight: '950', textAlign: 'center', letterSpacing: '-0.03em', lineHeight: '1.1', color: '#ffffff' }}>Skin Trust & Accuracy</div>
+          <span style={{ fontSize: '10px', fontWeight: '900', color: '#2dd4bf', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2px' }}>Skin Tight</span>
+          <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>Your Key Benefits</h2>
         </motion.div>
 
-        {/* Lead Trust introduction text */}
-        <motion.div variants={itemVariants} style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <p style={{ fontSize: '14px', color: '#94a3b8', lineHeight: 1.5 }}>
-            Skin Tight delivers robust, advanced optical screening with complete security. Below is how we protect your health while providing unmatched accessibility.
-          </p>
-        </motion.div>
-
-        {/* Dynamic Trust Grid */}
-        <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '28px' }}>
-          
-          {/* Point 1: Cheap / Free Comparison */}
-          <div className="glass-card" style={{ display: 'flex', gap: '16px', padding: '18px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(14, 165, 233, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Zap size={20} color="#0ea5e9" />
-            </div>
-            <div>
-              <h4 style={{ fontWeight: '850', fontSize: '15px', color: '#f8fafc', marginBottom: '4px' }}>Instant & Cost-Free</h4>
-              <p style={{ fontSize: '12.5px', color: '#94a3b8', lineHeight: 1.4 }}>
-                Getting skin assessments shouldn't cost hundreds of dollars or require waiting months for an appointment. Skin Tight is <strong>100% free</strong> and gives you comprehensive screening metrics in under 60 seconds.
-              </p>
-            </div>
-          </div>
-
-          {/* Point 2: Trained on Thousands of Cases */}
-          <div className="glass-card" style={{ display: 'flex', gap: '16px', padding: '18px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(168, 85, 247, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Globe size={20} color="#a855f7" />
-            </div>
-            <div>
-              <h4 style={{ fontWeight: '850', fontSize: '15px', color: '#f8fafc', marginBottom: '4px' }}>Proven Clinic-Backed Data</h4>
-              <p style={{ fontSize: '12.5px', color: '#94a3b8', lineHeight: 1.4 }}>
-                The underlying image analysis engine runs on a state-of-the-art vision framework trained on <strong>thousands of verified dermatologist cases and medical data collections</strong>. This ensures high visual pattern matching accuracy.
-              </p>
-            </div>
-          </div>
-
-          {/* Point 3: Real user validation & tracking */}
-          <div className="glass-card" style={{ display: 'flex', gap: '16px', padding: '18px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(45, 212, 191, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Users size={20} color="#2dd4bf" />
-            </div>
-            <div>
-              <h4 style={{ fontWeight: '850', fontSize: '15px', color: '#f8fafc', marginBottom: '4px' }}>Trusted by Real Users</h4>
-              <p style={{ fontSize: '12.5px', color: '#94a3b8', lineHeight: 1.4 }}>
-                Real users turn to Skin Tight for personal screenings and visual body mole monitoring. It is a vital frontline tracking companion used to safely monitor changes over time.
-              </p>
-            </div>
-          </div>
-
-          {/* Point 4: High Security & Privacy */}
-          <div className="glass-card" style={{ display: 'flex', gap: '16px', padding: '18px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Lock size={20} color="#ef4444" />
-            </div>
-            <div>
-              <h4 style={{ fontWeight: '850', fontSize: '15px', color: '#f8fafc', marginBottom: '4px' }}>Private & Encrypted Protocols</h4>
-              <p style={{ fontSize: '12.5px', color: '#94a3b8', lineHeight: 1.4 }}>
-                Your uploads, histories, and personal dashboard statistics are heavily sandboxed. Only you have authorized read access to your skin documents.
-              </p>
-            </div>
-          </div>
-
-        </motion.div>
-
-        {/* Inline Numerical Proof metrics */}
-        <motion.div variants={itemVariants} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '24px' }}>
+        {/* Benefits List - Super Compact */}
+        <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {[
-            { label: 'Thousands', text: 'Scans Handled' },
-            { label: '$0 Free', text: 'vs. $150+ Clinic' },
-            { label: '98%', text: 'Survival caught early' }
-          ].map((stat, i) => (
-            <div key={i} className="glass-card" style={{ padding: '12px 6px', borderRadius: '16px', textAlign: 'center', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.03)' }}>
-              <div style={{ fontWeight: '950', fontSize: '13px', color: '#2dd4bf', marginBottom: '2px' }}>{stat.label}</div>
-              <div style={{ fontSize: '9px', color: '#64748b', textTransform: 'uppercase', fontWeight: '800' }}>{stat.text}</div>
-            </div>
-          ))}
+            {
+              title: "100% Free & Fast",
+              desc: "Instant clinical screening in under 60 seconds (vs. $150+ clinic visits).",
+              icon: Zap,
+              color: "#0ea5e9"
+            },
+            {
+              title: "High Clinical Accuracy",
+              desc: "Powered by AI models trained on thousands of verified dermatology cases.",
+              icon: Globe,
+              color: "#a855f7"
+            },
+            {
+              title: "Private & Secure",
+              desc: "Your uploaded images and diagnostic records remain strictly encrypted.",
+              icon: Lock,
+              color: "#2dd4bf"
+            }
+          ].map((item, idx) => {
+            const IconComp = item.icon;
+            return (
+              <div key={idx} style={{ display: 'flex', gap: '12px', padding: '10px 14px', borderRadius: '14px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', alignItems: 'center' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: `${item.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: item.color }}>
+                  <IconComp size={16} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: '800', fontSize: '13px', color: '#f8fafc', marginBottom: '1px' }}>{item.title}</div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', lineHeight: 1.3 }}>{item.desc}</div>
+                </div>
+              </div>
+            );
+          })}
         </motion.div>
 
-        <motion.p variants={itemVariants} style={{ fontSize: '10.5px', color: '#475569', textAlign: 'center', lineHeight: 1.4, marginBottom: '24px' }}>
-          Reminder: AI skin wellness calculations are informational screening tools. They do not constitute official clinical medical diagnoses or replace dermatologist visits.
+        <motion.p variants={itemVariants} style={{ fontSize: '9.5px', color: '#64748b', textAlign: 'center', margin: '2px 0 4px' }}>
+          Informational screening tool only; does not replace medical doctor advice.
         </motion.p>
 
         <motion.button
@@ -2291,15 +2250,15 @@ const WelcomePage = ({ onComplete }: { onComplete: () => void }) => {
           onClick={onComplete}
           style={{
             width: '100%',
-            padding: '16px',
-            borderRadius: '20px',
+            padding: '14px',
+            borderRadius: '16px',
             border: 'none',
             background: 'linear-gradient(135deg, #2dd4bf 0%, #0d9488 100%)',
             color: '#020617',
             fontWeight: '950',
-            fontSize: '16px',
+            fontSize: '15px',
             cursor: 'pointer',
-            boxShadow: '0 8px 30px rgba(45, 212, 191, 0.25)'
+            boxShadow: '0 8px 20px rgba(45, 212, 191, 0.25)'
           }}
         >
           Start
@@ -4942,19 +4901,86 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
           flexDirection: 'column'
         }}
       >
-        <div style={{ textAlign: 'center', marginBottom: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div style={{ 
-            width: '80px', height: '80px', background: 'rgba(45, 212, 191, 0.1)', 
-            borderRadius: '24px', display: 'flex', alignItems: 'center', 
-            justifyContent: 'center', margin: '0 0 24px',
-            border: '1px solid rgba(45, 212, 191, 0.2)'
-          }}>
-            <ShieldCheck size={40} color="#2dd4bf" />
+        <div style={{ textAlign: 'center', marginBottom: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 14px', borderRadius: '20px', background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.3)', color: '#c084fc', fontSize: '11px', fontWeight: '800', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '16px' }}>
+            <SparklesIcon size={14} /> Unique Skin Tight Journey
           </div>
-          <h1 style={{ fontSize: '32px', fontWeight: '800', marginBottom: '12px', letterSpacing: '-0.02em' }}>Welcome</h1>
-          <p style={{ color: '#94a3b8', lineHeight: '1.6', fontSize: '16px' }}>
-            Your AI-powered wellness and informational skin analysis tool. Let's get started by reviewing our medical disclaimer and policies.
+          <h1 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '8px', letterSpacing: '-0.03em', color: '#ffffff' }}>More Than Just a Scan</h1>
+          <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0, lineHeight: '1.5', maxWidth: '400px' }}>
+            Experience an end-to-end preventative dermatological ecosystem tailored to your skin profile.
           </p>
+        </div>
+
+        {/* Journey Timeline */}
+        <div style={{ position: 'relative', paddingLeft: '28px', marginBottom: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Connecting Vertical Line */}
+          <div style={{ position: 'absolute', left: '13px', top: '16px', bottom: '16px', width: '2px', background: 'linear-gradient(to bottom, #2dd4bf 0%, #a855f7 50%, #3b82f6 100%)', opacity: 0.5 }} />
+
+          {[
+            {
+              step: "01",
+              title: "AI Skin Checkup",
+              desc: "Snap or upload photos for instant clinical-grade ABCDE spot & lesion screening.",
+              icon: Camera,
+              color: "#2dd4bf",
+              bg: "rgba(45, 212, 191, 0.15)"
+            },
+            {
+              step: "02",
+              title: "Timeline Tracking",
+              desc: "Store encrypted visual histories to track subtle spot developments over time.",
+              icon: History,
+              color: "#a855f7",
+              bg: "rgba(168, 85, 247, 0.15)"
+            },
+            {
+              step: "03",
+              title: "Smart Care Suggestions",
+              desc: "Receive personalized daily advice and habits to improve your skin wellness score.",
+              icon: SparklesIcon,
+              color: "#8b5cf6",
+              bg: "rgba(139, 92, 246, 0.15)"
+            },
+            {
+              step: "04",
+              title: "Dermatologist Booking",
+              desc: "Locate verified clinic specialists near you to schedule professional in-person exams.",
+              icon: MapPinned,
+              color: "#3b82f6",
+              bg: "rgba(59, 130, 246, 0.15)"
+            }
+          ].map((item, idx) => {
+            const IconComponent = item.icon;
+            return (
+              <div key={idx} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', position: 'relative' }}>
+                <div style={{
+                  position: 'absolute',
+                  left: '-28px',
+                  top: '2px',
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  background: item.bg,
+                  border: `2px solid ${item.color}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: item.color,
+                  zIndex: 2,
+                  boxShadow: `0 0 14px ${item.color}35`
+                }}>
+                  <IconComponent size={14} />
+                </div>
+                <div style={{ background: 'rgba(30, 41, 59, 0.35)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '12px 16px', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3px' }}>
+                    <h4 style={{ fontSize: '14.5px', fontWeight: '800', color: '#f8fafc', margin: 0 }}>{item.title}</h4>
+                    <span style={{ fontSize: '10px', fontWeight: '900', color: item.color, letterSpacing: '1px' }}>STEP {item.step}</span>
+                  </div>
+                  <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: 0, lineHeight: '1.4' }}>{item.desc}</p>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
@@ -7370,59 +7396,115 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 </button>
               </div>
             )}
-            <div style={{ 
-              marginBottom: '24px', 
-              position: 'relative', 
-              overflow: 'hidden', 
-              borderRadius: '28px',
-              padding: '28px',
-              background: 'rgba(30, 41, 59, 0.2)',
-              border: '1px solid rgba(255, 255, 255, 0.05)',
-              minHeight: '140px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              width: '100%'
-            }}>
+
+            {/* Prominent 3D Pulsing Frequency Scan Button at Very Top */}
+            <div style={{ width: '100%', marginBottom: '24px', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '8px 0' }}>
+              {/* 3D Frequency Sonar Depth Rings */}
               <motion.div
-                animate={{ scale: [1, 1.2, 1], opacity: [0.05, 0.1, 0.05] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: '200px',
-                  height: '200px',
-                  borderRadius: '50%',
-                  background: '#2dd4bf',
-                  filter: 'blur(40px)',
-                  zIndex: 0
-                }}
+                animate={{ scale: [0.85, 1.35], opacity: [0.6, 0] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut", delay: 0 }}
+                style={{ position: 'absolute', width: '100%', maxWidth: '380px', height: '150px', borderRadius: '36px', border: '2px solid #c084fc', pointerEvents: 'none' }}
               />
-              <h1 style={{ 
-                fontSize: '32px', 
-                fontWeight: '900', 
-                background: 'linear-gradient(135deg, #f8fafc 0%, #2dd4bf 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                position: 'relative',
-                zIndex: 1,
-                margin: 0,
-                lineHeight: '1.1'
-              }} >Catch It Early.</h1>
-              <div style={{ position: 'relative', zIndex: 1, marginTop: '6px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: '#2dd4bf', letterSpacing: '1.5px', textTransform: 'uppercase' }}>AI Skin Screening &amp; Monitoring</span>
-              </div>
-              <p style={{ 
-                fontSize: '15px', 
-                color: '#94a3b8', 
-                margin: '8px 0 0',
-                position: 'relative',
-                zIndex: 1,
-                lineHeight: '1.5'
-              }}>Scan suspicious spots, track changes, and know when to act. Skin Tight enables dynamic AI skin analysis, mole tracking, and proactive skin cancer awareness.</p>
+              <motion.div
+                animate={{ scale: [0.85, 1.45], opacity: [0.4, 0] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut", delay: 0.8 }}
+                style={{ position: 'absolute', width: '100%', maxWidth: '380px', height: '150px', borderRadius: '36px', border: '2px solid #a855f7', pointerEvents: 'none' }}
+              />
+
+              {/* Main 3D Depth Button */}
+              <motion.div
+                id="newScanButtonHeroTop"
+                onClick={() => setActiveTab('scan')}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                animate={{
+                  scale: [1, 1.06, 0.96, 1.04, 1],
+                  boxShadow: [
+                    '0 10px 30px -5px rgba(168, 85, 247, 0.45), inset 0 2px 4px rgba(255, 255, 255, 0.4)',
+                    '0 25px 60px 10px rgba(192, 132, 252, 0.95), inset 0 6px 16px rgba(255, 255, 255, 0.85)',
+                    '0 6px 18px -4px rgba(147, 51, 234, 0.35), inset 0 1px 3px rgba(255, 255, 255, 0.25)',
+                    '0 20px 50px 5px rgba(168, 85, 247, 0.8), inset 0 4px 10px rgba(255, 255, 255, 0.65)',
+                    '0 10px 30px -5px rgba(168, 85, 247, 0.45), inset 0 2px 4px rgba(255, 255, 255, 0.4)'
+                  ],
+                  border: [
+                    '2px solid rgba(192, 132, 252, 0.7)',
+                    '2px solid rgba(255, 255, 255, 1)',
+                    '2px solid rgba(168, 85, 247, 0.4)',
+                    '2px solid rgba(233, 213, 255, 0.9)',
+                    '2px solid rgba(192, 132, 252, 0.7)'
+                  ]
+                }}
+                transition={{
+                  duration: 2.2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  textAlign: 'center',
+                  padding: '32px 24px',
+                  borderRadius: '32px',
+                  cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #7e22ce 0%, #4c1d95 50%, #3b0764 100%)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                {/* Light & Dark Pulse Overlay */}
+                <motion.div
+                  animate={{ opacity: [0, 0.55, 0, 0.4, 0] }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                  style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(135deg, #e9d5ff 0%, #c084fc 100%)', pointerEvents: 'none' }}
+                />
+
+                {/* Animated Sweep Shimmer */}
+                <motion.div 
+                  animate={{ x: [-200, 500] }}
+                  transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", repeatDelay: 0.6 }}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    width: '70px',
+                    height: '100%',
+                    background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.35), transparent)',
+                    transform: 'skewX(-25deg)',
+                    pointerEvents: 'none'
+                  }}
+                />
+
+                <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <motion.div
+                    animate={{ scale: [1, 1.15, 0.95, 1.1, 1], rotate: [0, -5, 5, -3, 0] }}
+                    transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                    style={{
+                      width: '68px',
+                      height: '68px',
+                      borderRadius: '22px',
+                      background: 'rgba(255, 255, 255, 0.15)',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: '14px',
+                      boxShadow: '0 8px 25px rgba(0,0,0,0.3)'
+                    }}
+                  >
+                    <Camera size={36} color="#ffffff" />
+                  </motion.div>
+
+                  <div style={{ fontWeight: '950', fontSize: '26px', color: '#ffffff', letterSpacing: '-0.02em', textShadow: '0 2px 10px rgba(0,0,0,0.5)', marginBottom: '4px' }}>
+                    START NEW SCAN
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#e9d5ff', fontWeight: '800', letterSpacing: '0.5px' }}>
+                    ✨ Tap Here for Immediate AI Skin Analysis
+                  </div>
+                </div>
+              </motion.div>
             </div>
+
 
             {/* Steps & How to Use Section */}
             <div className="glass-card mb-6" style={{
@@ -7502,77 +7584,6 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
             </div>
 
             <UVCard uvData={uvData} />
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '24px', width: '100%', marginTop: '16px' }}>
-              <motion.div 
-                id="newScanButtonHero"
-                className="glass-card" 
-                onClick={() => setActiveTab('scan')}
-                whileHover={{ scale: 1.05, y: -5 }}
-                whileTap={{ scale: 0.95 }}
-                animate={{ 
-                  boxShadow: [
-                    '0 0 20px rgba(168, 85, 247, 0.5)',
-                    '0 0 40px rgba(139, 92, 246, 0.8)',
-                    '0 0 20px rgba(99, 102, 241, 0.5)',
-                    '0 0 20px rgba(168, 85, 247, 0.5)'
-                  ],
-                  border: [
-                    '2px solid rgba(168, 85, 247, 0.9)',
-                    '2px solid rgba(139, 92, 246, 0.9)',
-                    '2px solid rgba(99, 102, 241, 0.9)',
-                    '2px solid rgba(168, 85, 247, 0.9)'
-                  ]
-                }}
-                transition={{ 
-                  duration: 3, 
-                  repeat: Infinity, 
-                  ease: "linear",
-                  boxShadow: { duration: 3, repeat: Infinity, ease: "linear" },
-                  border: { duration: 3, repeat: Infinity, ease: "linear" }
-                }}
-                style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
-                  textAlign: 'center',
-                  padding: '32px 24px',
-                  borderRadius: '28px',
-                  cursor: 'pointer',
-                  background: 'rgba(24, 18, 48, 0.8)',
-                  backdropFilter: 'blur(20px)',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-              >
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(45deg, rgba(168, 85, 247, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%)', pointerEvents: 'none' }} />
-                
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                  style={{ marginBottom: '16px' }}
-                >
-                  <Camera size={48} color="#c084fc" />
-                </motion.div>
-                
-                <div style={{ fontWeight: '950', fontSize: '24px', marginBottom: '8px', color: '#f8fafc', letterSpacing: '-0.02em' }}>START NEW SCAN</div>
-                <div style={{ fontSize: '14px', color: '#c084fc', fontWeight: 'bold' }}>Immediate AI Skin Analysis</div>
-                
-                <motion.div 
-                  animate={{ x: [-100, 300] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", repeatDelay: 1 }}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    width: '50px',
-                    height: '100%',
-                    background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent)',
-                    transform: 'skewX(-25deg)',
-                    pointerEvents: 'none'
-                  }}
-                />
-              </motion.div>
-            </div>
 
             {recentScan ? (
               <div className="glass-card p-8 rounded-3xl mb-6 border border-cyan-500/20 cursor-pointer hover:bg-white/5 transition-all text-center" onClick={() => { setSelectedScanId(recentScan.id); setActiveTab('timeline'); }}>
