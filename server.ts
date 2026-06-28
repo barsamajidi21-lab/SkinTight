@@ -6,26 +6,141 @@ import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
 
-const genAI = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
-    }
+// --- 1. SECRET MANAGEMENT (Lazy Initialization) ---
+let genAIClient: GoogleGenAI | null = null;
+function getGenAI(): GoogleGenAI {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY environment variable is required and missing in server configuration.");
   }
-});
+  if (!genAIClient) {
+    genAIClient = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build-devsecops',
+        }
+      }
+    });
+  }
+  return genAIClient;
+}
+
+// --- 4. RATE LIMITING ENGINE (In-Memory Sliding Window) ---
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 15; // 15 API requests / minute / IP
+const ipRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+// Cleanup stale IP rate limits every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, record] of ipRateLimitMap.entries()) {
+    if (now > record.resetTime) ipRateLimitMap.delete(ip);
+  }
+}, 5 * 60 * 1000);
+
+function rateLimiterMiddleware(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const record = ipRateLimitMap.get(ip as string) || { count: 0, resetTime: now + RATE_LIMIT_WINDOW_MS };
+
+  if (now > record.resetTime) {
+    record.count = 1;
+    record.resetTime = now + RATE_LIMIT_WINDOW_MS;
+  } else {
+    record.count++;
+  }
+  ipRateLimitMap.set(ip as string, record);
+
+  res.setHeader("X-RateLimit-Limit", MAX_REQUESTS_PER_WINDOW.toString());
+  res.setHeader("X-RateLimit-Remaining", Math.max(0, MAX_REQUESTS_PER_WINDOW - record.count).toString());
+
+  if (record.count > MAX_REQUESTS_PER_WINDOW) {
+    res.setHeader("Retry-After", Math.ceil((record.resetTime - now) / 1000).toString());
+    return res.status(429).json({
+      error: "Too Many Requests. Security rate limit exceeded. Please wait 60 seconds before submitting new screening images."
+    });
+  }
+  next();
+}
+
+// --- 2. API ROUTE PROTECTION (Strict CORS & Domain Verification) ---
+function corsGuardMiddleware(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const origin = req.headers.origin;
+  const referer = req.headers.referer;
+
+  // Allow same-origin requests (server-side calls or same container requests without Origin header)
+  if (!origin && !referer) return next();
+
+  const requestDomain = origin || (referer ? new URL(referer).origin : "");
+  
+  // Whitelist exact frontend domain, local dev port, and platform sandboxes
+  const isAllowed = 
+    requestDomain === "http://localhost:3000" ||
+    requestDomain.endsWith(".run.app") ||
+    requestDomain.endsWith(".vercel.app") ||
+    requestDomain.includes("skintightai.com") ||
+    (process.env.ALLOWED_ORIGIN && requestDomain === process.env.ALLOWED_ORIGIN);
+
+  if (!isAllowed) {
+    console.warn(`[DevSecOps CORS Bouncer Blocked Unauthorized Domain]: ${requestDomain}`);
+    return res.status(403).json({
+      error: "Access Forbidden: Unauthorized Cross-Origin Request. Backend accepts requests strictly from verified app origins."
+    });
+  }
+
+  if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
+
+  if (req.method === "OPTIONS") return res.status(200).end();
+  next();
+}
+
+// --- 3. INPUT SANITIZATION & XSS DEFENSE HELPERS ---
+function sanitizeText(input?: string): string {
+  if (!input || typeof input !== "string") return "";
+  return input
+    .replace(/\x00/g, "") // Strip null bytes
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "") // Strip active script tags
+    .trim();
+}
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json({ limit: '50mb' }));
+  // --- 5. STRICT HTTP SECURITY HEADERS ---
+  app.use((req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Permissions-Policy", "camera=*, microphone=(), geolocation=()");
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+    res.setHeader("Content-Security-Policy", "frame-ancestors 'self' https://ai.studio https://*.run.app https://*.vercel.app;");
+    next();
+  });
 
-  // API Routes
-  app.post("/api/ai/generate", async (req, res) => {
+  // Limit body parser size strictly to handle image uploads safely
+  app.use(express.json({ limit: "25mb" }));
+
+  // Mount API CORS Bouncer on all API endpoints
+  app.use("/api", corsGuardMiddleware);
+
+  // Protected AI Screening Generation Endpoint
+  app.post("/api/ai/generate", rateLimiterMiddleware, async (req, res) => {
     try {
+      if (!req.body || typeof req.body !== "object") {
+        return res.status(400).json({ error: "Invalid request body format." });
+      }
+
       const { prompt, parts, model: modelName = "gemini-2.5-flash", config = {} } = req.body;
       
+      // Strict Model Verification
       let mappedModel = modelName;
       if (modelName === "gemini-3-flash-preview" || modelName === "gemini-3.5-flash" || !modelName) {
         mappedModel = "gemini-2.5-flash";
@@ -33,38 +148,65 @@ async function startServer() {
 
       let contents;
       if (parts) {
-        // Sanitize inlineData data base64 strings if present to avoid "The string did not match the expected pattern."
-        const sanitizedParts = parts.map((part: any) => {
-          if (part && part.inlineData && typeof part.inlineData.data === 'string') {
-            // Strip data URL prefixes if they accidentally got passed to the server
-            const base64Raw = part.inlineData.data.includes(',')
-              ? part.inlineData.data.split(',')[1]
-              : part.inlineData.data;
+        if (!Array.isArray(parts)) {
+          return res.status(400).json({ error: "Invalid payload: parts must be an array." });
+        }
+        if (parts.length > 15) {
+          return res.status(400).json({ error: "Payload rejected: Exceeded maximum allowed 15 diagnostic images." });
+        }
 
-            // Use Node's built-in Buffer to automatically heal any incomplete/invalid base64
-            const cleanBase64 = Buffer.from(base64Raw.trim(), 'base64').toString('base64');
+        // Validate and sanitize image payloads
+        const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/heic"];
+        const sanitizedParts = parts.map((part: any, index: number) => {
+          if (part && part.inlineData) {
+            const { mimeType, data } = part.inlineData;
             
+            // Whitelist MIME type check
+            if (!mimeType || !allowedMimeTypes.includes(mimeType.toLowerCase())) {
+              throw new Error(`Security Violation: Image #${index + 1} uses unsupported or dangerous MIME type "${mimeType}". Only JPEG, PNG, WEBP, and HEIC are permitted.`);
+            }
+
+            if (!data || typeof data !== "string") {
+              throw new Error(`Security Violation: Image #${index + 1} has corrupted data.`);
+            }
+
+            // Strip data URL prefixes if present
+            const base64Raw = data.includes(',') ? data.split(',')[1] : data;
+            const trimmed = base64Raw.trim();
+
+            // Validate base64 regex character set
+            if (!/^[A-Za-z0-9+/=]+$/.test(trimmed)) {
+              throw new Error(`Security Violation: Image #${index + 1} contains malformed base64 characters.`);
+            }
+
+            // Enforce size ceiling (approx 15MB base64 limit)
+            if (trimmed.length > 20 * 1024 * 1024) {
+              throw new Error(`Security Violation: Image #${index + 1} exceeds max file size ceiling.`);
+            }
+
+            // Buffer heal
+            const cleanBase64 = Buffer.from(trimmed, 'base64').toString('base64');
             return {
               ...part,
-              inlineData: {
-                ...part.inlineData,
-                data: cleanBase64
-              }
+              inlineData: { mimeType, data: cleanBase64 }
             };
+          }
+          if (part && part.text) {
+            return { ...part, text: sanitizeText(part.text.slice(0, 50000)) };
           }
           return part;
         });
         contents = { parts: sanitizedParts };
       } else {
-        contents = prompt;
+        contents = sanitizeText(typeof prompt === "string" ? prompt.slice(0, 100000) : "");
       }
 
+      const ai = getGenAI();
       let response;
       let lastError: any = null;
       const maxRetries = 4;
       const retryDelayMs = 1200;
 
-      // Ensure safety settings are configured to prevent false-positives
       const enhancedConfig = {
         ...config,
         safetySettings: [
@@ -78,20 +220,12 @@ async function startServer() {
 
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          // Robust rotation sequence across stable & lightweight model families to bypass localized timeouts/API limits
           let currentModel = mappedModel;
-          if (attempt === 2) {
-            currentModel = "gemini-3.1-flash-lite";
-            console.log(`[Backup Failover 1]: Rotating to lightweight candidate "${currentModel}" on attempt 2`);
-          } else if (attempt === 3) {
-            currentModel = "gemini-2.5-flash";
-            console.log(`[Backup Failover 2]: Retrying stable candidate "${currentModel}" on attempt 3`);
-          } else if (attempt === 4) {
-            currentModel = "gemini-3.1-flash-lite";
-            console.log(`[Backup Failover 3]: Retrying lightweight candidate "${currentModel}" on attempt 4`);
-          }
+          if (attempt === 2) currentModel = "gemini-3.1-flash-lite";
+          else if (attempt === 3) currentModel = "gemini-2.5-flash";
+          else if (attempt === 4) currentModel = "gemini-3.1-flash-lite";
 
-          response = await genAI.models.generateContent({
+          response = await ai.models.generateContent({
             model: currentModel,
             contents,
             config: enhancedConfig
@@ -113,63 +247,43 @@ async function startServer() {
         }
       }
 
-      if (lastError) {
-        throw lastError;
-      }
+      if (lastError) throw lastError;
 
-      const text = response.text;
-
+      const text = response?.text;
       if (!text) {
-        console.error("AI response has no text content");
         return res.status(500).json({ error: "AI generated an empty response." });
       }
 
       res.json({ text });
-    } catch (error) {
-      console.error("Gemini API error:", error);
-      res.status(500).json({ error: error instanceof Error ? error.message : "Internal Server Error" });
+    } catch (error: any) {
+      console.error("Protected Gemini API Error:", error.message || error);
+      const status = error.message && error.message.includes("Security Violation") ? 400 : 500;
+      res.status(status).json({ error: error instanceof Error ? error.message : "Internal Server Error" });
     }
   });
 
-  // Dynamic Sitemap.xml Route for Search Engine Crawler Updates
+  // Dynamic Sitemap Route
   app.get("/sitemap.xml", (req, res) => {
     res.header("Content-Type", "application/xml");
-    
     const publicPaths = [
-      "",
-      "about",
-      "clinic",
-      "routine",
-      "plans",
-      "learn",
-      "learn/early-signs-of-skin-cancer",
-      "learn/suspicious-mole-warning-signs",
-      "learn/when-to-see-a-dermatologist",
-      "learn/abcde-rule-for-moles",
+      "", "about", "clinic", "routine", "plans", "learn",
+      "learn/early-signs-of-skin-cancer", "learn/suspicious-mole-warning-signs",
+      "learn/when-to-see-a-dermatologist", "learn/abcde-rule-for-moles",
       "learn/how-to-monitor-skin-changes"
     ];
-    
     const host = "https://skintightai.com";
     const currentDate = new Date().toISOString().split('T')[0];
     
-    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
-    xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
-    
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
     publicPaths.forEach(p => {
       const pathSegment = p ? `/${p}` : "";
-      xml += `  <url>\n`;
-      xml += `    <loc>${host}${pathSegment}</loc>\n`;
-      xml += `    <lastmod>${currentDate}</lastmod>\n`;
-      xml += `    <changefreq>weekly</changefreq>\n`;
-      xml += `    <priority>${p === "" ? "1.0" : "0.8"}</priority>\n`;
-      xml += `  </url>\n`;
+      xml += `  <url>\n    <loc>${host}${pathSegment}</loc>\n    <lastmod>${currentDate}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${p === "" ? "1.0" : "0.8"}</priority>\n  </url>\n`;
     });
-    
     xml += `</urlset>`;
     res.send(xml);
   });
 
-  // Vite middleware for development
+  // Vite middleware for development vs static production
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -185,7 +299,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Bulletproof DevSecOps Server running on port ${PORT}`);
   });
 }
 
