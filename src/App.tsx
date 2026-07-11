@@ -2239,12 +2239,12 @@ const ScanPage = ({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Has this specific body part changed on your body?</label>
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-3 gap-2 w-full">
                     {['Yes', 'No', "Not sure"].map(o => (
                       <button 
                         key={o}
                         onClick={() => updateIntake('changedRecently', o)}
-                        className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all ${intakeForm.changedRecently === o ? 'bg-cyan-500 text-white border border-cyan-400' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+                        className={`py-3 px-1 rounded-xl font-bold text-[11px] sm:text-xs text-center transition-all ${intakeForm.changedRecently === o ? 'bg-cyan-500 text-white border border-cyan-400' : 'bg-white/5 text-slate-400 border border-white/10'}`}
                       >
                         {o}
                       </button>
@@ -2254,12 +2254,12 @@ const ScanPage = ({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Do you regularly use sun protection?</label>
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-3 gap-2 w-full">
                     {['Never', 'Sometimes', 'Always'].map(o => (
                       <button 
                         key={o}
                         onClick={() => updateIntake('useSunProtection', o)}
-                        className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.useSunProtection === o ? 'bg-cyan-500 text-white border border-cyan-400' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+                        className={`py-3 px-1 rounded-xl font-bold text-[11px] sm:text-xs text-center transition-all ${intakeForm.useSunProtection === o ? 'bg-cyan-500 text-white border border-cyan-400' : 'bg-white/5 text-slate-400 border border-white/10'}`}
                       >
                         {o}
                       </button>
@@ -2269,12 +2269,12 @@ const ScanPage = ({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Does anyone in your bloodline have skin cancer?</label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-3 gap-2 w-full">
                     {['Yes', 'No', 'Not sure'].map(o => (
                       <button 
                         key={o}
                         onClick={() => updateIntake('cancerHistory', o)}
-                        className={`flex-1 min-w-[80px] py-3 px-4 rounded-xl font-bold text-xs transition-all ${intakeForm.cancerHistory === o ? 'bg-cyan-500 text-white border border-cyan-400' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+                        className={`py-3 px-1 rounded-xl font-bold text-[11px] sm:text-xs text-center transition-all ${intakeForm.cancerHistory === o ? 'bg-cyan-500 text-white border border-cyan-400' : 'bg-white/5 text-slate-400 border border-white/10'}`}
                       >
                         {o}
                       </button>
