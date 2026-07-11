@@ -1,8 +1,10 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
+import { PSEO_LANDING_PAGES } from "./src/data/pSEOData";
 
 dotenv.config();
 
@@ -279,16 +281,65 @@ async function startServer() {
       const pathSegment = p ? `/${p}` : "";
       xml += `  <url>\n    <loc>${host}${pathSegment}</loc>\n    <lastmod>${currentDate}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${p === "" ? "1.0" : "0.8"}</priority>\n  </url>\n`;
     });
+
+    // Programmatic SEO landing pages
+    PSEO_LANDING_PAGES.forEach(page => {
+      xml += `  <url>\n    <loc>https://aerobarrier.com/track/${page.slug}</loc>\n    <lastmod>${currentDate}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+    });
+
     xml += `</urlset>`;
     res.send(xml);
   });
 
   // Vite middleware for development vs static production
+  let vite: any = null;
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
+    vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
+  }
+
+  // Programmatic SEO Dynamic Route Meta-Tag Interceptor
+  app.get("/track/:slug", async (req, res, next) => {
+    const { slug } = req.params;
+    const found = PSEO_LANDING_PAGES.find(p => p.slug === slug);
+    if (!found) {
+      return next();
+    }
+
+    try {
+      let templatePath = "";
+      if (process.env.NODE_ENV !== "production") {
+        templatePath = path.join(process.cwd(), "index.html");
+      } else {
+        templatePath = path.join(process.cwd(), "dist", "index.html");
+      }
+
+      if (!fs.existsSync(templatePath)) {
+        return next();
+      }
+
+      let html = fs.readFileSync(templatePath, "utf-8");
+
+      // Replace Title and Meta Description
+      html = html.replace(/<title>[^<]+<\/title>/, `<title>${found.seoTitle}</title>`);
+      html = html.replace(/<meta name="description" content="[^"]+" \/>/, `<meta name="description" content="${found.seoDescription}" />`);
+
+      // Transform index.html via Vite to inject HMR client and other tags in development
+      if (process.env.NODE_ENV !== "production" && vite) {
+        html = await vite.transformIndexHtml(req.originalUrl, html);
+      }
+
+      res.setHeader("Content-Type", "text/html");
+      return res.send(html);
+    } catch (err) {
+      console.error("pSEO HTML Injection Error:", err);
+      return next();
+    }
+  });
+
+  if (process.env.NODE_ENV !== "production") {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');

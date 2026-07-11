@@ -80,6 +80,8 @@ import {
 } from 'lucide-react';
 
 import { BLOG_ARTICLES, BLOG_DISCLAIMER } from './data/blogData';
+import { PSEO_LANDING_PAGES, PseoPage } from './data/pSEOData';
+import { PseoLandingPage } from './components/PseoLandingPage';
 
 import { db, auth, storage } from './lib/firebase';
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
@@ -303,6 +305,7 @@ const validateAndFallbackAnalysisResult = (data: any): AnalysisResult => {
     urgency: typeof data.urgency === 'string' && data.urgency ? data.urgency : fallback.urgency,
     data_quality_note: typeof data.data_quality_note === 'string' && data.data_quality_note ? data.data_quality_note : fallback.data_quality_note,
     disclaimer: typeof data.disclaimer === 'string' && data.disclaimer ? data.disclaimer : fallback.disclaimer,
+    detected_body_part: typeof data.detected_body_part === 'string' ? data.detected_body_part : undefined,
   };
 };
 
@@ -1875,6 +1878,9 @@ const styles = {
     );
   };
 
+const upperBodyParts = ["Face", "Ear", "Neck", "Arms", "Chest", "Stomach", "Hands", "Back"];
+const lowerBodyParts = ["Legs", "Thighs", "Knees", "Feet", "Toes", "Ankles", "Hips"];
+
 const ScanPage = ({
   result,
   saveStatus,
@@ -1906,6 +1912,20 @@ const ScanPage = ({
   fullUserData,
   loading
 }: any) => {
+  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<'upper' | 'lower'>('upper');
+  const [tempSelectedParts, setTempSelectedParts] = useState<string[]>([]);
+
+  const handleTogglePart = (part: string) => {
+    setTempSelectedParts(prev => {
+      if (prev.includes(part)) {
+        return prev.filter(p => p !== part);
+      } else {
+        return [...prev, part];
+      }
+    });
+  };
+
   return (
     <div className="page-container" style={styles.tabContent}>
       {result ? (
@@ -1927,6 +1947,12 @@ const ScanPage = ({
               </span>
             </div>
             <p className="text-sm font-bold text-white mt-3 px-1">{result.summary}</p>
+            {result.detected_body_part && (
+              <div className="mt-3 px-1.5 py-1 inline-flex items-center gap-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-300 font-mono">
+                <SparklesIcon size={12} className="text-cyan-400 animate-pulse" />
+                <span>AI Detected Body Part: <strong className="text-white">{result.detected_body_part}</strong></span>
+              </div>
+            )}
           </div>
 
           <div className="glass-card p-6 rounded-3xl mb-6 border border-cyan-500/20">
@@ -2075,14 +2101,140 @@ const ScanPage = ({
               <div className="p-6 space-y-6">
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase mb-3 text-red-500">Where is this on your body? *</label>
-                  <select 
-                    className={`w-full bg-white/5 border rounded-xl p-4 text-white outline-none transition-all ${!intakeForm.bodyLocation ? 'border-red-500/30' : 'border-white/10 focus:border-cyan-500'}`}
-                    value={intakeForm.bodyLocation}
-                    onChange={(e) => updateIntake('bodyLocation', e.target.value)}
+                  
+                  {/* Custom Selector Trigger Button */}
+                  <div 
+                    onClick={() => {
+                      const current = intakeForm.bodyLocation 
+                        ? intakeForm.bodyLocation.split(',').map((s: string) => s.trim()).filter(Boolean)
+                        : [];
+                      setTempSelectedParts(current);
+                      const hasLower = current.some((p: string) => lowerBodyParts.includes(p));
+                      const hasUpper = current.some((p: string) => upperBodyParts.includes(p));
+                      if (hasLower && !hasUpper) {
+                        setActiveCategory('lower');
+                      } else {
+                        setActiveCategory('upper');
+                      }
+                      setIsSelectorOpen(!isSelectorOpen);
+                    }}
+                    className={`w-full bg-white/5 border rounded-xl p-4 text-white outline-none cursor-pointer transition-all flex justify-between items-center ${!intakeForm.bodyLocation ? 'border-red-500/30' : 'border-white/10 hover:border-cyan-500/50 focus:border-cyan-500'}`}
                   >
-                    <option value="" disabled>Select Location</option>
-                    {bodyLocations.map(l => <option key={l} value={l} className="bg-slate-900">{l}</option>)}
-                  </select>
+                    <span className={intakeForm.bodyLocation ? "text-white font-bold" : "text-slate-400 font-medium text-sm"}>
+                      {intakeForm.bodyLocation || "Select Location(s)"}
+                    </span>
+                    <ChevronDown size={18} className="text-slate-400" />
+                  </div>
+
+                  <AnimatePresence>
+                    {isSelectorOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10, height: 0 }}
+                        animate={{ opacity: 1, y: 0, height: 'auto' }}
+                        exit={{ opacity: 0, y: -10, height: 0 }}
+                        className="bg-slate-900 border border-white/10 rounded-2xl mt-2 overflow-hidden shadow-2xl transition-all"
+                      >
+                        {/* Upper / Lower selection toggle buttons */}
+                        <div className="flex border-b border-white/5 p-2 gap-2 bg-white/[0.02]">
+                          <button
+                            type="button"
+                            onClick={() => setActiveCategory('upper')}
+                            className={`flex-1 py-2.5 px-3 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                              activeCategory === 'upper' 
+                                ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20' 
+                                : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
+                            }`}
+                          >
+                            Upper Body
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setActiveCategory('lower')}
+                            className={`flex-1 py-2.5 px-3 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                              activeCategory === 'lower' 
+                                ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20' 
+                                : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
+                            }`}
+                          >
+                            Lower Body
+                          </button>
+                        </div>
+
+                        {/* List of common body parts */}
+                        <div className="p-4 max-h-[220px] overflow-y-auto space-y-1.5 scrollbar-thin">
+                          {activeCategory === 'upper' && (
+                            <div className="grid grid-cols-2 gap-2">
+                              {upperBodyParts.map((part) => {
+                                const isSelected = tempSelectedParts.includes(part);
+                                return (
+                                  <button
+                                    key={part}
+                                    type="button"
+                                    onClick={() => handleTogglePart(part)}
+                                    className={`py-3 px-3 rounded-xl text-xs font-bold transition-all text-left flex items-center justify-between border ${
+                                      isSelected 
+                                        ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300' 
+                                        : 'bg-white/5 border-transparent text-slate-300 hover:bg-white/10 hover:border-white/10'
+                                    }`}
+                                  >
+                                    <span>{part}</span>
+                                    {isSelected && <div className="w-2 h-2 rounded-full bg-cyan-400" />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {activeCategory === 'lower' && (
+                            <div className="grid grid-cols-2 gap-2">
+                              {lowerBodyParts.map((part) => {
+                                const isSelected = tempSelectedParts.includes(part);
+                                return (
+                                  <button
+                                    key={part}
+                                    type="button"
+                                    onClick={() => handleTogglePart(part)}
+                                    className={`py-3 px-3 rounded-xl text-xs font-bold transition-all text-left flex items-center justify-between border ${
+                                      isSelected 
+                                        ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300' 
+                                        : 'bg-white/5 border-transparent text-slate-300 hover:bg-white/10 hover:border-white/10'
+                                    }`}
+                                  >
+                                    <span>{part}</span>
+                                    {isSelected && <div className="w-2 h-2 rounded-full bg-cyan-400" />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* OK and Cancel buttons at the bottom */}
+                        <div className="flex border-t border-white/5 p-3 gap-2 bg-white/[0.01]">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsSelectorOpen(false);
+                            }}
+                            className="flex-1 py-2.5 px-4 rounded-xl font-bold text-xs bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition-all"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const value = tempSelectedParts.join(', ');
+                              updateIntake('bodyLocation', value);
+                              setIsSelectorOpen(false);
+                            }}
+                            className="flex-1 py-2.5 px-4 rounded-xl font-bold text-xs bg-cyan-500 text-white shadow-lg shadow-cyan-500/25 hover:bg-cyan-400 transition-all"
+                          >
+                            OK
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 <div>
@@ -3549,6 +3701,7 @@ interface AnalysisResult {
   urgency: string; // When to See a Doctor
   data_quality_note: string;
   disclaimer: string;
+  detected_body_part?: string; // AI Detected Body Part
 }
 
 interface IntakeForm {
@@ -4098,6 +4251,11 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
               <div>
                 <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>{new Date(scan.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
                 <h3 style={{ fontSize: '24px', fontWeight: '900', marginTop: '4px' }}>{scan.bodyRegion}</h3>
+                {scan.result.detected_body_part && (
+                  <div style={{ marginTop: '6px', fontSize: '12px', color: '#2dd4bf', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    ✨ AI Detected Region: {scan.result.detected_body_part}
+                  </div>
+                )}
               </div>
               <div style={{ 
                 padding: '6px 12px', borderRadius: '10px', background: `${riskColor}22`, color: riskColor, 
@@ -5749,6 +5907,7 @@ function App() {
   // --- Navigation State ---
   const [activeTab, setActiveTab] = useState<'home' | 'scan' | 'timeline' | 'routine' | 'plans' | 'profile' | 'clinic' | 'welcome' | 'auth' | 'learn'>('home');
   const [selectedArticleSlug, setSelectedArticleSlug] = useState<string | null>(null);
+  const [activePseoPage, setActivePseoPage] = useState<PseoPage | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [notifications, setNotifications] = useState<{ id: string; text: string; type: 'warning' | 'info' | 'alert'; read: boolean; date: string }[]>([]);
@@ -5777,6 +5936,19 @@ function App() {
 
   // --- Dynamic SEO Page Title Effect ---
   useEffect(() => {
+    if (activePseoPage) {
+      document.title = activePseoPage.seoTitle;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) {
+        metaDesc.setAttribute('content', activePseoPage.seoDescription);
+      } else {
+        const meta = document.createElement('meta');
+        meta.name = 'description';
+        meta.content = activePseoPage.seoDescription;
+        document.head.appendChild(meta);
+      }
+      return;
+    }
     switch (activeTab) {
       case 'home':
         document.title = 'Skin Tight – AI Skin Monitoring & Skin Cancer Awareness Tool';
@@ -5821,12 +5993,25 @@ function App() {
         document.title = 'Skin Tight – AI Skin Monitoring & Skin Cancer Awareness Tool';
         break;
     }
-  }, [activeTab, selectedArticleSlug]);
+  }, [activeTab, selectedArticleSlug, activePseoPage]);
  
   // --- Deep Linking & Path Parsing on Mount ---
   useEffect(() => {
     const handleUrlPath = () => {
       const path = window.location.pathname;
+      if (path.startsWith('/track/')) {
+        const slug = path.replace('/track/', '');
+        const found = PSEO_LANDING_PAGES.find(p => p.slug === slug);
+        if (found) {
+          setActivePseoPage(found);
+          return;
+        } else {
+          setActivePseoPage(null);
+        }
+      } else {
+        setActivePseoPage(null);
+      }
+
       if (path.startsWith('/learn') || path.startsWith('/blog')) {
         setActiveTab('learn');
         const parts = path.split('/');
@@ -5861,7 +6046,9 @@ function App() {
   useEffect(() => {
     const currentPath = window.location.pathname;
     let expectedPath = '/';
-    if (activeTab === 'learn') {
+    if (activePseoPage) {
+      expectedPath = `/track/${activePseoPage.slug}`;
+    } else if (activeTab === 'learn') {
       expectedPath = selectedArticleSlug ? `/learn/${selectedArticleSlug}` : '/learn';
     } else if (activeTab === 'clinic') {
       expectedPath = '/clinic';
@@ -5878,7 +6065,7 @@ function App() {
     if (currentPath !== expectedPath) {
       window.history.pushState(null, '', expectedPath);
     }
-  }, [activeTab, selectedArticleSlug]);
+  }, [activeTab, selectedArticleSlug, activePseoPage]);
 
   // --- Connectivity Check ---
   useEffect(() => {
@@ -6798,6 +6985,7 @@ Location: ${intakeForm.bodyLocation}
 Respond ONLY with valid JSON with these fields:
 - risk_level: "low", "moderate", or "high"
 - confidence_level: "low", "medium", or "high"
+- detected_body_part: string (Recognize which body part/parts or region is shown in the uploaded photo/photos by yourself based on the visual context. Be specific, e.g. "Arm", "Face", "Chest", etc.)
 - findings: array of max 3 bullet points. Each bullet point max 15 words. Plain language only.
 - concerning_signs: array of ABCDE assessment findings (will be saved but UI will show simplified).
 - risk_factors_identified: array of max 2 bullet points pulled from their profile. Short and specific.
@@ -7227,6 +7415,19 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
           <Dna size={48} color="#2dd4bf" />
         </motion.div>
       </div>
+    );
+  }
+
+  if (activePseoPage) {
+    return (
+      <PseoLandingPage 
+        page={activePseoPage} 
+        onCtaClick={() => {
+          setActivePseoPage(null);
+          setActiveTab('home');
+          window.history.pushState(null, '', '/');
+        }} 
+      />
     );
   }
 
