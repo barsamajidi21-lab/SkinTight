@@ -252,7 +252,7 @@ export function SkinShowcaseCarousel() {
             </div>
 
             {/* High Visibility Swipe Dots */}
-            <div className="flex justify-center items-center gap-2 py-1">
+            <div className="flex justify-center items-center gap-1.5 py-1">
               {SHOWCASE_ITEMS.map((_, idx) => (
                 <button
                   key={idx}
@@ -261,10 +261,10 @@ export function SkinShowcaseCarousel() {
                     e.stopPropagation();
                     setCurrentIndex(idx);
                   }}
-                  className={`h-2.5 rounded-full transition-all duration-300 ${
+                  className={`h-[7px] rounded-full transition-all duration-300 ${
                     idx === currentIndex 
-                      ? 'w-7 bg-cyan-400 shadow-lg shadow-cyan-400/40' 
-                      : 'w-2.5 bg-slate-700 hover:bg-slate-600 active:scale-95'
+                      ? 'w-[20px] bg-cyan-400 shadow-sm shadow-cyan-400/30' 
+                      : 'w-[7px] bg-slate-700 hover:bg-slate-600 active:scale-95'
                   }`}
                   aria-label={`Go to image ${idx + 1}`}
                 />
