@@ -4,8 +4,6 @@ import {
   AlertTriangle, 
   CheckCircle2, 
   Info, 
-  ChevronLeft, 
-  ChevronRight, 
   ShieldAlert, 
   Stethoscope, 
   Eye
@@ -207,52 +205,6 @@ export function SkinShowcaseCarousel() {
       position: 'relative',
       overflow: 'hidden'
     }}>
-      {/* Header, Title & Compact Navigation Controls at the top */}
-      <div className="flex flex-col gap-1 mb-4 border-b border-white/5 pb-2.5">
-        <div className="flex justify-between items-center w-full">
-          <h3 style={{ fontSize: '9px', fontWeight: '900', color: '#2dd4bf', letterSpacing: '1.5px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
-            Skin Library
-          </h3>
-          
-          {/* Controls nested perfectly on top */}
-          <div className="flex items-center gap-3">
-            {/* Dots */}
-            <div className="flex gap-1">
-              {SHOWCASE_ITEMS.map((_, idx) => (
-                <div
-                  key={idx}
-                  className={`h-1 rounded-full transition-all duration-300 ${
-                    idx === currentIndex ? 'w-3 bg-cyan-400' : 'w-1 bg-slate-700'
-                  }`}
-                />
-              ))}
-            </div>
-            
-            {/* Navigation Arrows */}
-            <div className="flex gap-1">
-              <button 
-                onClick={handlePrev}
-                type="button"
-                className="w-6 h-6 rounded-lg bg-white/5 hover:bg-white/10 active:scale-95 transition-all flex items-center justify-center text-slate-400 hover:text-white border border-white/5"
-                aria-label="Previous"
-              >
-                <ChevronLeft size={13} />
-              </button>
-              <button 
-                onClick={handleNext}
-                type="button"
-                className="w-6 h-6 rounded-lg bg-white/5 hover:bg-white/10 active:scale-95 transition-all flex items-center justify-center text-slate-400 hover:text-white border border-white/5"
-                aria-label="Next"
-              >
-                <ChevronRight size={13} />
-              </button>
-            </div>
-          </div>
-        </div>
-        <p className="text-[11px] font-bold text-white/95 leading-tight">Swipe left/right or use arrows to view library</p>
-      </div>
-
       {/* Swipeable container */}
       <div className="relative w-full overflow-hidden select-none">
         <AnimatePresence mode="wait">
@@ -273,7 +225,7 @@ export function SkinShowcaseCarousel() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
-            className="flex flex-col gap-3.5 cursor-grab active:cursor-grabbing touch-pan-y"
+            className="flex flex-col gap-3 cursor-grab active:cursor-grabbing touch-pan-y"
           >
             {/* Visual up close photo view */}
             <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-slate-900 border border-white/5 shadow-xl">
@@ -297,6 +249,26 @@ export function SkinShowcaseCarousel() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* High Visibility Swipe Dots */}
+            <div className="flex justify-center items-center gap-2 py-1">
+              {SHOWCASE_ITEMS.map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentIndex(idx);
+                  }}
+                  className={`h-2.5 rounded-full transition-all duration-300 ${
+                    idx === currentIndex 
+                      ? 'w-7 bg-cyan-400 shadow-lg shadow-cyan-400/40' 
+                      : 'w-2.5 bg-slate-700 hover:bg-slate-600 active:scale-95'
+                  }`}
+                  aria-label={`Go to image ${idx + 1}`}
+                />
+              ))}
             </div>
 
             {/* AI Diagnostics & Analysis Report */}
@@ -329,7 +301,7 @@ export function SkinShowcaseCarousel() {
                 {/* Recommendations column */}
                 <div className="space-y-1.5">
                   <h5 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-1 border-b border-white/5 pb-1">
-                    <Stethoscope size={11} className="text-cyan-400 animate-pulse" />
+                    <Stethoscope size={11} className="text-cyan-400" />
                     AI Action
                   </h5>
                   <ul className="space-y-1">
