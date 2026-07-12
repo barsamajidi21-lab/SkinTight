@@ -29,7 +29,7 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
     id: 'benign_mole',
     name: 'Benign Melanocytic Nevus',
     category: 'Normal Mole',
-    image: '/src/assets/images/skin_mole_normal_1783884962854.jpg',
+    image: '/images/skin_mole_normal_1783884962854.jpg',
     riskLevel: 'benign',
     explanation: 'A completely normal, symmetrical, single-shaded brown spot with well-defined borders. Normal moles are safe and extremely common.',
     symptoms: [
@@ -47,7 +47,7 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
     id: 'atypical_mole',
     name: 'Atypical Dysplastic Nevus',
     category: 'Suspect Mole',
-    image: '/src/assets/images/atypical_mole_suspect_1783884972298.jpg',
+    image: '/images/atypical_mole_suspect_1783884972298.jpg',
     riskLevel: 'moderate',
     explanation: 'An irregular mole with slightly asymmetrical contour, fuzzy borders, and multiple colors. These require careful monitoring as they can occasionally mimic melanoma.',
     symptoms: [
@@ -65,7 +65,7 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
     id: 'sun_damage',
     name: 'Solar Lentigines',
     category: 'Sun Damage / Freckles',
-    image: '/src/assets/images/skin_sun_damage_spots_1783884980559.jpg',
+    image: '/images/skin_sun_damage_spots_1783884980559.jpg',
     riskLevel: 'low',
     explanation: 'Common flat spots caused by chronic exposure to UV light. While they are benign in themselves, they indicate cumulative sun damage and increased skin vulnerability.',
     symptoms: [
@@ -83,7 +83,7 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
     id: 'acne_pustule',
     name: 'Acne Vulgaris',
     category: 'Inflammatory Acne',
-    image: '/src/assets/images/skin_acne_pustules_1783884987754.jpg',
+    image: '/images/skin_acne_pustules_1783884987754.jpg',
     riskLevel: 'low',
     explanation: 'An inflammatory blockage of hair follicles and sebaceous glands by oil and dead skin. Highly active but temporary and completely non-cancerous.',
     symptoms: [
@@ -101,7 +101,7 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
     id: 'eczema',
     name: 'Atopic Dermatitis',
     category: 'Eczema / Dryness',
-    image: '/src/assets/images/skin_eczema_dryness_1783884995375.jpg',
+    image: '/images/skin_eczema_dryness_1783884995375.jpg',
     riskLevel: 'low',
     explanation: 'An inflammatory, itchy skin barrier disruption. Often triggered by environmental allergens, stress, or dry climates. Non-contagious.',
     symptoms: [
@@ -119,7 +119,7 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
     id: 'seborrheic_keratosis',
     name: 'Seborrheic Keratosis',
     category: 'Harmless Waxy Growth',
-    image: '/src/assets/images/seborrheic_keratosis_lesion_1783885004465.jpg',
+    image: '/images/seborrheic_keratosis_lesion_1783885004465.jpg',
     riskLevel: 'benign',
     explanation: 'A very common, completely non-cancerous skin growth that typically appears in adulthood. They are harmless and do not transform into skin cancer.',
     symptoms: [
@@ -137,7 +137,7 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
     id: 'psoriasis',
     name: 'Plaque Psoriasis',
     category: 'Chronic Scale Patch',
-    image: '/src/assets/images/psoriasis_plaque_1783885021862.jpg',
+    image: '/images/psoriasis_plaque_1783885021862.jpg',
     riskLevel: 'low',
     explanation: 'A chronic, non-contagious autoimmune condition that accelerates skin cell replacement, leading to thick raised patches of skin buildup.',
     symptoms: [
@@ -155,7 +155,7 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
     id: 'cherry_angioma',
     name: 'Cherry Angioma',
     category: 'Benign Vascular Spot',
-    image: '/src/assets/images/cherry_angioma_1783885030327.jpg',
+    image: '/images/cherry_angioma_1783885030327.jpg',
     riskLevel: 'benign',
     explanation: 'A benign skin growth made up of a small cluster of dilated blood vessels. They are very common after the age of 30 and are completely harmless.',
     symptoms: [
