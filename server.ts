@@ -28,41 +28,83 @@ function getGenAI(): GoogleGenAI {
   return genAIClient;
 }
 
-// --- 4. RATE LIMITING ENGINE (In-Memory Sliding Window) ---
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 15; // 15 API requests / minute / IP
-const ipRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+// --- 4. RATE LIMITING ENGINE (In-Memory Sliding Window for Hourly & Daily Limits) ---
+const MAX_REQUESTS_PER_HOUR = 20; // 20 API requests / hour / IP
+const MAX_REQUESTS_PER_DAY = 30;  // 30 API requests / day / IP
+const ipRateLimitMap = new Map<string, { hourlyRequests: number[]; dailyRequests: number[] }>();
 
-// Cleanup stale IP rate limits every 5 minutes
+// Cleanup stale IP rate limits every 5 minutes to release memory for inactive IPs
 setInterval(() => {
   const now = Date.now();
   for (const [ip, record] of ipRateLimitMap.entries()) {
-    if (now > record.resetTime) ipRateLimitMap.delete(ip);
+    const dailyRequests = record.dailyRequests.filter(t => now - t < 24 * 3600 * 1000);
+    if (dailyRequests.length === 0) {
+      ipRateLimitMap.delete(ip);
+    } else {
+      record.dailyRequests = dailyRequests;
+      record.hourlyRequests = record.hourlyRequests.filter(t => now - t < 3600 * 1000);
+    }
   }
 }, 5 * 60 * 1000);
 
 function rateLimiterMiddleware(req: express.Request, res: express.Response, next: express.NextFunction) {
-  const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-  const now = Date.now();
-  const record = ipRateLimitMap.get(ip as string) || { count: 0, resetTime: now + RATE_LIMIT_WINDOW_MS };
-
-  if (now > record.resetTime) {
-    record.count = 1;
-    record.resetTime = now + RATE_LIMIT_WINDOW_MS;
+  let ip: string = "unknown";
+  const xForwardedFor = req.headers['x-forwarded-for'];
+  if (xForwardedFor) {
+    if (typeof xForwardedFor === 'string') {
+      ip = xForwardedFor.split(',')[0].trim();
+    } else if (Array.isArray(xForwardedFor) && xForwardedFor.length > 0) {
+      ip = xForwardedFor[0].trim();
+    }
   } else {
-    record.count++;
+    ip = req.ip || req.socket.remoteAddress || 'unknown';
   }
-  ipRateLimitMap.set(ip as string, record);
 
-  res.setHeader("X-RateLimit-Limit", MAX_REQUESTS_PER_WINDOW.toString());
-  res.setHeader("X-RateLimit-Remaining", Math.max(0, MAX_REQUESTS_PER_WINDOW - record.count).toString());
+  const now = Date.now();
+  const record = ipRateLimitMap.get(ip) || { hourlyRequests: [], dailyRequests: [] };
 
-  if (record.count > MAX_REQUESTS_PER_WINDOW) {
-    res.setHeader("Retry-After", Math.ceil((record.resetTime - now) / 1000).toString());
+  // Filter out timestamps older than 1 hour and 24 hours respectively
+  const oneHourAgo = now - 3600 * 1000;
+  const oneDayAgo = now - 24 * 3600 * 1000;
+
+  record.hourlyRequests = record.hourlyRequests.filter(t => t > oneHourAgo);
+  record.dailyRequests = record.dailyRequests.filter(t => t > oneDayAgo);
+
+  // Check hourly limit (Max 20 requests per hour)
+  if (record.hourlyRequests.length >= MAX_REQUESTS_PER_HOUR) {
+    const oldestRequest = record.hourlyRequests[0];
+    const msToWait = oldestRequest + 3600 * 1000 - now;
+    const minutesToWait = Math.ceil(msToWait / (60 * 1000));
+    
+    res.setHeader("Retry-After", Math.ceil(msToWait / 1000).toString());
     return res.status(429).json({
-      error: "Too Many Requests. Security rate limit exceeded. Please wait 60 seconds before submitting new screening images."
+      error: `Too Many Requests. Hourly security rate limit reached. You can perform at most ${MAX_REQUESTS_PER_HOUR} skin screenings per hour. Please wait ${minutesToWait} minute(s) before trying again.`
     });
   }
+
+  // Check daily limit (Max 30 requests per day)
+  if (record.dailyRequests.length >= MAX_REQUESTS_PER_DAY) {
+    const oldestRequest = record.dailyRequests[0];
+    const msToWait = oldestRequest + 24 * 3600 * 1000 - now;
+    const hoursToWait = Math.ceil(msToWait / (3600 * 1000));
+
+    res.setHeader("Retry-After", Math.ceil(msToWait / 1000).toString());
+    return res.status(429).json({
+      error: `Too Many Requests. Daily security rate limit reached. You can perform at most ${MAX_REQUESTS_PER_DAY} skin screenings per day. Please wait ${hoursToWait} hour(s) before trying again.`
+    });
+  }
+
+  // Record this request
+  record.hourlyRequests.push(now);
+  record.dailyRequests.push(now);
+  ipRateLimitMap.set(ip, record);
+
+  // Set informative rate limit response headers
+  res.setHeader("X-RateLimit-Limit-Hour", MAX_REQUESTS_PER_HOUR.toString());
+  res.setHeader("X-RateLimit-Remaining-Hour", (MAX_REQUESTS_PER_HOUR - record.hourlyRequests.length).toString());
+  res.setHeader("X-RateLimit-Limit-Day", MAX_REQUESTS_PER_DAY.toString());
+  res.setHeader("X-RateLimit-Remaining-Day", (MAX_REQUESTS_PER_DAY - record.dailyRequests.length).toString());
+
   next();
 }
 

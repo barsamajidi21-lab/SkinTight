@@ -82,6 +82,7 @@ import {
 import { BLOG_ARTICLES, BLOG_DISCLAIMER } from './data/blogData';
 import { PSEO_LANDING_PAGES, PseoPage } from './data/pSEOData';
 import { PseoLandingPage } from './components/PseoLandingPage';
+import { SkinShowcaseCarousel } from './components/SkinShowcaseCarousel';
 
 import { db, auth, storage } from './lib/firebase';
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
@@ -7766,6 +7767,8 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 ))}
               </div>
             </div>
+
+            <SkinShowcaseCarousel />
 
             <div id="scanReminderBanner" style={{ display: 'none', background: 'rgba(239, 159, 39, 0.1)', border: '1px solid rgba(239, 159, 39, 0.3)', borderRadius: '12px', padding: '12px 16px', marginBottom: '14px', alignItems: 'center', gap: '12px' }}>
               <span style={{ fontSize: '20px' }}>🔔</span>
