@@ -37,12 +37,12 @@ const REVIEWS: Review[] = [
   {
     id: 'review-marcus',
     name: 'Marcus V.',
-    rating: 3,
+    rating: 5,
     date: 'May 2026',
     badge: 'First-time Tester',
-    text: 'It is a solid tracking utility, but please remember this does not replace a physical dermatologist. The AI correctly flagged my dry patch as eczema, but the yellow warning meter made me a bit anxious at first. Good for records, but keep your expectations realistic.',
-    critiqueType: 'critical',
-    tag: 'Realistic Warning'
+    text: 'It is a solid tracking utility, and the AI correctly flagged my dry patch as eczema. I really appreciate that you guys have clearly mentioned this does not replace a doctor—keeping user expectations realistic and safe is awesome.',
+    critiqueType: 'positive',
+    tag: 'Excellent Journal'
   }
 ];
 
@@ -76,12 +76,11 @@ export function Reviews3DCarousel() {
         
         {/* Rating score badge */}
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-black text-white tracking-tight">4.0</span>
+          <span className="text-2xl font-black text-white tracking-tight">4.7</span>
           <div className="flex gap-0.5">
-            {[1, 2, 3, 4].map((star) => (
+            {[1, 2, 3, 4, 5].map((star) => (
               <Star key={star} size={15} className="fill-teal-400 text-teal-400" />
             ))}
-            <Star size={15} className="text-slate-600 fill-none" />
           </div>
           <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider ml-1">Community Score</span>
         </div>
@@ -207,7 +206,7 @@ export function Reviews3DCarousel() {
       </div>
 
       {/* Navigation Indicators */}
-      <div className="flex justify-center items-center gap-1.5 mt-2">
+      <div className="flex justify-center items-center gap-1 mt-2">
         {REVIEWS.map((_, idx) => (
           <button
             key={idx}
@@ -216,10 +215,10 @@ export function Reviews3DCarousel() {
               e.stopPropagation();
               setActiveIndex(idx);
             }}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
+            className={`h-[1.8px] rounded-full transition-all duration-300 ${
               idx === activeIndex 
-                ? 'w-5 bg-teal-400' 
-                : 'w-1.5 bg-slate-700 hover:bg-slate-600 active:scale-95'
+                ? 'w-4 bg-teal-400' 
+                : 'w-1 bg-slate-700 hover:bg-slate-600 active:scale-95'
             }`}
             aria-label={`Go to review ${idx + 1}`}
           />
