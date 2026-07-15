@@ -83,6 +83,7 @@ import { BLOG_ARTICLES, BLOG_DISCLAIMER } from './data/blogData';
 import { PSEO_LANDING_PAGES, PseoPage } from './data/pSEOData';
 import { PseoLandingPage } from './components/PseoLandingPage';
 import { SkinShowcaseCarousel } from './components/SkinShowcaseCarousel';
+import { Reviews3DCarousel } from './components/Reviews3DCarousel';
 
 import { db, auth, storage } from './lib/firebase';
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
@@ -7844,48 +7845,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               </div>
             )}
 
-            {/* Skin Health Academy - Internal Links Selection */}
-            <div className="glass-card p-6 rounded-3xl mb-6 border border-white/5 space-y-4">
-              <div className="flex items-center gap-2 pb-2 border-b border-white/5">
-                <BookOpen size={18} className="text-teal-400" />
-                <h3 className="text-sm font-black text-white tracking-wide uppercase">Skin Health Academy</h3>
-              </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Stay informed on skin wellness. Read our clinical guides and learn to track suspicious visual developments:
-              </p>
-              <div className="space-y-2">
-                {[
-                  { title: "Understanding the ABCDE Rule for Moles", slug: "abcde-rule-for-moles" },
-                  { title: "How to Monitor Skin Changes Over Time", slug: "how-to-monitor-skin-changes" },
-                  { title: "Early Signs of Skin Cancer: What to Watch For", slug: "early-signs-of-skin-cancer" }
-                ].map((link, idx) => (
-                  <div 
-                    key={idx}
-                    onClick={() => {
-                      setSelectedArticleSlug(link.slug);
-                      setActiveTab('learn');
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className="flex justify-between items-center p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-teal-500/10 hover:border-teal-500/20 active:scale-98 transition-all cursor-pointer text-left"
-                  >
-                    <span className="text-xs text-slate-300 font-bold hover:text-white transition-colors">{link.title}</span>
-                    <ChevronRight size={14} className="text-teal-400 ml-2 flex-shrink-0" />
-                  </div>
-                ))}
-              </div>
-              <div className="text-center pt-2">
-                <button
-                  onClick={() => {
-                    setSelectedArticleSlug(null);
-                    setActiveTab('learn');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  className="text-xs text-teal-400 font-black uppercase tracking-wider hover:underline cursor-pointer"
-                >
-                  View All Guidelines ({BLOG_ARTICLES.length})
-                </button>
-              </div>
-            </div>
+            <Reviews3DCarousel />
 
             <div style={styles.disclaimerBanner} className="glass-card shimmer-overlay">
               <AlertCircle size={20} color="#f59e0b" style={{ flexShrink: 0 }} />
