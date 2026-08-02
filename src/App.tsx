@@ -5822,7 +5822,7 @@ const Footer = ({ onShowLegal }: { onShowLegal: (type: 'terms' | 'privacy' | 'di
       ✓ Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.
     </div>
     <p style={{ fontSize: '11px', color: '#64748b', width: '100%', maxWidth: '640px', margin: '0 auto', lineHeight: '1.6' }}>
-      Disclaimer: Skin Tight is an educational AI skin monitoring and photo-journaling tool, not a diagnostic medical device. It does not provide medical advice, diagnosis, or treatment. Always consult a licensed dermatologist or medical professional for any skin health concerns. © 2026 Skin Tight.
+      Disclaimer: Skin Tight is an educational AI skin monitoring and photo-journaling tool, not a diagnostic medical device. It does not provide medical advice, diagnosis, or treatment. Always consult a licensed dermatologist or medical professional for any skin health concerns. © 2026 Skin Tight. <span style={{ opacity: 0.25, fontSize: '10px' }}>•</span>
     </p>
   </footer>
 );
