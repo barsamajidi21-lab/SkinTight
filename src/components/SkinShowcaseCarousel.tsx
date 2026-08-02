@@ -234,6 +234,8 @@ export function SkinShowcaseCarousel() {
                 alt={activeItem.name} 
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
+                loading="lazy"
+                decoding="async"
                 draggable="false"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent flex items-end p-3.5">

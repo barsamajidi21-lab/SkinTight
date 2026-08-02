@@ -84,6 +84,7 @@ import { PSEO_LANDING_PAGES, PseoPage } from './data/pSEOData';
 import { PseoLandingPage } from './components/PseoLandingPage';
 import { SkinShowcaseCarousel } from './components/SkinShowcaseCarousel';
 import { Reviews3DCarousel } from './components/Reviews3DCarousel';
+import { ensureLeafletLoaded, ensureChartJsLoaded } from './lib/scriptLoader';
 
 import { db, auth, storage } from './lib/firebase';
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
@@ -1334,8 +1335,8 @@ const styles = {
           }
         }
 
-        if (!(window as any).L) return;
-        const L = (window as any).L;
+        const L = await ensureLeafletLoaded();
+        if (!L) return;
 
         if (!mapInstance.current) {
           if (!mapRef.current) {
@@ -1880,7 +1881,7 @@ const styles = {
     );
   };
 
-const upperBodyParts = ["Face", "Ear", "Neck", "Arms", "Chest", "Stomach", "Hands", "Back"];
+const upperBodyParts = ["Head / Forehead", "Face", "Ear", "Neck", "Arms", "Chest", "Stomach", "Hands", "Back"];
 const lowerBodyParts = ["Legs", "Thighs", "Knees", "Feet", "Toes", "Ankles", "Hips"];
 
 const ScanPage = ({
@@ -4502,10 +4503,12 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
 
     useEffect(() => {
       let isMounted = true;
-      const initChart = () => {
+      const initChart = async () => {
         if (!isMounted) return;
-        if (chartRef.current && scans.length > 0 && (window as any).Chart) {
+        if (chartRef.current && scans.length > 0) {
           try {
+            const Chart = await ensureChartJsLoaded();
+            if (!isMounted) return;
             const ctx = chartRef.current.getContext('2d');
             if (ctx) {
               if (chartInstance.current) {
@@ -5028,9 +5031,7 @@ const DISCLAIMER_TEXT = `MEDICAL DISCLAIMER: Skin Tight is NOT a medical device 
 
 // --- Onboarding Screen Component ---
 const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
-  const [agreedDisclaimer, setAgreedDisclaimer] = useState(false);
-  const [agreedTerms, setAgreedTerms] = useState(false);
-  const [agreedPrivacy, setAgreedPrivacy] = useState(false);
+  const [agreedAll, setAgreedAll] = useState(false);
   const [expandedSection, setExpandedSection] = useState<'disclaimer' | 'terms' | 'privacy' | null>(null);
 
   return (
@@ -5143,15 +5144,16 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
           })}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
+        {/* Legal Agreements Accordions */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
           {/* Medical Disclaimer Section */}
-          <div style={{ border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '16px', overflow: 'hidden' }}>
+          <div style={{ border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', overflow: 'hidden', background: 'rgba(255, 255, 255, 0.02)' }}>
             <button 
               onClick={() => setExpandedSection(expandedSection === 'disclaimer' ? null : 'disclaimer')}
               style={{
-                width: '100%', padding: '16px', display: 'flex', justifyContent: 'space-between',
-                alignItems: 'center', background: 'rgba(255, 255, 255, 0.02)', border: 'none',
-                color: '#f8fafc', cursor: 'pointer', fontWeight: '600'
+                width: '100%', padding: '14px 16px', display: 'flex', justifyContent: 'space-between',
+                alignItems: 'center', background: 'none', border: 'none',
+                color: '#f8fafc', cursor: 'pointer', fontWeight: '600', fontSize: '13.5px'
               }}
             >
               <span>Medical Disclaimer</span>
@@ -5172,13 +5174,13 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
           </div>
 
           {/* Terms Section */}
-          <div style={{ border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '16px', overflow: 'hidden' }}>
+          <div style={{ border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', overflow: 'hidden', background: 'rgba(255, 255, 255, 0.02)' }}>
             <button 
               onClick={() => setExpandedSection(expandedSection === 'terms' ? null : 'terms')}
               style={{
-                width: '100%', padding: '16px', display: 'flex', justifyContent: 'space-between',
-                alignItems: 'center', background: 'rgba(255, 255, 255, 0.02)', border: 'none',
-                color: '#f8fafc', cursor: 'pointer', fontWeight: '600'
+                width: '100%', padding: '14px 16px', display: 'flex', justifyContent: 'space-between',
+                alignItems: 'center', background: 'none', border: 'none',
+                color: '#f8fafc', cursor: 'pointer', fontWeight: '600', fontSize: '13.5px'
               }}
             >
               <span>Terms & Conditions</span>
@@ -5199,13 +5201,13 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
           </div>
 
           {/* Privacy Section */}
-          <div style={{ border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '16px', overflow: 'hidden' }}>
+          <div style={{ border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', overflow: 'hidden', background: 'rgba(255, 255, 255, 0.02)' }}>
             <button 
               onClick={() => setExpandedSection(expandedSection === 'privacy' ? null : 'privacy')}
               style={{
-                width: '100%', padding: '16px', display: 'flex', justifyContent: 'space-between',
-                alignItems: 'center', background: 'rgba(255, 255, 255, 0.02)', border: 'none',
-                color: '#f8fafc', cursor: 'pointer', fontWeight: '600'
+                width: '100%', padding: '14px 16px', display: 'flex', justifyContent: 'space-between',
+                alignItems: 'center', background: 'none', border: 'none',
+                color: '#f8fafc', cursor: 'pointer', fontWeight: '600', fontSize: '13.5px'
               }}
             >
               <span>Privacy Policy</span>
@@ -5226,94 +5228,65 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
+        {/* Consolidated Single Agreement Checkbox Box */}
+        <div style={{
+          marginBottom: '24px',
+          padding: '16px 18px',
+          borderRadius: '20px',
+          background: agreedAll ? 'rgba(45, 212, 191, 0.08)' : 'rgba(30, 41, 59, 0.5)',
+          border: `1.5px solid ${agreedAll ? 'rgba(45, 212, 191, 0.4)' : 'rgba(255, 255, 255, 0.12)'}`,
+          transition: 'all 0.2s ease'
+        }}>
           <div 
-            onClick={() => setAgreedDisclaimer(!agreedDisclaimer)}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '14px' }}
+            onClick={() => setAgreedAll(!agreedAll)}
+            style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', cursor: 'pointer' }}
           >
             <div style={{
               width: '24px',
               height: '24px',
-              borderRadius: '6px',
-              border: `2px solid ${agreedDisclaimer ? '#2dd4bf' : 'rgba(255,255,255,0.2)'}`,
-              background: agreedDisclaimer ? '#2dd4bf' : 'transparent',
+              borderRadius: '7px',
+              border: `2px solid ${agreedAll ? '#2dd4bf' : 'rgba(255,255,255,0.3)'}`,
+              background: agreedAll ? '#2dd4bf' : 'transparent',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              flexShrink: 0
+              transition: 'all 0.2s ease',
+              flexShrink: 0,
+              marginTop: '2px'
             }}>
-              {agreedDisclaimer && <Check size={16} color="#020617" strokeWidth={4} />}
+              {agreedAll && <Check size={16} color="#020617" strokeWidth={4} />}
             </div>
-            <span style={{ color: agreedDisclaimer ? '#f8fafc' : '#94a3b8', transition: 'color 0.2s' }}>
-              I agree to the Medical Disclaimer
-            </span>
-          </div>
-
-          <div 
-            onClick={() => setAgreedTerms(!agreedTerms)}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '14px' }}
-          >
-            <div style={{
-              width: '24px',
-              height: '24px',
-              borderRadius: '6px',
-              border: `2px solid ${agreedTerms ? '#2dd4bf' : 'rgba(255,255,255,0.2)'}`,
-              background: agreedTerms ? '#2dd4bf' : 'transparent',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              flexShrink: 0
-            }}>
-              {agreedTerms && <Check size={16} color="#020617" strokeWidth={4} />}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontSize: '14px', fontWeight: '800', color: agreedAll ? '#ffffff' : '#f1f5f9' }}>
+                I agree to all legal policies & disclaimer above
+              </span>
+              <span style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.45' }}>
+                By checking this box, you confirm that you have read and agree to the Medical Disclaimer, Terms & Conditions, and Privacy Policy listed above.
+              </span>
             </div>
-            <span style={{ color: agreedTerms ? '#f8fafc' : '#94a3b8', transition: 'color 0.2s' }}>
-              I agree to the Terms & Conditions
-            </span>
-          </div>
-
-          <div 
-            onClick={() => setAgreedPrivacy(!agreedPrivacy)}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '14px' }}
-          >
-            <div style={{
-              width: '24px',
-              height: '24px',
-              borderRadius: '6px',
-              border: `2px solid ${agreedPrivacy ? '#2dd4bf' : 'rgba(255,255,255,0.2)'}`,
-              background: agreedPrivacy ? '#2dd4bf' : 'transparent',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              flexShrink: 0
-            }}>
-              {agreedPrivacy && <Check size={16} color="#020617" strokeWidth={4} />}
-            </div>
-            <span style={{ color: agreedPrivacy ? '#f8fafc' : '#94a3b8', transition: 'color 0.2s' }}>
-              I agree to the Privacy Policy
-            </span>
           </div>
         </div>
 
         <button
-          disabled={!agreedDisclaimer || !agreedTerms || !agreedPrivacy}
+          disabled={!agreedAll}
           onClick={onComplete}
           style={{
             width: '100%',
             padding: '16px',
             borderRadius: '16px',
             border: 'none',
-            background: agreedDisclaimer && agreedTerms && agreedPrivacy ? '#2dd4bf' : 'rgba(255, 255, 255, 0.05)',
-            color: agreedDisclaimer && agreedTerms && agreedPrivacy ? '#020617' : '#475569',
-            fontWeight: '800',
+            background: agreedAll 
+              ? 'linear-gradient(135deg, #2dd4bf 0%, #0d9488 100%)' 
+              : 'rgba(255, 255, 255, 0.08)',
+            color: agreedAll ? '#020617' : '#64748b',
+            fontWeight: '900',
             fontSize: '16px',
-            cursor: agreedDisclaimer && agreedTerms && agreedPrivacy ? 'pointer' : 'not-allowed',
-            transition: 'all 0.3s ease'
+            cursor: agreedAll ? 'pointer' : 'not-allowed',
+            boxShadow: agreedAll ? '0 8px 25px rgba(45, 212, 191, 0.3)' : 'none',
+            transition: 'all 0.2s ease'
           }}
         >
-          Continue
+          Accept & Continue
         </button>
       </motion.div>
     </div>
@@ -5845,8 +5818,11 @@ const Footer = ({ onShowLegal }: { onShowLegal: (type: 'terms' | 'privacy' | 'di
       <button onClick={() => onShowLegal('privacy')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Privacy</button>
       <button onClick={() => onShowLegal('disclaimer')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Disclaimer</button>
     </div>
-    <p style={{ fontSize: '11px', color: '#64748b', width: '100%', margin: '20px 0', lineHeight: '1.5' }}>
-      Informational and wellness tool only. Not medical advice. © 2026 AI Skin Analysis.
+    <div style={{ maxWidth: '640px', margin: '0 auto', fontSize: '11px', color: '#2dd4bf', padding: '10px 14px', borderRadius: '10px', background: 'rgba(45, 212, 191, 0.06)', border: '1px solid rgba(45, 212, 191, 0.15)', marginBottom: '14px', fontWeight: 600 }}>
+      ✓ Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.
+    </div>
+    <p style={{ fontSize: '11px', color: '#64748b', width: '100%', maxWidth: '640px', margin: '0 auto', lineHeight: '1.6' }}>
+      Disclaimer: Skin Tight is an educational AI skin monitoring and photo-journaling tool, not a diagnostic medical device. It does not provide medical advice, diagnosis, or treatment. Always consult a licensed dermatologist or medical professional for any skin health concerns. © 2026 Skin Tight.
     </p>
   </footer>
 );
@@ -6331,7 +6307,7 @@ function App() {
           const ctx = canvas.getContext('2d');
           if (!ctx) return reject(new Error('Canvas context failed'));
           ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', quality));
+          resolve(canvas.toDataURL('image/webp', quality));
         } catch (e: any) {
           reject(new Error(`Rendering failed: ${e.message || 'Unknown'}`));
         }
@@ -7437,11 +7413,6 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     return <OnboardingScreen onComplete={() => {
       setOnboardingComplete(true);
       localStorage.setItem('onboarding_complete', 'true');
-    }} />;
-  }
-
-  if (!welcomeSeen) {
-    return <WelcomePage onComplete={() => {
       setWelcomeSeen(true);
       localStorage.setItem('welcomeSeen', 'true');
     }} />;
@@ -7706,6 +7677,73 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                   </div>
                 </div>
               </motion.div>
+            </div>
+
+            {/* Your Key Benefits Section - Transferred directly below Start New Scan button */}
+            <div style={{
+              width: '100%',
+              marginBottom: '20px',
+              padding: '20px',
+              borderRadius: '24px',
+              background: 'rgba(15, 23, 42, 0.45)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              boxShadow: '0 10px 30px -10px rgba(0,0,0,0.3)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                <div style={{
+                  width: '36px', height: '36px', borderRadius: '10px',
+                  background: 'rgba(45, 212, 191, 0.15)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: '1px solid rgba(45, 212, 191, 0.3)',
+                }}>
+                  <ShieldCheck size={20} color="#2dd4bf" />
+                </div>
+                <div>
+                  <span style={{ fontSize: '10px', fontWeight: '900', color: '#2dd4bf', letterSpacing: '1.5px', textTransform: 'uppercase', display: 'block' }}>Skin Tight</span>
+                  <h3 style={{ fontSize: '17px', fontWeight: '900', margin: 0, color: '#ffffff', letterSpacing: '-0.01em' }}>Your Key Benefits</h3>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '10px' }}>
+                {[
+                  {
+                    title: "100% Free & Fast",
+                    desc: "Instant clinical screening in under 60 seconds (vs. $150+ clinic visits).",
+                    icon: Zap,
+                    color: "#0ea5e9"
+                  },
+                  {
+                    title: "High Clinical Accuracy",
+                    desc: "Powered by AI models trained on thousands of verified dermatology cases.",
+                    icon: Globe,
+                    color: "#a855f7"
+                  },
+                  {
+                    title: "Private & Secure",
+                    desc: "Your uploaded images and diagnostic records remain strictly encrypted.",
+                    icon: Lock,
+                    color: "#2dd4bf"
+                  }
+                ].map((item, idx) => {
+                  const IconComp = item.icon;
+                  return (
+                    <div key={idx} style={{ display: 'flex', gap: '12px', padding: '12px 14px', borderRadius: '16px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', alignItems: 'center' }}>
+                      <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: `${item.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: item.color }}>
+                        <IconComp size={18} />
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: '800', fontSize: '13px', color: '#f8fafc', marginBottom: '2px' }}>{item.title}</div>
+                        <div style={{ fontSize: '11.5px', color: '#94a3b8', lineHeight: 1.35 }}>{item.desc}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <p style={{ fontSize: '10px', color: '#64748b', textAlign: 'center', margin: '12px 0 0', lineHeight: 1.4 }}>
+                Informational screening tool only; does not replace medical doctor advice.
+              </p>
             </div>
 
 

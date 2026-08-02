@@ -68,11 +68,7 @@
       ]
     }
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <!-- Heavy scripts (Leaflet map, Chart.js, 3D assets) are loaded dynamically on demand when relevant tabs/features are opened -->
     <link rel="manifest" href="/manifest.json?v=8" />
     <meta name="theme-color" content="#060818" />
     <meta name="application-name" content="Skin Tight">
@@ -103,7 +99,6 @@
         }
       });
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
       if ('serviceWorker' in navigator) {
         let refreshing = false;

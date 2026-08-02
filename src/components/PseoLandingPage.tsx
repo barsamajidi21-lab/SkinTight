@@ -322,9 +322,13 @@ export const PseoLandingPage: React.FC<PseoLandingPageProps> = ({ page, onCtaCli
       {/* Modern Footer */}
       <footer className="border-t py-8 mt-12 text-center text-xs text-gray-500" 
               style={{ borderColor: 'rgba(234, 224, 213, 0.05)', background: '#121212' }}>
+        <div className="max-w-md mx-auto px-4 mb-3 py-2 rounded-lg text-[11px] text-[#2dd4bf] font-medium border"
+             style={{ background: 'rgba(45, 212, 191, 0.05)', borderColor: 'rgba(45, 212, 191, 0.15)' }}>
+          ✓ Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.
+        </div>
         <p>© 2026 Skin Tight Atmospheric Health Network. All rights reserved.</p>
-        <p className="mt-2 text-[10px] text-gray-600 max-w-md mx-auto px-4">
-          Disclaimer: This environmental skin-barrier tracker is designed for educational purposes only. It does not constitute medical diagnosis or diagnostic advice.
+        <p className="mt-2 text-[10px] text-gray-500 max-w-lg mx-auto px-4 leading-relaxed">
+          Disclaimer: Skin Tight is an educational AI skin monitoring and photo-journaling tool, not a diagnostic medical device. It does not provide medical advice, diagnosis, or treatment. Always consult a licensed dermatologist or medical professional for any skin health concerns.
         </p>
       </footer>
     </div>

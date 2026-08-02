@@ -28,21 +28,49 @@ function getGenAI(): GoogleGenAI {
   return genAIClient;
 }
 
-// --- 4. RATE LIMITING ENGINE (In-Memory Sliding Window for Hourly & Daily Limits) ---
-const MAX_REQUESTS_PER_HOUR = 20; // 20 API requests / hour / IP
-const MAX_REQUESTS_PER_DAY = 30;  // 30 API requests / day / IP
-const ipRateLimitMap = new Map<string, { hourlyRequests: number[]; dailyRequests: number[] }>();
+// --- 4. ADVANCED MULTI-TIER RATE LIMITING ENGINE & GLOBAL CIRCUIT BREAKER ---
+// Per-IP Limits (Tiered per minute, hour, and day)
+const MAX_REQUESTS_PER_MINUTE_IP = 5;  // 5 API requests / minute / IP
+const MAX_REQUESTS_PER_HOUR_IP = 20;   // 20 API requests / hour / IP
+const MAX_REQUESTS_PER_DAY_IP = 30;    // 30 API requests / day / IP
 
-// Cleanup stale IP rate limits every 5 minutes to release memory for inactive IPs
+// Global System Circuit Breaker (Protecting against botnets, IP rotators & runaway API billing)
+const GLOBAL_MAX_PER_MINUTE = 30;  // Max 30 total API requests / minute server-wide
+const GLOBAL_MAX_PER_HOUR = 200;   // Max 200 total API requests / hour server-wide
+const GLOBAL_MAX_PER_DAY = 500;    // Max 500 total API requests / day server-wide
+
+interface IPRateRecord {
+  minuteRequests: number[];
+  hourlyRequests: number[];
+  dailyRequests: number[];
+}
+
+const ipRateLimitMap = new Map<string, IPRateRecord>();
+let globalMinuteRequests: number[] = [];
+let globalHourlyRequests: number[] = [];
+let globalDailyRequests: number[] = [];
+
+// Cleanup stale IP records & global trackers every 5 minutes
 setInterval(() => {
   const now = Date.now();
+  const oneDayAgo = now - 24 * 3600 * 1000;
+  const oneHourAgo = now - 3600 * 1000;
+  const oneMinuteAgo = now - 60 * 1000;
+
+  // Cleanup Global arrays
+  globalDailyRequests = globalDailyRequests.filter(t => t > oneDayAgo);
+  globalHourlyRequests = globalHourlyRequests.filter(t => t > oneHourAgo);
+  globalMinuteRequests = globalMinuteRequests.filter(t => t > oneMinuteAgo);
+
+  // Cleanup IP records
   for (const [ip, record] of ipRateLimitMap.entries()) {
-    const dailyRequests = record.dailyRequests.filter(t => now - t < 24 * 3600 * 1000);
+    const dailyRequests = record.dailyRequests.filter(t => t > oneDayAgo);
     if (dailyRequests.length === 0) {
       ipRateLimitMap.delete(ip);
     } else {
       record.dailyRequests = dailyRequests;
-      record.hourlyRequests = record.hourlyRequests.filter(t => now - t < 3600 * 1000);
+      record.hourlyRequests = record.hourlyRequests.filter(t => t > oneHourAgo);
+      record.minuteRequests = record.minuteRequests.filter(t => t > oneMinuteAgo);
     }
   }
 }, 5 * 60 * 1000);
@@ -61,49 +89,85 @@ function rateLimiterMiddleware(req: express.Request, res: express.Response, next
   }
 
   const now = Date.now();
-  const record = ipRateLimitMap.get(ip) || { hourlyRequests: [], dailyRequests: [] };
-
-  // Filter out timestamps older than 1 hour and 24 hours respectively
+  const oneMinuteAgo = now - 60 * 1000;
   const oneHourAgo = now - 3600 * 1000;
   const oneDayAgo = now - 24 * 3600 * 1000;
 
-  record.hourlyRequests = record.hourlyRequests.filter(t => t > oneHourAgo);
-  record.dailyRequests = record.dailyRequests.filter(t => t > oneDayAgo);
+  // 1. GLOBAL SYSTEM CIRCUIT BREAKER CHECK
+  globalMinuteRequests = globalMinuteRequests.filter(t => t > oneMinuteAgo);
+  globalHourlyRequests = globalHourlyRequests.filter(t => t > oneHourAgo);
+  globalDailyRequests = globalDailyRequests.filter(t => t > oneDayAgo);
 
-  // Check hourly limit (Max 20 requests per hour)
-  if (record.hourlyRequests.length >= MAX_REQUESTS_PER_HOUR) {
-    const oldestRequest = record.hourlyRequests[0];
-    const msToWait = oldestRequest + 3600 * 1000 - now;
-    const minutesToWait = Math.ceil(msToWait / (60 * 1000));
-    
-    res.setHeader("Retry-After", Math.ceil(msToWait / 1000).toString());
+  if (globalMinuteRequests.length >= GLOBAL_MAX_PER_MINUTE ||
+      globalHourlyRequests.length >= GLOBAL_MAX_PER_HOUR ||
+      globalDailyRequests.length >= GLOBAL_MAX_PER_DAY) {
+    console.warn(`[Security Alert]: Global System Rate Limit Circuit Breaker Tripped at ${new Date().toISOString()}`);
+    res.setHeader("Retry-After", "60");
     return res.status(429).json({
-      error: `Too Many Requests. Hourly security rate limit reached. You can perform at most ${MAX_REQUESTS_PER_HOUR} skin screenings per hour. Please wait ${minutesToWait} minute(s) before trying again.`
+      error: "Global System Protection Activated: Server-wide request limit reached to safeguard API infrastructure. Please wait a moment and try again."
     });
   }
 
-  // Check daily limit (Max 30 requests per day)
-  if (record.dailyRequests.length >= MAX_REQUESTS_PER_DAY) {
-    const oldestRequest = record.dailyRequests[0];
-    const msToWait = oldestRequest + 24 * 3600 * 1000 - now;
+  // 2. PER-IP MULTI-TIER RATE LIMIT CHECK
+  const record = ipRateLimitMap.get(ip) || { minuteRequests: [], hourlyRequests: [], dailyRequests: [] };
+
+  record.minuteRequests = record.minuteRequests.filter(t => t > oneMinuteAgo);
+  record.hourlyRequests = record.hourlyRequests.filter(t => t > oneHourAgo);
+  record.dailyRequests = record.dailyRequests.filter(t => t > oneDayAgo);
+
+  // Tier A: Minute Limit (Max 5 req/min per IP)
+  if (record.minuteRequests.length >= MAX_REQUESTS_PER_MINUTE_IP) {
+    const oldest = record.minuteRequests[0];
+    const msToWait = oldest + 60 * 1000 - now;
+    const secondsToWait = Math.ceil(msToWait / 1000);
+
+    res.setHeader("Retry-After", secondsToWait.toString());
+    return res.status(429).json({
+      error: `Too Many Requests. Rapid screening limit reached. You can perform at most ${MAX_REQUESTS_PER_MINUTE_IP} screenings per minute. Please wait ${secondsToWait} second(s) before trying again.`
+    });
+  }
+
+  // Tier B: Hourly Limit (Max 20 req/hour per IP)
+  if (record.hourlyRequests.length >= MAX_REQUESTS_PER_HOUR_IP) {
+    const oldest = record.hourlyRequests[0];
+    const msToWait = oldest + 3600 * 1000 - now;
+    const minutesToWait = Math.ceil(msToWait / (60 * 1000));
+
+    res.setHeader("Retry-After", Math.ceil(msToWait / 1000).toString());
+    return res.status(429).json({
+      error: `Too Many Requests. Hourly security rate limit reached. You can perform at most ${MAX_REQUESTS_PER_HOUR_IP} skin screenings per hour. Please wait ${minutesToWait} minute(s) before trying again.`
+    });
+  }
+
+  // Tier C: Daily Limit (Max 30 req/day per IP)
+  if (record.dailyRequests.length >= MAX_REQUESTS_PER_DAY_IP) {
+    const oldest = record.dailyRequests[0];
+    const msToWait = oldest + 24 * 3600 * 1000 - now;
     const hoursToWait = Math.ceil(msToWait / (3600 * 1000));
 
     res.setHeader("Retry-After", Math.ceil(msToWait / 1000).toString());
     return res.status(429).json({
-      error: `Too Many Requests. Daily security rate limit reached. You can perform at most ${MAX_REQUESTS_PER_DAY} skin screenings per day. Please wait ${hoursToWait} hour(s) before trying again.`
+      error: `Too Many Requests. Daily security rate limit reached. You can perform at most ${MAX_REQUESTS_PER_DAY_IP} skin screenings per day. Please wait ${hoursToWait} hour(s) before trying again.`
     });
   }
 
-  // Record this request
+  // Record IP and Global timestamps
+  record.minuteRequests.push(now);
   record.hourlyRequests.push(now);
   record.dailyRequests.push(now);
   ipRateLimitMap.set(ip, record);
 
-  // Set informative rate limit response headers
-  res.setHeader("X-RateLimit-Limit-Hour", MAX_REQUESTS_PER_HOUR.toString());
-  res.setHeader("X-RateLimit-Remaining-Hour", (MAX_REQUESTS_PER_HOUR - record.hourlyRequests.length).toString());
-  res.setHeader("X-RateLimit-Limit-Day", MAX_REQUESTS_PER_DAY.toString());
-  res.setHeader("X-RateLimit-Remaining-Day", (MAX_REQUESTS_PER_DAY - record.dailyRequests.length).toString());
+  globalMinuteRequests.push(now);
+  globalHourlyRequests.push(now);
+  globalDailyRequests.push(now);
+
+  // Set informative rate limit headers
+  res.setHeader("X-RateLimit-Limit-Minute", MAX_REQUESTS_PER_MINUTE_IP.toString());
+  res.setHeader("X-RateLimit-Remaining-Minute", (MAX_REQUESTS_PER_MINUTE_IP - record.minuteRequests.length).toString());
+  res.setHeader("X-RateLimit-Limit-Hour", MAX_REQUESTS_PER_HOUR_IP.toString());
+  res.setHeader("X-RateLimit-Remaining-Hour", (MAX_REQUESTS_PER_HOUR_IP - record.hourlyRequests.length).toString());
+  res.setHeader("X-RateLimit-Limit-Day", MAX_REQUESTS_PER_DAY_IP.toString());
+  res.setHeader("X-RateLimit-Remaining-Day", (MAX_REQUESTS_PER_DAY_IP - record.dailyRequests.length).toString());
 
   next();
 }
