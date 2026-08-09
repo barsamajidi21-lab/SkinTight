@@ -7683,41 +7683,42 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
             <div style={{
               width: '100%',
               marginBottom: '20px',
-              padding: '20px',
+              padding: '24px',
               borderRadius: '24px',
-              background: 'rgba(15, 23, 42, 0.45)',
-              backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              boxShadow: '0 10px 30px -10px rgba(0,0,0,0.3)',
+              background: 'rgba(30, 41, 59, 0.75)',
+              backdropFilter: 'blur(16px)',
+              border: '1px solid rgba(255, 255, 255, 0.16)',
+              boxShadow: '0 12px 32px -8px rgba(0,0,0,0.45), 0 0 20px rgba(45, 212, 191, 0.08)',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                 <div style={{
-                  width: '36px', height: '36px', borderRadius: '10px',
-                  background: 'rgba(45, 212, 191, 0.15)',
+                  width: '42px', height: '42px', borderRadius: '12px',
+                  background: 'rgba(45, 212, 191, 0.2)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: '1px solid rgba(45, 212, 191, 0.3)',
+                  border: '1px solid rgba(45, 212, 191, 0.4)',
+                  boxShadow: '0 4px 12px rgba(45, 212, 191, 0.2)'
                 }}>
-                  <ShieldCheck size={20} color="#2dd4bf" />
+                  <ShieldCheck size={22} color="#2dd4bf" strokeWidth={2.2} />
                 </div>
                 <div>
-                  <span style={{ fontSize: '10px', fontWeight: '900', color: '#2dd4bf', letterSpacing: '1.5px', textTransform: 'uppercase', display: 'block' }}>Skin Tight</span>
-                  <h3 style={{ fontSize: '17px', fontWeight: '900', margin: 0, color: '#ffffff', letterSpacing: '-0.01em' }}>Your Key Benefits</h3>
+                  <span style={{ fontSize: '11px', fontWeight: '900', color: '#2dd4bf', letterSpacing: '1.5px', textTransform: 'uppercase', display: 'block' }}>Skin Tight</span>
+                  <h3 style={{ fontSize: '18px', fontWeight: '900', margin: 0, color: '#ffffff', letterSpacing: '-0.01em' }}>Your Key Benefits</h3>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '12px' }}>
                 {[
                   {
                     title: "100% Free & Fast",
                     desc: "Instant clinical screening in under 60 seconds (vs. $150+ clinic visits).",
                     icon: Zap,
-                    color: "#0ea5e9"
+                    color: "#38bdf8"
                   },
                   {
                     title: "High Clinical Accuracy",
                     desc: "Powered by AI models trained on thousands of verified dermatology cases.",
                     icon: Globe,
-                    color: "#a855f7"
+                    color: "#c084fc"
                   },
                   {
                     title: "Private & Secure",
@@ -7728,20 +7729,20 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 ].map((item, idx) => {
                   const IconComp = item.icon;
                   return (
-                    <div key={idx} style={{ display: 'flex', gap: '12px', padding: '12px 14px', borderRadius: '16px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', alignItems: 'center' }}>
-                      <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: `${item.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: item.color }}>
-                        <IconComp size={18} />
+                    <div key={idx} style={{ display: 'flex', gap: '12px', padding: '14px 16px', borderRadius: '16px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', alignItems: 'center' }}>
+                      <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: `${item.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: item.color, border: `1px solid ${item.color}40` }}>
+                        <IconComp size={20} strokeWidth={2.2} />
                       </div>
                       <div>
-                        <div style={{ fontWeight: '800', fontSize: '13px', color: '#f8fafc', marginBottom: '2px' }}>{item.title}</div>
-                        <div style={{ fontSize: '11.5px', color: '#94a3b8', lineHeight: 1.35 }}>{item.desc}</div>
+                        <div style={{ fontWeight: '800', fontSize: '14px', color: '#ffffff', marginBottom: '3px' }}>{item.title}</div>
+                        <div style={{ fontSize: '12.5px', color: '#cbd5e1', lineHeight: 1.45 }}>{item.desc}</div>
                       </div>
                     </div>
                   );
                 })}
               </div>
 
-              <p style={{ fontSize: '10px', color: '#64748b', textAlign: 'center', margin: '12px 0 0', lineHeight: 1.4 }}>
+              <p style={{ fontSize: '12px', color: '#cbd5e1', textAlign: 'center', margin: '16px 0 0', lineHeight: 1.5 }}>
                 Informational screening tool only; does not replace medical doctor advice.
               </p>
             </div>
@@ -7749,61 +7750,155 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
 
             {/* Steps & How to Use Section */}
             <div className="glass-card mb-6" style={{
-              background: 'rgba(30, 41, 59, 0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.03)',
+              background: 'rgba(30, 41, 59, 0.75)',
+              backdropFilter: 'blur(16px)',
+              border: '1px solid rgba(168, 85, 247, 0.3)',
               borderRadius: '24px',
               padding: '24px',
               width: '100%',
-              marginTop: '12px'
+              marginTop: '12px',
+              boxShadow: '0 12px 32px -8px rgba(0,0,0,0.45), 0 0 25px rgba(168, 85, 247, 0.1)',
             }}>
-              <h3 style={{ fontSize: '11px', fontWeight: '900', color: '#a855f7', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#a855f7' }}></span> How Skin Tight Works
-              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h3 style={{ fontSize: '12px', fontWeight: '900', color: '#c084fc', letterSpacing: '2px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#c084fc', boxShadow: '0 0 8px #c084fc' }}></span> How Skin Tight Works
+                </h3>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: '#2dd4bf', background: 'rgba(45,212,191,0.15)', padding: '4px 10px', borderRadius: '20px', border: '1px solid rgba(45,212,191,0.3)' }}>
+                  4 Simple Steps
+                </span>
+              </div>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                 {[
                   {
                     step: "1",
+                    label: "SCAN",
                     title: "Snap or Upload Photo",
                     desc: "Take a clear, close-up photo of any suspicious spots, moles, or lesions of concern.",
-                    color: "#a855f7"
+                    color: "#c084fc",
+                    bgGradient: "linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)",
+                    icon: Camera
                   },
                   {
                     step: "2",
-                    title: "Analyze Instantly",
+                    label: "ANALYZE",
+                    title: "Instant AI Screening",
                     desc: "Our dermatologist-trained AI checks risk factors, ABCDE indicators, and pattern symmetries.",
-                    color: "#8b5cf6"
+                    color: "#38bdf8",
+                    bgGradient: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
+                    icon: Sparkles
                   },
                   {
                     step: "3",
-                    title: "Track Developments",
-                    desc: "Compare pictures over time to monitor changes, build your timeline, and export reports.",
-                    color: "#6366f1"
+                    label: "TRACK",
+                    title: "Monitor Developments",
+                    desc: "Compare pictures over time to monitor changes, build your skin journal, and view timeline trends.",
+                    color: "#2dd4bf",
+                    bgGradient: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)",
+                    icon: History
+                  },
+                  {
+                    step: "4",
+                    label: "CONSULT",
+                    title: "Export & Share Report",
+                    desc: "Generate clinical PDF summary reports ready to present directly to your doctor or dermatologist.",
+                    color: "#f43f5e",
+                    bgGradient: "linear-gradient(135deg, #e11d48 0%, #be123c 100%)",
+                    icon: FileText
                   }
-                ].map((item, idx) => (
-                  <div key={idx} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                    <div style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      background: `rgba(${idx === 0 ? '168, 85, 247' : idx === 1 ? '139, 92, 246' : '99, 102, 241'}, 0.1)`,
-                      color: item.color,
+                ].map((item, idx) => {
+                  const StepIcon = item.icon;
+                  return (
+                    <div key={idx} style={{
                       display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: '900',
-                      fontSize: '12px',
-                      flexShrink: 0,
-                      border: `1px solid rgba(${idx === 0 ? '168, 85, 247' : idx === 1 ? '139, 92, 246' : '99, 102, 241'}, 0.2)`
+                      gap: '16px',
+                      alignItems: 'flex-start',
+                      padding: '14px',
+                      borderRadius: '16px',
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)'
                     }}>
-                      {item.step}
+                      {/* Large Numbered Circle */}
+                      <div style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        background: item.bgGradient,
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: '900',
+                        fontSize: '15px',
+                        flexShrink: 0,
+                        boxShadow: `0 4px 14px ${item.color}40`,
+                        border: '2px solid rgba(255, 255, 255, 0.3)'
+                      }}>
+                        {item.step}
+                      </div>
+
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <span style={{
+                            fontSize: '10px',
+                            fontWeight: '900',
+                            letterSpacing: '1px',
+                            color: item.color,
+                            background: `${item.color}20`,
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                            border: `1px solid ${item.color}40`
+                          }}>
+                            {item.label}
+                          </span>
+                          <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#ffffff', margin: 0 }}>{item.title}</h4>
+                        </div>
+                        <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.55', margin: 0 }}>{item.desc}</p>
+                      </div>
+
+                      <div style={{ color: item.color, opacity: 0.8, padding: '4px' }}>
+                        <StepIcon size={20} strokeWidth={2.2} />
+                      </div>
                     </div>
-                    <div>
-                      <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#f8fafc', marginBottom: '2px' }}>{item.title}</h4>
-                      <p style={{ fontSize: '12.5px', color: '#94a3b8', lineHeight: '1.4' }}>{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
+              </div>
+
+              {/* Call-to-Action (CTA) */}
+              <div style={{ marginTop: '22px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <button
+                  onClick={() => setActiveTab('scan')}
+                  style={{
+                    width: '100%',
+                    padding: '16px 24px',
+                    borderRadius: '16px',
+                    background: 'linear-gradient(135deg, #a855f7 0%, #06b6d4 100%)',
+                    color: '#ffffff',
+                    fontWeight: '900',
+                    fontSize: '15.5px',
+                    letterSpacing: '0.3px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '0 8px 25px rgba(168, 85, 247, 0.4)',
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 12px 30px rgba(168, 85, 247, 0.5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0px)';
+                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(168, 85, 247, 0.4)';
+                  }}
+                >
+                  <Camera size={20} color="#ffffff" strokeWidth={2.5} />
+                  <span>Start Free AI Skin Scan Now</span>
+                  <Sparkles size={18} color="#ffffff" />
+                </button>
               </div>
             </div>
 
