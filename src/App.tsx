@@ -7786,7 +7786,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                     desc: "Our dermatologist-trained AI checks risk factors, ABCDE indicators, and pattern symmetries.",
                     color: "#38bdf8",
                     bgGradient: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
-                    icon: Sparkles
+                    icon: SparklesIcon
                   },
                   {
                     step: "3",
@@ -7897,7 +7897,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 >
                   <Camera size={20} color="#ffffff" strokeWidth={2.5} />
                   <span>Start Free AI Skin Scan Now</span>
-                  <Sparkles size={18} color="#ffffff" />
+                  <SparklesIcon size={18} color="#ffffff" />
                 </button>
               </div>
             </div>
