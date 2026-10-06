@@ -84,6 +84,7 @@ import { PSEO_LANDING_PAGES, PseoPage } from './data/pSEOData';
 import { PseoLandingPage } from './components/PseoLandingPage';
 import { SkinShowcaseCarousel } from './components/SkinShowcaseCarousel';
 import { Reviews3DCarousel } from './components/Reviews3DCarousel';
+import { PricingPlansPage } from './components/PricingPlansPage';
 import { ensureLeafletLoaded, ensureChartJsLoaded } from './lib/scriptLoader';
 
 import { db, auth, storage } from './lib/firebase';
@@ -3005,6 +3006,45 @@ const LearnPage = ({
             dangerouslySetInnerHTML={{ __html: activeArticle.content }}
           />
 
+          {/* Clinical Sources & References Section */}
+          {activeArticle.sources && activeArticle.sources.length > 0 && (
+            <motion.div variants={itemVariants} className="p-5 rounded-2xl bg-slate-900/80 border border-teal-500/20 space-y-3 mt-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2 m-0">
+                  <BookOpen size={14} className="text-teal-400" />
+                  Clinical References & Sources
+                </h3>
+                <span className="text-[10px] text-teal-400 font-semibold bg-teal-500/10 px-2 py-0.5 rounded-full border border-teal-500/20">
+                  Evidence-Backed
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                {activeArticle.sources.map((src, idx) => (
+                  <a
+                    key={idx}
+                    href={src.url || `https://${src.domain}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 hover:border-teal-500/40 hover:bg-teal-500/[0.04] transition-all flex flex-col justify-between group text-left"
+                  >
+                    <div>
+                      <div className="text-xs font-bold text-white group-hover:text-teal-300 transition-colors flex items-center justify-between gap-1">
+                        <span>{src.name}</span>
+                        <ExternalLink size={12} className="text-slate-500 group-hover:text-teal-400 shrink-0" />
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                        {src.topic}
+                      </p>
+                    </div>
+                    <span className="text-[10px] text-teal-400/80 font-mono mt-2.5 flex items-center gap-1">
+                      {src.domain}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
           {/* Read Again / Back Button */}
           <motion.div variants={itemVariants} className="pt-6 border-t border-white/5 text-center">
             <button
@@ -3438,49 +3478,12 @@ const ShopPage = () => {
   );
 };
 
-const PlansPage = () => {
-  const plans = [
-    { id: 'free', name: 'Basic', price: '$0', features: ['Unlimited Scans', 'Basic UV Alerts', 'Clinic Finder'], current: true },
-    { id: 'pro', name: 'Pro', price: '$9.99/mo', features: ['AI Prevention Protocol', 'Change Tracking', 'PDF Reports', 'Priority Support'], current: false },
-    { id: 'family', name: 'Family', price: '$19.99/mo', features: ['Up to 5 Profiles', 'Shared History', 'Early Access Features'], current: false }
-  ];
-
+const PlansPage = ({ setActiveTab }: { setActiveTab: (tab: any) => void }) => {
   return (
-    <div className="page-container" style={styles.tabContent}>
-      <h2 style={styles.sectionTitle} className="mb-6"><CreditCard size={24} color="#2dd4bf" /> <span>Subscription Plans</span></h2>
-      
-      <div className="space-y-4">
-        {plans.map(plan => (
-          <div key={plan.id} className={`glass-card p-6 rounded-3xl border-2 transition-all ${plan.current ? 'border-teal-500 bg-teal-500/5' : 'border-white/5'}`}>
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-xl font-black text-white">{plan.name}</h3>
-                <span className="text-2xl font-black text-teal-400">{plan.price}</span>
-              </div>
-              {plan.current && (
-                <span className="px-3 py-1 bg-teal-500 text-slate-900 text-[10px] font-black uppercase rounded-full">Current Plan</span>
-              )}
-            </div>
-            
-            <div className="space-y-3 mb-6">
-              {plan.features.map((f, i) => (
-                <div key={i} className="flex items-center gap-3 text-sm text-slate-300">
-                  <CheckCircle2 size={16} className="text-teal-400" />
-                  {f}
-                </div>
-              ))}
-            </div>
-
-            <button 
-              disabled={plan.current}
-              className={`w-full py-4 rounded-2xl font-black transition-all ${plan.current ? 'bg-white/5 text-slate-500 cursor-default' : 'bg-teal-500 text-slate-900 hover:scale-[1.02]'}`}
-            >
-              {plan.current ? 'Active' : 'Upgrade Now'}
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
+    <PricingPlansPage 
+      setActiveTab={setActiveTab} 
+      onStartScan={() => setActiveTab('scan')} 
+    />
   );
 };
 
@@ -3658,6 +3661,7 @@ const SideMenu = ({
       { id: 'timeline', label: 'Timeline and Schedule', icon: Calendar },
     ] : []),
     { id: 'clinic', label: 'Find Dermatologists', icon: MapPinned },
+    { id: 'plans', label: 'Pricing & Plans', icon: CreditCard },
     { id: 'learn', label: 'Skin Health Academy', icon: BookOpen },
     { id: 'welcome', label: 'About Skin Tight', icon: Info },
     ...(!currentUser ? [
@@ -6099,14 +6103,17 @@ const AuthPage = ({ onAuthSuccess, onSkip }: { onAuthSuccess: (user: any) => voi
   );
 };
 
-const Footer = ({ onShowLegal }: { onShowLegal: (type: 'terms' | 'privacy' | 'disclaimer') => void }) => (
+const Footer = ({ onShowLegal, onNavigate }: { onShowLegal: (type: 'terms' | 'privacy' | 'disclaimer') => void; onNavigate?: (tab: any) => void }) => (
   <footer style={{
     padding: '32px 24px',
     borderTop: '1px solid rgba(255, 255, 255, 0.05)',
     marginTop: 'auto',
     textAlign: 'center'
   }}>
-    <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginBottom: '16px', fontSize: '12px', fontWeight: '600', color: '#94a3b8' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', marginBottom: '16px', fontSize: '12px', fontWeight: '600', color: '#94a3b8' }}>
+      {onNavigate && (
+        <button onClick={() => onNavigate('plans')} style={{ background: 'none', border: 'none', color: '#00E5B9', cursor: 'pointer', fontWeight: '700' }}>Pricing &amp; Plans</button>
+      )}
       <button onClick={() => onShowLegal('terms')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Terms</button>
       <button onClick={() => onShowLegal('privacy')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Privacy</button>
       <button onClick={() => onShowLegal('disclaimer')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Disclaimer</button>
@@ -6234,7 +6241,7 @@ function App() {
         document.title = 'Skin Self-Check & Prevention Habits | Skin Tight';
         break;
       case 'plans':
-        document.title = 'Skin Risk Assessment & Monitoring Plans | Skin Tight';
+        document.title = 'Pricing & Plans – Individual Monitoring & Clinic Partnerships | Skin Tight';
         break;
       case 'profile':
         document.title = 'Profile | Skin Tight';
@@ -8331,7 +8338,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
             currentUser={currentUser}
           />
         )}
-        {activeTab === 'plans' && <PlansPage />}
+        {activeTab === 'plans' && <PlansPage setActiveTab={setActiveTab} />}
         {activeTab === 'clinic' && <ClinicFinder />}
 
         {activeTab === 'welcome' && <AboutPage />}
@@ -8420,6 +8427,28 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                     onMouseOut={(e) => e.currentTarget.style.background = 'rgba(45, 212, 191, 0.1)'}
                   >
                     <SparklesIcon size={16} /> How to Improve
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('plans')}
+                    style={{
+                      background: 'rgba(0, 229, 185, 0.08)',
+                      border: '1px solid rgba(0, 229, 185, 0.25)',
+                      color: '#00E5B9',
+                      padding: '10px 20px',
+                      borderRadius: '14px',
+                      fontSize: '14px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 4px 15px rgba(0, 229, 185, 0.1)'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(0, 229, 185, 0.16)'}
+                    onMouseOut={(e) => e.currentTarget.style.background = 'rgba(0, 229, 185, 0.08)'}
+                  >
+                    <CreditCard size={16} /> Plans &amp; Partnerships
                   </button>
                 </div>
               </div>
@@ -8608,7 +8637,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
           </div>
         )}
         
-        <Footer onShowLegal={setShowLegalModal} />
+        <Footer onShowLegal={setShowLegalModal} onNavigate={setActiveTab} />
       </div>
     </div>
 

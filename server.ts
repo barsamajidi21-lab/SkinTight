@@ -187,6 +187,8 @@ function corsGuardMiddleware(req: express.Request, res: express.Response, next: 
     requestDomain === "http://localhost:3000" ||
     requestDomain.endsWith(".run.app") ||
     requestDomain.endsWith(".vercel.app") ||
+    requestDomain.endsWith(".google.com") ||
+    requestDomain.endsWith(".googleusercontent.com") ||
     requestDomain.includes("skintightai.com") ||
     (process.env.ALLOWED_ORIGIN && requestDomain === process.env.ALLOWED_ORIGIN);
 
@@ -224,12 +226,11 @@ async function startServer() {
   // --- 5. STRICT HTTP SECURITY HEADERS ---
   app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "SAMEORIGIN");
     res.setHeader("X-XSS-Protection", "1; mode=block");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=*, microphone=(), geolocation=()");
     res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
-    res.setHeader("Content-Security-Policy", "frame-ancestors 'self' https://ai.studio https://*.run.app https://*.vercel.app;");
+    res.setHeader("Content-Security-Policy", "frame-ancestors 'self' https://ai.studio https://*.google.com https://*.googleusercontent.com https://*.run.app https://*.vercel.app;");
     next();
   });
 

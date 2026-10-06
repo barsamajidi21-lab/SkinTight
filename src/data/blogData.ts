@@ -1,3 +1,10 @@
+export interface ArticleSource {
+  name: string;
+  topic: string;
+  domain: string;
+  url?: string;
+}
+
 export interface Article {
   slug: string;
   title: string;
@@ -6,6 +13,7 @@ export interface Article {
   readTime: string;
   publishDate: string;
   content: string; // HTML structured string for rendering
+  sources?: ArticleSource[];
 }
 
 export const BLOG_REVIEW_STAMP = "Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.";
@@ -20,6 +28,26 @@ export const BLOG_ARTICLES: Article[] = [
     category: "Skin Wellness",
     readTime: "8 min read",
     publishDate: "May 2026",
+    sources: [
+      {
+        name: "The Skin Cancer Foundation",
+        topic: "Warning Signs of Melanoma, Basal Cell & Squamous Cell Carcinomas",
+        domain: "skincancer.org",
+        url: "https://www.skincancer.org/skin-cancer-information/"
+      },
+      {
+        name: "American Academy of Dermatology (AAD)",
+        topic: "Detect Skin Cancer: Types, Early Signs & Body Examination Guide",
+        domain: "aad.org",
+        url: "https://www.aad.org/public/diseases/skin-cancer/find/atypical-moles"
+      },
+      {
+        name: "National Cancer Institute (NCI / NIH)",
+        topic: "Skin Cancer Screening & Precancerous Lesion Detection (PDQ®)",
+        domain: "cancer.gov",
+        url: "https://www.cancer.gov/types/skin"
+      }
+    ],
     content: `<h3>Recognizing the Early Warnings in Skin Health Tracking</h3>
 <p>In the realm of wellness, <strong>early skin awareness</strong> is one of the most powerful tools we possess. Skin cancer is by far the most commonly diagnosed cancer worldwide, yet when identified in its incipient stages, the probability of successful treatment is extremely high—often exceeding 98%. This makes routine <strong>skin health tracking</strong> and regular inspections a vital part of a complete personal wellness protocol.</p>
 
@@ -124,6 +152,20 @@ export const BLOG_ARTICLES: Article[] = [
     category: "Mole Monitoring",
     readTime: "7 min read",
     publishDate: "May 2026",
+    sources: [
+      {
+        name: "American Academy of Dermatology (AAD)",
+        topic: "What to Look for: Atypical Moles & Visual Self-Screening Criteria",
+        domain: "aad.org",
+        url: "https://www.aad.org/public/diseases/skin-cancer/find/atypical-moles"
+      },
+      {
+        name: "The Skin Cancer Foundation",
+        topic: "Dysplastic Nevi (Atypical Moles) and Melanoma Risk Factors",
+        domain: "skincancer.org",
+        url: "https://www.skincancer.org/skin-cancer-information/dysplastic-nevi/"
+      }
+    ],
     content: `<h3>Visualizing the Threshold of Suspicion in Skin Spots</h3>
 <p>For many, moles are simply natural features of our skin's canvas—small, dark occurrences of pigment that present themselves throughout our lives. While the vast majority of moles are entirely benign (non-cancerous), others can serve as precursor signs or early stages of cutaneous melanoma. Implementing an active <strong>mole tracking</strong> regime is a vital protocol for identifying <strong>suspicious skin spots</strong> before they can present a systemic hazard.</p>
 
@@ -209,6 +251,20 @@ export const BLOG_ARTICLES: Article[] = [
     category: "Professional Care",
     readTime: "6 min read",
     publishDate: "May 2026",
+    sources: [
+      {
+        name: "American Academy of Dermatology (AAD)",
+        topic: "Clinical Guidelines: When to See a Dermatologist for Skin Exams",
+        domain: "aad.org",
+        url: "https://www.aad.org/public/diseases/skin-cancer/find/exams"
+      },
+      {
+        name: "Centers for Disease Control and Prevention (CDC)",
+        topic: "Skin Cancer Screening & Prevention Guidelines",
+        domain: "cdc.gov",
+        url: "https://www.cdc.gov/cancer/skin/basic_info/prevention.htm"
+      }
+    ],
     content: `<h3>Bridging Self-Checks with Board-Certified Clinical Care</h3>
 <p>We live in an era where digital tools provide remarkable insights into our everyday wellness. We can monitor heart rates, log coordinates, and utilize advanced <strong>AI skin monitoring</strong> to track visual spots. However, these tools are ultimately built to complement, not replace, professional medical expertise. Knowing when to transition from home <strong>skin monitoring</strong> to specialized <strong>dermatologist monitoring</strong> is a critical decision point.</p>
 
@@ -280,6 +336,20 @@ export const BLOG_ARTICLES: Article[] = [
     category: "Skin Self-Check",
     readTime: "7 min read",
     publishDate: "May 2026",
+    sources: [
+      {
+        name: "The Skin Cancer Foundation",
+        topic: "The ABCDEs of Melanoma Early Detection Framework",
+        domain: "skincancer.org",
+        url: "https://www.skincancer.org/skin-cancer-information/melanoma/melanoma-warning-signs-and-images/"
+      },
+      {
+        name: "National Cancer Institute (NCI / NIH)",
+        topic: "Melanoma Diagnosis, Staging, and Visual Screening Criteria",
+        domain: "cancer.gov",
+        url: "https://www.cancer.gov/types/skin/patient/skin-screening-pdq"
+      }
+    ],
     content: `<h3>Mastering the Hand Guide of Melanoma Screening</h3>
 <p>When performing a monthly <strong>skin screening</strong>, having a clear, structured framework is essential. Dermatologists worldwide have developed a simple, highly effective mnemonic designed to help anyone assess skin spots with clinical clarity: the <strong>ABCDE rule</strong>.</p>
 
@@ -371,6 +441,20 @@ export const BLOG_ARTICLES: Article[] = [
     category: "Skin Monitoring",
     readTime: "6 min read",
     publishDate: "May 2026",
+    sources: [
+      {
+        name: "American Academy of Dermatology (AAD)",
+        topic: "Step-by-Step Body Mole Map & Monthly Self-Exam Protocol",
+        domain: "aad.org",
+        url: "https://www.aad.org/public/diseases/skin-cancer/find/check-skin"
+      },
+      {
+        name: "World Health Organization (WHO)",
+        topic: "Global Solar UV Index & Ultraviolet Radiation Protection",
+        domain: "who.int",
+        url: "https://www.who.int/news-room/fact-sheets/detail/ultraviolet-radiation"
+      }
+    ],
     content: `<h3>Establishing a Successful Methodical Home Wellness Protocol</h3>
 <p>Our skin is the largest organ of our bodies, acting as an active protective barrier. Establishing a consistent, methodical routine to <strong>track skin changes</strong> is one of the most proactive decisions you can make for your wellness.</p>
 
@@ -396,6 +480,86 @@ export const BLOG_ARTICLES: Article[] = [
     <p style="font-size: 13px; color: #9ca3af; margin-top: 8px;">Human memory naturally smooths out gradual physical changes over months. Chronological photo logs provide objective side-by-side comparison for both you and your dermatologist.</p>
   </details>
 </div>
+
+<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
+  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
+</p>`
+  },
+  {
+    slug: "ugly-duckling-sign-moles",
+    title: "The Ugly Duckling Sign: Spotting the Outlier Mole",
+    excerpt: "Learn how dermatologists use the clinical Ugly Duckling concept to spot atypical lesions that stand out from the rest of your skin.",
+    category: "Mole Monitoring",
+    readTime: "5 min read",
+    publishDate: "June 2026",
+    sources: [
+      {
+        name: "The Skin Cancer Foundation",
+        topic: "The Ugly Duckling Sign & Comparative Mole Analysis",
+        domain: "skincancer.org",
+        url: "https://www.skincancer.org/skin-cancer-information/melanoma/melanoma-warning-signs-and-images/#uglyduckling"
+      },
+      {
+        name: "American Academy of Dermatology (AAD)",
+        topic: "How to Spot Unusual Moles: Pattern and Outlier Identification",
+        domain: "aad.org",
+        url: "https://www.aad.org/public/diseases/skin-cancer/find/atypical-moles"
+      }
+    ],
+    content: `<h3>Understanding the Outlier Concept in Dermatology</h3>
+<p>Most individuals have a personal "signature pattern" when it comes to moles. Your skin spots might all tend to be small and dark brown, or perhaps slightly larger and lighter tan. The <strong>Ugly Duckling Sign</strong> is a proven clinical strategy based on the observation that normal nevi on the same person generally resemble each other in structure and color.</p>
+
+<h4>Why the 'Odd Spot Out' Matters</h4>
+<p>When a melanoma develops, it frequently does not match the visual signature of your other spots. It may appear significantly darker, noticeably lighter, irregularly shaped, or isolated compared to adjacent moles.</p>
+
+<ul>
+  <li><strong>The Solitary Dark Spot:</strong> A single pitch-black or mottled lesion on a background of uniform light-brown moles.</li>
+  <li><strong>The Solitary Pale/Red Spot:</strong> An amelanotic (non-pigmented) pinkish lesion among darker spots.</li>
+  <li><strong>The Large Outlier:</strong> A mole that is double the diameter of every other mark on the limb or back.</li>
+</ul>
+
+<h4>How to Check for Ugly Ducklings at Home</h4>
+<p>Step back from the mirror to observe the overall distribution of your moles before zooming in. Look for the outlier that catches your eye immediately from a distance of two to three feet. If you find one, log a high-resolution photo in Skin Tight and consult a dermatologist.</p>
+
+<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
+  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
+</p>`
+  },
+  {
+    slug: "skin-cancer-darker-skin-tones",
+    title: "Skin of Color: Spotting Skin Cancer on Darker Skin Tones",
+    excerpt: "Skin cancer affects all skin types. Understand Acral Lentiginous Melanoma and the specific areas to monitor on Fitzpatrick skin types IV to VI.",
+    category: "Skin Wellness",
+    readTime: "6 min read",
+    publishDate: "June 2026",
+    sources: [
+      {
+        name: "Journal of the American Academy of Dermatology (JAAD)",
+        topic: "Melanoma in Skin of Color & Acral Lentiginous Presentation",
+        domain: "jaad.org",
+        url: "https://www.jaad.org"
+      },
+      {
+        name: "The Skin Cancer Foundation",
+        topic: "Skin Cancer and People of Color: Facts & Early Warning Signs",
+        domain: "skincancer.org",
+        url: "https://www.skincancer.org/skin-cancer-information/skin-cancer-skin-of-color/"
+      }
+    ],
+    content: `<h3>Debunking Myths Around Melanin and Skin Protection</h3>
+<p>While higher melanin levels provide some natural defense against ultraviolet (UV) radiation, <strong>individuals of all skin tones can develop skin cancer</strong>. In fact, when skin cancer is diagnosed in people of color (Fitzpatrick IV–VI), it is often identified at a later stage simply because of common misconceptions that darker skin is immune.</p>
+
+<h4>Where to Look: Acral Lentiginous Melanoma (ALM)</h4>
+<p>In darker skin tones, the most prevalent form of melanoma is <strong>Acral Lentiginous Melanoma</strong>. Unlike UV-driven melanomas on the back or chest, ALM occurs in areas receiving minimal sun exposure:</p>
+
+<ul>
+  <li><strong>Palms of the hands & soles of the feet:</strong> Irregular brown or black patches.</li>
+  <li><strong>Under fingernails and toenails (Subungual Melanoma):</strong> A dark vertical stripe or band extending from the nail cuticle.</li>
+  <li><strong>Mucous membranes:</strong> Inside the mouth, gums, or genital areas.</li>
+</ul>
+
+<h4>Crucial Self-Check Habits</h4>
+<p>During your monthly self-check, remember to remove nail polish, check between your toes, inspect the soles of your feet with a handheld mirror, and log any new dark pigmentation changes in Skin Tight.</p>
 
 <p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
   ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
