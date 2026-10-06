@@ -3740,11 +3740,32 @@ const SideMenu = ({
                 fontWeight: '700',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
-                textAlign: 'left'
+                textAlign: 'left',
+                width: '100%',
+                boxSizing: 'border-box'
               }}
             >
-              <item.icon size={24} />
-              {item.label}
+              <item.icon 
+                size={24} 
+                style={{ 
+                  width: '24px', 
+                  height: '24px', 
+                  minWidth: '24px', 
+                  minHeight: '24px', 
+                  maxWidth: '24px',
+                  maxHeight: '24px',
+                  flexShrink: 0,
+                  display: 'inline-block',
+                  padding: 0,
+                  margin: 0,
+                  background: 'transparent',
+                  border: 'none',
+                  boxShadow: 'none'
+                }} 
+              />
+              <span style={{ fontSize: '16px', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                {item.label}
+              </span>
             </button>
           ))}
         </div>
