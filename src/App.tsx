@@ -3480,10 +3480,12 @@ const ShopPage = () => {
 
 const PlansPage = ({ setActiveTab }: { setActiveTab: (tab: any) => void }) => {
   return (
-    <PricingPlansPage 
-      setActiveTab={setActiveTab} 
-      onStartScan={() => setActiveTab('scan')} 
-    />
+    <div className="page-container" style={styles.tabContent}>
+      <PricingPlansPage 
+        setActiveTab={setActiveTab} 
+        onStartScan={() => setActiveTab('scan')} 
+      />
+    </div>
   );
 };
 
@@ -3719,7 +3721,7 @@ const SideMenu = ({
           <span style={{ fontSize: '18px', fontWeight: '900', color: '#f8fafc', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Skin Tight</span>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <nav aria-label="Main Navigation" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '0 8px' }}>
           {menuItems.map(item => (
             <button 
               key={item.id}
@@ -3727,6 +3729,7 @@ const SideMenu = ({
                 setActiveTab(item.id);
                 setIsMenuOpen(false);
               }}
+              className="mini-btn"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -3734,7 +3737,7 @@ const SideMenu = ({
                 padding: '16px 20px',
                 borderRadius: '16px',
                 background: activeTab === item.id ? 'rgba(45, 212, 191, 0.1)' : 'transparent',
-                border: 'none',
+                border: activeTab === item.id ? '1px solid rgba(45, 212, 191, 0.2)' : '1px solid transparent',
                 color: activeTab === item.id ? '#2dd4bf' : '#94a3b8',
                 fontSize: '16px',
                 fontWeight: '700',
@@ -3743,6 +3746,18 @@ const SideMenu = ({
                 textAlign: 'left',
                 width: '100%',
                 boxSizing: 'border-box'
+              }}
+              onMouseEnter={(e) => {
+                if (activeTab !== item.id) {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.color = '#f8fafc';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeTab !== item.id) {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#94a3b8';
+                }
               }}
             >
               <item.icon 
@@ -3768,7 +3783,7 @@ const SideMenu = ({
               </span>
             </button>
           ))}
-        </div>
+        </nav>
 
         <div style={{ marginTop: 'auto', padding: '20px' }}>
           {currentUser ? (
@@ -6124,7 +6139,7 @@ const AuthPage = ({ onAuthSuccess, onSkip }: { onAuthSuccess: (user: any) => voi
   );
 };
 
-const Footer = ({ onShowLegal, onNavigate }: { onShowLegal: (type: 'terms' | 'privacy' | 'disclaimer') => void; onNavigate?: (tab: any) => void }) => (
+const Footer = ({ onShowLegal }: { onShowLegal: (type: 'terms' | 'privacy' | 'disclaimer') => void }) => (
   <footer style={{
     padding: '32px 24px',
     borderTop: '1px solid rgba(255, 255, 255, 0.05)',
@@ -6132,9 +6147,6 @@ const Footer = ({ onShowLegal, onNavigate }: { onShowLegal: (type: 'terms' | 'pr
     textAlign: 'center'
   }}>
     <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', marginBottom: '16px', fontSize: '12px', fontWeight: '600', color: '#94a3b8' }}>
-      {onNavigate && (
-        <button onClick={() => onNavigate('plans')} style={{ background: 'none', border: 'none', color: '#00E5B9', cursor: 'pointer', fontWeight: '700' }}>Pricing &amp; Plans</button>
-      )}
       <button onClick={() => onShowLegal('terms')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Terms</button>
       <button onClick={() => onShowLegal('privacy')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Privacy</button>
       <button onClick={() => onShowLegal('disclaimer')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Disclaimer</button>
@@ -8449,28 +8461,6 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                   >
                     <SparklesIcon size={16} /> How to Improve
                   </button>
-                  <button
-                    onClick={() => setActiveTab('plans')}
-                    style={{
-                      background: 'rgba(0, 229, 185, 0.08)',
-                      border: '1px solid rgba(0, 229, 185, 0.25)',
-                      color: '#00E5B9',
-                      padding: '10px 20px',
-                      borderRadius: '14px',
-                      fontSize: '14px',
-                      fontWeight: '700',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      transition: 'all 0.2s ease',
-                      boxShadow: '0 4px 15px rgba(0, 229, 185, 0.1)'
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(0, 229, 185, 0.16)'}
-                    onMouseOut={(e) => e.currentTarget.style.background = 'rgba(0, 229, 185, 0.08)'}
-                  >
-                    <CreditCard size={16} /> Plans &amp; Partnerships
-                  </button>
                 </div>
               </div>
             )}
@@ -8658,7 +8648,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
           </div>
         )}
         
-        <Footer onShowLegal={setShowLegalModal} onNavigate={setActiveTab} />
+        <Footer onShowLegal={setShowLegalModal} />
       </div>
     </div>
 

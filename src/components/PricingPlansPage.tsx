@@ -21,7 +21,8 @@ import {
   Camera, 
   CheckCircle2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  CreditCard
 } from 'lucide-react';
 
 export interface PricingPlansPageProps {
@@ -138,34 +139,20 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
   ];
 
   return (
-    <div 
-      className="page-container w-full min-h-screen text-slate-100"
-      style={{
-        backgroundColor: '#060B13',
-        fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
-      }}
-    >
-      {/* Top Hero Section */}
-      <div className="w-full max-w-5xl mx-auto pt-4 pb-8 px-3 sm:px-6 text-center">
-        {/* Subtle pill badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/80 border border-teal-500/30 text-teal-300 text-xs font-semibold tracking-wide mb-4 shadow-sm">
-          <Sparkles size={14} className="text-[#00E5B9]" />
-          <span>Transparent Monetization &amp; Healthcare Partnerships</span>
+    <div className="w-full text-slate-100 pb-16">
+      {/* Top Header Section - Matching Academy & About branding shapes and title scales */}
+      <div className="flex flex-col items-center text-center pt-4 mb-8">
+        <div className="w-16 h-16 rounded-2xl bg-teal-500/10 flex items-center justify-center mb-4 border border-teal-500/20 shadow-2xl shadow-teal-500/10">
+          <CreditCard size={30} color="#2dd4bf" />
         </div>
-
-        <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight mb-4">
-          Skin Health for Individuals.<br />
-          <span className="bg-gradient-to-r from-[#00E5B9] via-teal-300 to-[#8A2BE2] bg-clip-text text-transparent">
-            Scalable Triage for Providers.
-          </span>
-        </h1>
-
-        <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto mb-8 font-normal leading-relaxed">
-          Proactive early detection habits for patients, paired with pre-screened intake and referral infrastructure for dermatologists and health systems.
+        <h1 className="text-2xl sm:text-3xl font-black text-white mb-2 tracking-tight">Pricing &amp; Plans</h1>
+        <p className="text-xs sm:text-sm text-teal-400 font-medium uppercase tracking-widest mb-3">Individual Care • Clinic Triage • Skincare Partnerships</p>
+        <p className="text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
+          Proactive early detection habits for individuals, paired with pre-screened intake and referral triage infrastructure for dermatologists and clinics.
         </p>
 
         {/* Category Filter Navigation */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+        <div className="flex flex-wrap items-center justify-center gap-2 mt-6">
           <button
             onClick={() => setFilterSection('all')}
             className="mini-btn px-4 py-2 rounded-xl text-xs font-bold transition-all border"

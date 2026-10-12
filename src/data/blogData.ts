@@ -564,5 +564,355 @@ export const BLOG_ARTICLES: Article[] = [
 <p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
   ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
 </p>`
+  },
+  {
+    slug: "basal-cell-vs-squamous-cell-carcinoma",
+    title: "Basal Cell vs. Squamous Cell Carcinoma: A Patient's Guide to Non-Melanoma Skin Cancer",
+    excerpt: "Understand the visual presentation, cellular origins, and growth patterns of the two most common skin cancers, and learn why early identification is critical.",
+    category: "Clinical Awareness",
+    readTime: "7 min read",
+    publishDate: "July 2026",
+    sources: [
+      {
+        name: "American Academy of Dermatology (AAD)",
+        topic: "Basal Cell & Squamous Cell Carcinomas: Detection and Practice Guidelines",
+        domain: "aad.org",
+        url: "https://www.aad.org/public/diseases/skin-cancer/types/common"
+      },
+      {
+        name: "The Skin Cancer Foundation",
+        topic: "Non-Melanoma Skin Cancer Guide & Warning Signs",
+        domain: "skincancer.org",
+        url: "https://www.skincancer.org/skin-cancer-information/"
+      },
+      {
+        name: "National Comprehensive Cancer Network (NCCN)",
+        topic: "NCCN Clinical Practice Guidelines for Basal Cell and Squamous Cell Cancers",
+        domain: "nccn.org",
+        url: "https://www.nccn.org/patients/guidelines/content/PDF/squamous-patient.pdf"
+      }
+    ],
+    content: `<h3>Demystifying the World's Most Common Skin Carcinomas</h3>
+<p>While melanoma garners substantial attention because of its aggressive metastatic potential, <strong>non-melanoma skin cancers (NMSC)</strong> account for the overwhelming majority of all skin tumors diagnosed worldwide. Over 5.4 million cases of non-melanoma skin cancer are diagnosed annually in the United States alone. The two predominant types are <strong>Basal Cell Carcinoma (BCC)</strong> and <strong>Squamous Cell Carcinoma (SCC)</strong>.</p>
+
+<p>Understanding their unique cellular triggers, typical anatomical locations, and characteristic appearances allows proactive individuals to spot them early—when simple office-based outpatient procedures can resolve them with minimal scarring.</p>
+
+<h4>1. Basal Cell Carcinoma (BCC): The Slow-Growing Nodular Tumor</h4>
+<p>Basal Cell Carcinoma originates in the round, basal layer cells situated at the deepest boundary of the epidermis. BCCs are notorious for growing slowly over months or years. Although they rarely metastasize to distant organs, an untreated BCC can continuously invade underlying cartilage, bone, and soft tissue, causing extensive local destruction.</p>
+
+<h5>Key Visual Identifiers of BCC:</h5>
+<ul>
+  <li><strong>Pearly, translucent bumps:</strong> Often smooth and dome-shaped with rolled edges. Under direct light, they can reflect like a tiny pearl.</li>
+  <li><strong>Telangiectasias (spider vessels):</strong> Fine, branching micro-capillaries clearly visible beneath the translucent skin surface.</li>
+  <li><strong>Non-healing sores that cycle:</strong> A small pink sore that bleeds, oozes, crusts over, seemingly heals, and then bleeds again two weeks later. This cyclical non-healing is a hallmark red flag.</li>
+  <li><strong>Scar-like white or yellowish plaques (Morpheaform BCC):</strong> A flat, waxy, scar-like patch with indistinct borders, often without prior injury.</li>
+</ul>
+
+<h4>2. Squamous Cell Carcinoma (SCC): The Keratin-Producing Sun Lesion</h4>
+<p>Squamous Cell Carcinoma originates in the flat squamous cells that make up the upper and middle layers of the epidermis. Unlike BCC, SCC is notably more biologically active. If neglected, SCC can infiltrate regional lymph nodes and travel to distant organs, particularly in immunosuppressed individuals or when developing on high-risk sites such as the lips, ears, or scalp.</p>
+
+<h5>Key Visual Identifiers of SCC:</h5>
+<ul>
+  <li><strong>Persistent rough, scaly red patches:</strong> Elevated or crusty areas that feel gritty like coarse sandpaper.</li>
+  <li><strong>Elevated growths with central depression:</strong> Firm, dome-shaped papules or nodules that crater in the center, sometimes looking like a miniature volcanic crater.</li>
+  <li><strong>Cutaneous horns:</strong> Firm, horn-like projections made of compact keratin protein emerging from a red base.</li>
+  <li><strong>Persistent tenderness or pain:</strong> Unlike benign seborrheic keratoses, invasive SCC lesions frequently itch, sting, or hurt when touched.</li>
+</ul>
+
+<h4>Clinical Comparison Table</h4>
+<div style="overflow-x: auto; margin: 24px 0;">
+  <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;">
+    <thead>
+      <tr style="background: rgba(45, 212, 191, 0.1); color: #2dd4bf; font-weight: bold;">
+        <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">Clinical Metric</th>
+        <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">Basal Cell Carcinoma (BCC)</th>
+        <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">Squamous Cell Carcinoma (SCC)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-weight: bold; color: #f8fafc;">Incidence Rate</td>
+        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">~80% of all skin cancer diagnoses</td>
+        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">~20% of all skin cancer diagnoses</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-weight: bold; color: #f8fafc;">Primary Surface Feel</td>
+        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">Smooth, pearly, translucent, delicate</td>
+        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">Rough, hyperkeratotic, crusted, firm</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-weight: bold; color: #f8fafc;">Metastasis Risk</td>
+        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">Extremely rare (<0.1%)</td>
+        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">Low to moderate (2%–5%, higher on lips/ears)</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-weight: bold; color: #f8fafc;">Precancerous Precursor</td>
+        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">None widely established (arises de novo)</td>
+        <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">Actinic Keratosis (AK)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h4>When to Seek Dermatologic Evaluation</h4>
+<p>If you notice a bleeding nodule, a stubborn crust that persists for longer than 3 to 4 weeks, or a pink pearly bump on your nose or cheek that doesn't disappear like a common blemish, document the area in Skin Tight and book a clinical examination.</p>
+
+<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
+  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
+</p>`
+  },
+  {
+    slug: "mineral-vs-chemical-sunscreen-science",
+    title: "Sunscreen Science: Mineral vs. Chemical UV Filters and Broad-Spectrum Protection",
+    excerpt: "How zinc oxide, titanium dioxide, and organic chemical filters defend against UVA and UVB rays, plus the clinical truth about SPF ratings.",
+    category: "Sun Safety & Prevention",
+    readTime: "6 min read",
+    publishDate: "August 2026",
+    sources: [
+      {
+        name: "U.S. Food & Drug Administration (FDA)",
+        topic: "Sunscreen: How to Help Protect Your Skin from the Sun & Filter GRASE Status",
+        domain: "fda.gov",
+        url: "https://www.fda.gov/drugs/understanding-over-counter-medicines/sunscreen-how-help-protect-your-skin-sun"
+      },
+      {
+        name: "American Academy of Dermatology (AAD)",
+        topic: "Sunscreen FAQs: Physical (Mineral) vs. Chemical UV Protection",
+        domain: "aad.org",
+        url: "https://www.aad.org/media/stats-sunscreen"
+      },
+      {
+        name: "The Skin Cancer Foundation",
+        topic: "All About Sunscreen: Active Ingredients, Broad Spectrum, and Reapplication",
+        domain: "skincancer.org",
+        url: "https://www.skincancer.org/skin-cancer-prevention/sun-protection/sunscreen/"
+      }
+    ],
+    content: `<h3>Decoding the Physics and Chemistry of Sun Protection</h3>
+<p>Applying sunscreen is widely acknowledged as the single most effective daily defense against photoaging and skin carcinogenesis. However, selecting an effective formulation requires understanding how active ingredients operate at the molecular level. Solar radiation reaches the Earth's surface in two primary wavelengths of concern: <strong>UVB (290–320 nm)</strong>, which causes acute erythema (sunburns), and <strong>UVA (320–400 nm)</strong>, which penetrates deep into the dermal matrix, generating free radicals and degrading collagen.</p>
+
+<h4>Physical (Mineral) UV Filters: The Particle Shields</h4>
+<p>Mineral sunscreens utilize inorganic micro-fine mineral particles, primarily <strong>Zinc Oxide (ZnO)</strong> and <strong>Titanium Dioxide (TiO₂)</strong>.</p>
+<ul>
+  <li><strong>Mechanism of Action:</strong> Mineral filters sit primarily upon the stratum corneum (outermost skin layer). They work by reflecting, scattering, and refracting approximately 5% to 10% of light, while absorbing the remaining 90%+ and releasing it as harmless heat.</li>
+  <li><strong>Broad-Spectrum Dominance:</strong> Zinc Oxide is historically unique because it provides comprehensive, uniform protection across the entire UVB and UVA spectrum, all the way past 380 nm into the long-wave UVA-1 band.</li>
+  <li><strong>Skin Sensitivity Profile:</strong> Because mineral filters are inert and do not penetrate viable skin tissue, they are the gold standard for sensitive skin, rosacea, pediatric patients, and post-procedural recovery.</li>
+</ul>
+
+<h4>Chemical (Organic) UV Filters: The Energy Converters</h4>
+<p>Chemical sunscreens utilize synthetic carbon-based aromatic compounds such as <strong>Avobenzone, Octisalate, Homosalate, Octocrylene, and Mexoryl</strong>.</p>
+<ul>
+  <li><strong>Mechanism of Action:</strong> Chemical filters absorb into the superficial epidermal layers. When high-energy ultraviolet photons hit these molecules, their chemical bonds absorb the photonic energy and convert it into low-energy infrared heat, protecting underlying cellular DNA from mutagenic thymine dimer formation.</li>
+  <li><strong>Cosmetic Elegance:</strong> Chemical sunscreens blend seamlessly into skin without leaving a white residue or chalky cast, making them popular for active sports and deeper skin complexions.</li>
+</ul>
+
+<h4>What Does "Broad Spectrum" Actually Mean?</h4>
+<p>SPF (Sun Protection Factor) only measures protection against <em>UVB</em> burning rays. A sunscreen with SPF 50 that lacks adequate UVA filters can allow deep-penetrating UVA radiation to trigger cellular mutation without you ever feeling a sunburn. To ensure comprehensive coverage:</p>
+<ul>
+  <li>Look for the explicit term <strong>"Broad Spectrum"</strong> on the label. Under FDA regulations, broad-spectrum formulas must undergo a critical wavelength test verifying protection up to at least 370 nm.</li>
+  <li>For outdoor recreational exposure, choose water-resistant formulas labeled for <strong>80 minutes</strong> of water immersion or sweat endurance.</li>
+  <li>Apply an adequate volume: most adults require roughly one ounce (equivalent to a shot glass full) for the entire body, reapplying every <strong>two hours</strong> or immediately after towel drying.</li>
+</ul>
+
+<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
+  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
+</p>`
+  },
+  {
+    slug: "fitzpatrick-skin-type-scale-guide",
+    title: "The Fitzpatrick Skin Type Scale: Calculating Your Personal UV Vulnerability",
+    excerpt: "Discover where you sit on the 6-tier Fitzpatrick phototype classification and how your natural melanin levels govern burning risk and skin cancer vulnerability.",
+    category: "Skin Wellness",
+    readTime: "6 min read",
+    publishDate: "August 2026",
+    sources: [
+      {
+        name: "Harvard Health Publishing / Harvard Medical School",
+        topic: "The Fitzpatrick Classification: Skin Phototypes and UV Radiation Risk",
+        domain: "health.harvard.edu",
+        url: "https://www.health.harvard.edu/skin-and-hair"
+      },
+      {
+        name: "World Health Organization (WHO)",
+        topic: "Global Solar UV Index and Skin Sensitivity Phototypes",
+        domain: "who.int",
+        url: "https://www.who.int/news-room/questions-and-answers/item/radiation-ultraviolet-(uv)"
+      },
+      {
+        name: "Journal of Clinical and Aesthetic Dermatology (JCAD)",
+        topic: "Understanding Skin Phototypes in Tailored Photoprotection Strategies",
+        domain: "ncbi.nlm.nih.gov",
+        url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3583886/"
+      }
+    ],
+    content: `<h3>How Melanin Composition Defines Your Skin's Response to Sunlight</h3>
+<p>In 1975, Harvard dermatologist Dr. Thomas B. Fitzpatrick developed a clinical classification system to estimate how human skin responds to ultraviolet radiation. Today, the <strong>Fitzpatrick Skin Phototype Scale</strong> remains the benchmark system utilized by dermatologists to assess skin cancer susceptibility, formulate laser therapy settings, and personalize daily sun safety habits.</p>
+
+<p>Your phototype is governed by the concentration and ratio of two primary melanin pigments: <strong>Eumelanin</strong> (dark brown/black, highly photoprotective) and <strong>Pheomelanin</strong> (red/yellow, chemically unstable, producing free radicals under UV light).</p>
+
+<h4>The Six Fitzpatrick Phototypes</h4>
+<ul>
+  <li><strong>Type I (Pale White / Ivory):</strong> Always burns severely; never tans. Typically red or blond hair, blue or light grey eyes, and frequent ephelides (freckles). <em>High melanoma risk; strict SPF 50+ and UPF clothing mandatory.</em></li>
+  <li><strong>Type II (Fair / Peach):</strong> Burns readily; tans minimally with difficulty. Usually light hair (blond or light brown) and blue, green, or hazel eyes. <em>Elevated lifetime risk of non-melanoma and melanoma carcinomas.</em></li>
+  <li><strong>Type III (Medium / Golden Olive):</strong> Burns moderately; tans gradually and evenly to light bronze. Common in Central European, Mediterranean, and mixed ancestries.</li>
+  <li><strong>Type IV (Olive / Light Brown):</strong> Burns minimally; tans easily to moderate brown. Common in Mediterranean, Hispanic, Middle Eastern, and Southern Asian populations.</li>
+  <li><strong>Type V (Rich Brown):</strong> Rarely burns; tans profusely to deep brown. Prevalent in South Asian, Middle Eastern, and African descents. <em>Subject to hyperpigmentation and acral melanoma presentations.</em></li>
+  <li><strong>Type VI (Deeply Pigmented / Dark Brown to Black):</strong> Never burns; deeply pigmented. Naturally high eumelanin density provides an inherent baseline SPF of approximately 13, but does not render the skin immune to UV-induced damage, cataracts, or acral lentiginous malignancies.</li>
+</ul>
+
+<h4>How Skin Tight Customizes Your Guidance</h4>
+<p>When you set your Fitzpatrick profile in Skin Tight, our system automatically recalibrates your UV sensitivity alerts, reminder frequency, and lesion self-check recommendations to match your biological risk profile.</p>
+
+<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
+  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
+</p>`
+  },
+  {
+    slug: "dermoscopy-clinical-imaging-guide",
+    title: "Dermoscopy & Clinical Imaging: How Dermatologists Evaluate Pigmented Lesions",
+    excerpt: "Learn what doctors see through high-magnification polarized dermoscopes and how sub-surface skin patterns distinguish benign moles from early melanomas.",
+    category: "Clinical Awareness",
+    readTime: "7 min read",
+    publishDate: "September 2026",
+    sources: [
+      {
+        name: "International Dermoscopy Society (IDS)",
+        topic: "Consensus Criteria, Two-Step Algorithm, and Pattern Analysis in Dermoscopy",
+        domain: "dermoscopy-ids.org",
+        url: "https://dermoscopy-ids.org"
+      },
+      {
+        name: "American Academy of Dermatology (AAD)",
+        topic: "Dermoscopy in Clinical Practice: Diagnostic Accuracy & Training",
+        domain: "aad.org",
+        url: "https://www.aad.org/member/clinical-quality/guidelines/dermoscopy"
+      },
+      {
+        name: "British Association of Dermatologists (BAD)",
+        topic: "Guidelines for the Management of Cutaneous Melanoma & Serial Digital Dermoscopy",
+        domain: "bad.org.uk",
+        url: "https://www.bad.org.uk/clinical-guidelines-and-standards/"
+      }
+    ],
+    content: `<h3>Peering Beneath the Stratum Corneum</h3>
+<p>To the naked eye, the surface of human skin reflects a substantial portion of incident light, creating glare and obscuring the deeper structures of the dermal-epidermal junction. To bypass this barrier, dermatologists utilize a specialized diagnostic optical instrument called a <strong>dermatoscope</strong> (or episcope).</p>
+
+<p>Combining cross-polarized illumination with 10x to 20x optical magnification, dermoscopy enables clinicians to visualize micro-anatomic features that are completely invisible without optical assistance, drastically improving diagnostic sensitivity and sparing patients unnecessary surgical biopsies.</p>
+
+<h4>Key Subsurface Patterns Analyzed in Dermoscopy</h4>
+<ul>
+  <li><strong>Pigment Network (Reticular Pattern):</strong> A regular, honey-comb network of brown lines over a lighter background signifies a benign melanocytic nevus. If the network lines become thickened, hyperpigmented, and terminate abruptly at the periphery, it suggests melanocytic dysplasia or melanoma.</li>
+  <li><strong>Globular & Cobblestone Patterns:</strong> Clusters of round brown or black globules, often observed in developing moles in children and young adults.</li>
+  <li><strong>Streaks & Pseudopods:</strong> Radiating brown-black projections emerging from the edge of a lesion, indicative of aggressive radial growth phase in melanoma.</li>
+  <li><strong>Blue-White Veil:</strong> An irregular, hazy, blue-toned pigmentation covered by an opalescent white frost. This optical phenomenon corresponds to melanin deep within the reticular dermis beneath an acanthotic, hyperkeratotic epidermis—a key sign of invasive melanoma.</li>
+  <li><strong>Atypical Vascularity:</strong> While benign lesions have uniform hairpin vessels, malignant lesions often display corkscrew, polymorphic, or dotted vessels indicating chaotic tumor angiogenesis.</li>
+</ul>
+
+<h4>Bridging Patient Self-Checks and Professional Dermoscopy</h4>
+<p>Consumer mobile apps and high-resolution cameras provide an invaluable longitudinal timeline of visual change. When you present your documented mole history to a dermatologist, they can focus their dermatoscope on the precise spot that has evolved, cross-referencing sub-surface optics with your sequential photographic logs.</p>
+
+<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
+  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
+</p>`
+  },
+  {
+    slug: "actinic-keratosis-precancer-warning-signs",
+    title: "Actinic Keratosis (Pre-Cancerous Spots): Identification, Progression, and Treatment",
+    excerpt: "Recognize the 'sandpaper' texture warning sign of actinic keratoses and understand how early intervention prevents progression to invasive Squamous Cell Carcinoma.",
+    category: "Early Detection",
+    readTime: "6 min read",
+    publishDate: "September 2026",
+    sources: [
+      {
+        name: "The Skin Cancer Foundation",
+        topic: "Actinic Keratosis Warning Signs, Risk Factors, and Treatments",
+        domain: "skincancer.org",
+        url: "https://www.skincancer.org/skin-cancer-information/actinic-keratosis/"
+      },
+      {
+        name: "Mayo Clinic",
+        topic: "Actinic Keratosis: Symptoms, Causes, and Cryotherapy Options",
+        domain: "mayoclinic.org",
+        url: "https://www.mayoclinic.org/diseases-conditions/actinic-keratosis/symptoms-causes/syc-20354969"
+      },
+      {
+        name: "American Academy of Dermatology (AAD)",
+        topic: "Actinic Keratoses: Diagnosis and Therapeutic Management",
+        domain: "aad.org",
+        url: "https://www.aad.org/public/diseases/skin-cancer/types/common/ak"
+      }
+    ],
+    content: `<h3>The Most Common Precancerous Skin Condition</h3>
+<p>An <strong>Actinic Keratosis (AK)</strong>, also referred to as a solar keratosis, is a precancerous epidermal lesion caused by chronic, cumulative exposure to ultraviolet radiation over decades. AKs represent the earliest detectable stage in the continuous biologic spectrum that leads to invasive <strong>Squamous Cell Carcinoma (SCC)</strong>.</p>
+
+<p>Studies estimate that between 5% and 10% of untreated actinic keratoses will eventually progress into invasive SCC. Because it is impossible to predict which specific lesion will become invasive, dermatologists recommend treating all active AKs promptly.</p>
+
+<h4>How to Identify an Actinic Keratosis: "Felt Before Seen"</h4>
+<p>In many cases, an individual will feel an AK with their fingertips long before seeing a distinct visual mark on the skin:</p>
+<ul>
+  <li><strong>The Sandpaper Feel:</strong> A localized dry, rough, gritty patch that feels distinctly rougher than surrounding skin.</li>
+  <li><strong>Color Variation:</strong> Often presents as a pink, red, or tan lesion, sometimes with a yellowish scaly crust on top.</li>
+  <li><strong>Frequent Recurrence:</strong> If the dry scale is inadvertently picked off, it repeatedly regenerates in the exact same spot.</li>
+  <li><strong>Common Locations:</strong> Highly sun-exposed areas including the bald scalp, tops of the ears, bridge of the nose, lower lip (actinic cheilitis), forearms, and backs of hands.</li>
+</ul>
+
+<h4>Modern Dermatologic Treatments</h4>
+<p>Dermatologists have an array of effective interventions to treat AKs with high cure rates:</p>
+<ul>
+  <li><strong>Cryotherapy:</strong> Liquid nitrogen sprayed onto the lesion freezes and destroys abnormal epidermal cells in seconds.</li>
+  <li><strong>Topical Chemotherapies / Immunomodulators:</strong> Creams such as 5-Fluorouracil (5-FU) or Imiquimod applied over several weeks selectively eliminate subclinical atypical cells across broad "field-cancerized" areas.</li>
+  <li><strong>Photodynamic Therapy (PDT):</strong> A photosensitizing chemical agent is applied to the skin and activated with specialized blue or red light, destroying precancerous cells while sparing normal tissue.</li>
+</ul>
+
+<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
+  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
+</p>`
+  },
+  {
+    slug: "childhood-sunburns-melanoma-risk-prevention",
+    title: "Youth & Adolescent Sun Protection: Preventing the Childhood Blistering Burn Risk",
+    excerpt: "Why suffering blistering sunburns in childhood more than doubles adult melanoma risk, and how family sun safety habits build lifelong protection.",
+    category: "Sun Safety & Prevention",
+    readTime: "6 min read",
+    publishDate: "October 2026",
+    sources: [
+      {
+        name: "Centers for Disease Control and Prevention (CDC)",
+        topic: "Sun Safety for Children and Teens: UV Exposure Patterns",
+        domain: "cdc.gov",
+        url: "https://www.cdc.gov/cancer/skin/basic_info/children.htm"
+      },
+      {
+        name: "American Academy of Pediatrics (AAP)",
+        topic: "Pediatric Sun Safety and Sunscreen Usage Guidelines",
+        domain: "healthychildren.org",
+        url: "https://www.healthychildren.org/English/safety-prevention/at-play/Pages/Sun-Safety.aspx"
+      },
+      {
+        name: "The Skin Cancer Foundation",
+        topic: "Childhood Sunburns and Adult Melanoma Risk: Epidemiological Facts",
+        domain: "skincancer.org",
+        url: "https://www.skincancer.org/skin-cancer-prevention/sun-protection/sun-safety-for-kids/"
+      }
+    ],
+    content: `<h3>The Long-Term Impact of Early Ultraviolet Damage</h3>
+<p>Epidemiological research conducted over the past four decades has confirmed a stark reality: <strong>sustained, intense UV exposure in youth is the single most potent environmental driver of cutaneous melanoma in adulthood</strong>. Having just <em>one or two blistering sunburns</em> during childhood or adolescence more than doubles an individual's lifetime risk of developing melanoma.</p>
+
+<p>Because children's skin is thinner, more cellularly active, and possesses lower baseline melanin density, the cellular repair mechanisms in young melanocytes can be overwhelmed by intense UV radiation, causing permanent DNA mutations that lay dormant for decades before manifesting as malignant tumors.</p>
+
+<h4>Core Pediatric Sun Protection Guidelines</h4>
+<ul>
+  <li><strong>Infants Under 6 Months:</strong> Keep babies out of direct sunlight entirely. Use lightweight protective clothing, wide-brimmed sun hats, and stroller canopies. (The AAP advises that small amounts of mineral zinc oxide sunscreen may be applied to limited exposed areas like face and hands if shade is unavailable).</li>
+  <li><strong>Children & Teens (6 Months and Older):</strong> Apply broad-spectrum mineral or gentle chemical SPF 30+ generously 15 minutes before outdoor activities. Reapply every two hours, or after swimming and heavy perspiration.</li>
+  <li><strong>UPF Sun Shirts (Rashguards):</strong> Sun-protective clothing with a UPF 50+ rating blocks 98% of harmful UV rays without needing reapplication, making it the most reliable solution for youth sports, beach days, and outdoor summer camps.</li>
+  <li><strong>Educate on the Shadow Rule:</strong> Teach children to check their shadow: <em>"If your shadow is shorter than you, the sun is high and you should seek shade!"</em> (typically between 10 AM and 4 PM).</li>
+</ul>
+
+<h4>Creating Proactive Sun Habits</h4>
+<p>Habits instilled in childhood shape lifelong behavior. By modeling sun-safe practices—wearing hats, seeking shade during peak hours, and normalizing skin health checks—families safeguard their long-term health.</p>
+
+<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
+  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
+</p>`
   }
 ];
