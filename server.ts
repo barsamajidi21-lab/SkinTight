@@ -29,15 +29,15 @@ function getGenAI(): GoogleGenAI {
 }
 
 // --- 4. ADVANCED MULTI-TIER RATE LIMITING ENGINE & GLOBAL CIRCUIT BREAKER ---
-// Per-IP Limits (Tiered per minute, hour, and day)
-const MAX_REQUESTS_PER_MINUTE_IP = 15;  // 15 API requests / minute / IP
-const MAX_REQUESTS_PER_HOUR_IP = 60;   // 60 API requests / hour / IP
-const MAX_REQUESTS_PER_DAY_IP = 150;    // 150 API requests / day / IP
+// Per-IP Limits (Tiered per minute, hour, and day - optimized for active testing and screening sessions)
+const MAX_REQUESTS_PER_MINUTE_IP = 60;  // 60 API requests / minute / IP
+const MAX_REQUESTS_PER_HOUR_IP = 300;   // 300 API requests / hour / IP
+const MAX_REQUESTS_PER_DAY_IP = 1000;   // 1000 API requests / day / IP
 
-// Global System Circuit Breaker (Protecting against botnets, IP rotators & runaway API billing)
-const GLOBAL_MAX_PER_MINUTE = 60;  // Max 60 total API requests / minute server-wide
-const GLOBAL_MAX_PER_HOUR = 300;   // Max 300 total API requests / hour server-wide
-const GLOBAL_MAX_PER_DAY = 1000;   // Max 1000 total API requests / day server-wide
+// Global System Circuit Breaker (Protecting against runaway loops while allowing robust concurrent usage)
+const GLOBAL_MAX_PER_MINUTE = 180;  // Max 180 total API requests / minute server-wide
+const GLOBAL_MAX_PER_HOUR = 1200;   // Max 1200 total API requests / hour server-wide
+const GLOBAL_MAX_PER_DAY = 5000;    // Max 5000 total API requests / day server-wide
 
 interface IPRateRecord {
   minuteRequests: number[];
@@ -247,13 +247,25 @@ async function startServer() {
         return res.status(400).json({ error: "Invalid request body format." });
       }
 
-      const { prompt, parts, model: modelName = "gemini-3.8-flash", config = {} } = req.body;
+      const { prompt, parts, model: requestedModel = "gemini-3.5-flash-lite", config = {} } = req.body;
       
-      // Strict Model Verification & Fallback Mapping
-      let mappedModel = "gemini-3.8-flash";
-      if (modelName === "gemini-flash-latest" || modelName === "gemini-3.1-flash-lite") {
-        mappedModel = modelName;
-      }
+      // Candidate models in prioritized order of operational health, quota availability, and low latency:
+      // 1. gemini-3.5-flash-lite: Active, responsive, highly reliable for multimodal vision and structured JSON
+      // 2. gemini-3-flash-preview: Active secondary fallback, excellent vision and formatting performance
+      // 3. gemini-3.8-flash: Next-generation flash model
+      // 4. gemini-flash-latest: Standard alias
+      const candidateModels = [
+        "gemini-3.5-flash-lite",
+        "gemini-3-flash-preview",
+        "gemini-3.8-flash",
+        "gemini-flash-latest"
+      ];
+
+      // If client specifically requested another valid candidate, prioritize it first
+      const orderedModels = [
+        ...(candidateModels.includes(requestedModel) ? [requestedModel] : []),
+        ...candidateModels.filter(m => m !== requestedModel)
+      ];
 
       let contents;
       if (parts) {
@@ -313,8 +325,7 @@ async function startServer() {
       const ai = getGenAI();
       let response;
       let lastError: any = null;
-      const maxRetries = 4;
-      const retryDelayMs = 1200;
+      const retryDelayMs = 800;
 
       const enhancedConfig = {
         ...config,
@@ -327,13 +338,9 @@ async function startServer() {
         ]
       };
 
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      for (let attempt = 1; attempt <= orderedModels.length; attempt++) {
+        const currentModel = orderedModels[attempt - 1];
         try {
-          let currentModel = mappedModel;
-          if (attempt === 2) currentModel = "gemini-flash-latest";
-          else if (attempt === 3) currentModel = "gemini-3.1-flash-lite";
-          else if (attempt === 4) currentModel = "gemini-3.8-flash";
-
           response = await ai.models.generateContent({
             model: currentModel,
             contents,
@@ -344,12 +351,23 @@ async function startServer() {
             lastError = null;
             break;
           } else {
-            throw new Error("AI returned empty text");
+            throw new Error(`AI model ${currentModel} returned empty text`);
           }
         } catch (err: any) {
           lastError = err;
-          console.warn(`[Server AI Attempt ${attempt}/${maxRetries} Failed on model]:`, err.message || err);
-          if (attempt < maxRetries) {
+          console.warn(`[Server AI Attempt ${attempt}/${orderedModels.length} on ${currentModel}]:`, err.message || err);
+          
+          // If the model is experiencing high demand (503) or quota exhaustion (429), immediately attempt the next model
+          const isBusyOrQuota = err.message && (
+            err.message.includes("503") ||
+            err.message.includes("429") ||
+            err.message.includes("demand") ||
+            err.message.includes("quota") ||
+            err.message.includes("RESOURCE_EXHAUSTED") ||
+            err.message.includes("UNAVAILABLE")
+          );
+
+          if (!isBusyOrQuota && attempt < orderedModels.length) {
             const delay = retryDelayMs * Math.pow(1.5, attempt - 1);
             await new Promise(resolve => setTimeout(resolve, delay));
           }
