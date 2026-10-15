@@ -30,14 +30,14 @@ function getGenAI(): GoogleGenAI {
 
 // --- 4. ADVANCED MULTI-TIER RATE LIMITING ENGINE & GLOBAL CIRCUIT BREAKER ---
 // Per-IP Limits (Tiered per minute, hour, and day)
-const MAX_REQUESTS_PER_MINUTE_IP = 5;  // 5 API requests / minute / IP
-const MAX_REQUESTS_PER_HOUR_IP = 20;   // 20 API requests / hour / IP
-const MAX_REQUESTS_PER_DAY_IP = 30;    // 30 API requests / day / IP
+const MAX_REQUESTS_PER_MINUTE_IP = 15;  // 15 API requests / minute / IP
+const MAX_REQUESTS_PER_HOUR_IP = 60;   // 60 API requests / hour / IP
+const MAX_REQUESTS_PER_DAY_IP = 150;    // 150 API requests / day / IP
 
 // Global System Circuit Breaker (Protecting against botnets, IP rotators & runaway API billing)
-const GLOBAL_MAX_PER_MINUTE = 30;  // Max 30 total API requests / minute server-wide
-const GLOBAL_MAX_PER_HOUR = 200;   // Max 200 total API requests / hour server-wide
-const GLOBAL_MAX_PER_DAY = 500;    // Max 500 total API requests / day server-wide
+const GLOBAL_MAX_PER_MINUTE = 60;  // Max 60 total API requests / minute server-wide
+const GLOBAL_MAX_PER_HOUR = 300;   // Max 300 total API requests / hour server-wide
+const GLOBAL_MAX_PER_DAY = 1000;   // Max 1000 total API requests / day server-wide
 
 interface IPRateRecord {
   minuteRequests: number[];
@@ -247,12 +247,12 @@ async function startServer() {
         return res.status(400).json({ error: "Invalid request body format." });
       }
 
-      const { prompt, parts, model: modelName = "gemini-2.5-flash", config = {} } = req.body;
+      const { prompt, parts, model: modelName = "gemini-3.8-flash", config = {} } = req.body;
       
-      // Strict Model Verification
-      let mappedModel = modelName;
-      if (modelName === "gemini-3-flash-preview" || modelName === "gemini-3.5-flash" || !modelName) {
-        mappedModel = "gemini-2.5-flash";
+      // Strict Model Verification & Fallback Mapping
+      let mappedModel = "gemini-3.8-flash";
+      if (modelName === "gemini-flash-latest" || modelName === "gemini-3.1-flash-lite") {
+        mappedModel = modelName;
       }
 
       let contents;
@@ -330,9 +330,9 @@ async function startServer() {
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           let currentModel = mappedModel;
-          if (attempt === 2) currentModel = "gemini-3.1-flash-lite";
-          else if (attempt === 3) currentModel = "gemini-2.5-flash";
-          else if (attempt === 4) currentModel = "gemini-3.1-flash-lite";
+          if (attempt === 2) currentModel = "gemini-flash-latest";
+          else if (attempt === 3) currentModel = "gemini-3.1-flash-lite";
+          else if (attempt === 4) currentModel = "gemini-3.8-flash";
 
           response = await ai.models.generateContent({
             model: currentModel,
