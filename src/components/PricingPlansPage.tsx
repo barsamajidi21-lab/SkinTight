@@ -146,9 +146,9 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
           <CreditCard size={30} color="#2dd4bf" />
         </div>
         <h1 className="text-2xl sm:text-3xl font-black text-white mb-2 tracking-tight">Pricing &amp; Plans</h1>
-        <p className="text-xs sm:text-sm text-teal-400 font-medium uppercase tracking-widest mb-3">Individual Care • Clinic Triage • Skincare Partnerships</p>
+        <p className="text-xs sm:text-sm text-teal-400 font-medium uppercase tracking-widest mb-3">Patient Monitoring • Clinic Triage • Dermatology Partnerships</p>
         <p className="text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
-          Proactive early detection habits for individuals, paired with pre-screened intake and referral triage infrastructure for dermatologists and clinics.
+          We help patients monitor suspicious skin changes over time and help dermatology providers receive better organized information before a patient ever walks into the office.
         </p>
 
         {/* Category Filter Navigation */}

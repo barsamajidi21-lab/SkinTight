@@ -1,6 +1,6 @@
 {
   "name": "Skin Tight",
-  "description": "A professional skin health and skin cancer screening tool using AI vision analysis.",
+  "description": "We help patients monitor suspicious skin changes over time and help dermatology providers receive better organized information before a patient ever walks into the office.",
   "requestFramePermissions": ["camera", "geolocation"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

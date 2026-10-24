@@ -23,6 +23,8 @@ import {
   X,
   Plus,
   History,
+  ClipboardList,
+  Building2,
   Map as MapIcon,
   Users,
   User,
@@ -2201,6 +2203,7 @@ const ScanPage = ({
   analyzeSkin,
   retakePhoto,
   downloadPDF,
+  openReportPreview,
   setCompareScanId,
   setSelectedScanId,
   setIsComparing,
@@ -2215,6 +2218,7 @@ const ScanPage = ({
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<'upper' | 'lower'>('upper');
   const [tempSelectedParts, setTempSelectedParts] = useState<string[]>([]);
+  const [intakeStep, setIntakeStep] = useState<1 | 2 | 3>(1);
 
   const handleTogglePart = (part: string) => {
     setTempSelectedParts(prev => {
@@ -2309,9 +2313,21 @@ const ScanPage = ({
           )}
 
           <div className="flex flex-col gap-3">
-            <button style={styles.analyzeButton} onClick={() => downloadPDF()}>
-              <Download size={20} /> Download PDF Report
+            <button 
+              style={styles.analyzeButton} 
+              onClick={() => downloadPDF()}
+              className="flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20"
+            >
+              <Download size={20} /> Download 1-Page Clinical PDF
             </button>
+            {openReportPreview && (
+              <button 
+                onClick={() => openReportPreview()}
+                className="w-full py-4 bg-teal-500/10 border border-teal-500/30 text-teal-300 font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-teal-500/20 transition-all shadow-md"
+              >
+                <Eye size={20} /> Preview 1-Page Doctor Report
+              </button>
+            )}
             {scans.filter((s: any) => s.bodyRegion === intakeForm.bodyLocation).length > 0 && (
               <button 
                 onClick={() => {
@@ -2322,7 +2338,7 @@ const ScanPage = ({
                     setIsComparing(true);
                   }
                 }}
-                className="w-full py-4 bg-teal-500/10 border border-teal-500/30 text-teal-400 font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-teal-500/20 transition-all"
+                className="w-full py-4 bg-purple-500/10 border border-purple-500/30 text-purple-400 font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-purple-500/20 transition-all"
               >
                 <History size={20} /> Compare with Previous
               </button>
@@ -2394,193 +2410,476 @@ const ScanPage = ({
           </div>
 
           <div className="space-y-4">
-            <div className="glass-card rounded-3xl overflow-hidden">
-              <div className="p-6 bg-white/5">
-                <h3 className="text-lg font-bold flex items-center gap-2"><CheckCircle2 size={20} color="#2dd4bf" /> About This Scan</h3>
+            <div className="glass-card rounded-3xl overflow-hidden border border-white/10">
+              <div className="p-5 bg-gradient-to-r from-teal-500/15 via-cyan-500/10 to-transparent border-b border-white/5 flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                    <ClipboardList size={20} className="text-teal-400" />
+                    <span>Pre-Visit Clinical Intake</span>
+                  </h3>
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-teal-400/15 text-teal-300 border border-teal-400/30">
+                    Doctor Time-Saver
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Optional details to format your 1-page pre-visit summary for the dermatology clinic. Skip any questions you are unsure about!
+                </p>
+
+                {/* 3 Step Pill Tabs */}
+                <div className="flex gap-2 mt-3 pt-3 border-t border-white/5">
+                  {[
+                    { id: 1, label: "1. Spot & Location", icon: MapPin },
+                    { id: 2, label: "2. Changes & Symptoms", icon: Activity },
+                    { id: 3, label: "3. Prior Care & History", icon: Building2 },
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setIntakeStep(tab.id as 1 | 2 | 3)}
+                      className={`flex-1 py-2 px-2 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 border ${
+                        intakeStep === tab.id
+                          ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20'
+                          : 'bg-white/5 text-slate-400 border-white/5 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
+
               <div className="p-6 space-y-6">
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3 text-red-500">Where is this on your body? *</label>
-                  
-                  {/* Custom Selector Trigger Button */}
-                  <div 
-                    onClick={() => {
-                      const current = intakeForm.bodyLocation 
-                        ? intakeForm.bodyLocation.split(',').map((s: string) => s.trim()).filter(Boolean)
-                        : [];
-                      setTempSelectedParts(current);
-                      const hasLower = current.some((p: string) => lowerBodyParts.includes(p));
-                      const hasUpper = current.some((p: string) => upperBodyParts.includes(p));
-                      if (hasLower && !hasUpper) {
-                        setActiveCategory('lower');
-                      } else {
-                        setActiveCategory('upper');
-                      }
-                      setIsSelectorOpen(!isSelectorOpen);
-                    }}
-                    className={`w-full bg-white/5 border rounded-xl p-4 text-white outline-none cursor-pointer transition-all flex justify-between items-center ${!intakeForm.bodyLocation ? 'border-red-500/30' : 'border-white/10 hover:border-cyan-500/50 focus:border-cyan-500'}`}
-                  >
-                    <span className={intakeForm.bodyLocation ? "text-white font-bold" : "text-slate-400 font-medium text-sm"}>
-                      {intakeForm.bodyLocation || "Select Location(s)"}
-                    </span>
-                    <ChevronDown size={18} className="text-slate-400" />
-                  </div>
-
-                  <AnimatePresence>
-                    {isSelectorOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10, height: 0 }}
-                        animate={{ opacity: 1, y: 0, height: 'auto' }}
-                        exit={{ opacity: 0, y: -10, height: 0 }}
-                        className="bg-slate-900 border border-white/10 rounded-2xl mt-2 overflow-hidden shadow-2xl transition-all"
+                {/* STEP 1: SPOT & LOCATION */}
+                {intakeStep === 1 && (
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                          <span>General Body Region</span>
+                          <span className="text-rose-400">*</span>
+                        </label>
+                        <span className="text-[11px] text-teal-400 font-semibold">Required for grouping</span>
+                      </div>
+                      
+                      {/* Custom Selector Trigger Button */}
+                      <div 
+                        onClick={() => {
+                          const current = intakeForm.bodyLocation 
+                            ? intakeForm.bodyLocation.split(',').map((s: string) => s.trim()).filter(Boolean)
+                            : [];
+                          setTempSelectedParts(current);
+                          const hasLower = current.some((p: string) => lowerBodyParts.includes(p));
+                          const hasUpper = current.some((p: string) => upperBodyParts.includes(p));
+                          if (hasLower && !hasUpper) {
+                            setActiveCategory('lower');
+                          } else {
+                            setActiveCategory('upper');
+                          }
+                          setIsSelectorOpen(!isSelectorOpen);
+                        }}
+                        className={`w-full bg-white/5 border rounded-2xl p-4 text-white outline-none cursor-pointer transition-all flex justify-between items-center ${!intakeForm.bodyLocation ? 'border-teal-500/40 hover:border-teal-400' : 'border-white/15 hover:border-teal-400'}`}
                       >
-                        {/* Upper / Lower selection toggle buttons */}
-                        <div className="flex border-b border-white/5 p-2 gap-2 bg-white/[0.02]">
-                          <button
-                            type="button"
-                            onClick={() => setActiveCategory('upper')}
-                            className={`flex-1 py-2.5 px-3 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
-                              activeCategory === 'upper' 
-                                ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20' 
-                                : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
-                            }`}
+                        <span className={intakeForm.bodyLocation ? "text-white font-bold" : "text-slate-400 font-medium text-sm"}>
+                          {intakeForm.bodyLocation || "Tap to select body region(s)"}
+                        </span>
+                        <ChevronDown size={18} className="text-slate-400" />
+                      </div>
+
+                      <AnimatePresence>
+                        {isSelectorOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10, height: 0 }}
+                            animate={{ opacity: 1, y: 0, height: 'auto' }}
+                            exit={{ opacity: 0, y: -10, height: 0 }}
+                            className="bg-slate-900 border border-white/15 rounded-2xl mt-2 overflow-hidden shadow-2xl transition-all"
                           >
-                            Upper Body
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setActiveCategory('lower')}
-                            className={`flex-1 py-2.5 px-3 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
-                              activeCategory === 'lower' 
-                                ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20' 
-                                : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
-                            }`}
-                          >
-                            Lower Body
-                          </button>
-                        </div>
-
-                        {/* List of common body parts */}
-                        <div className="p-4 max-h-[220px] overflow-y-auto space-y-1.5 scrollbar-thin">
-                          {activeCategory === 'upper' && (
-                            <div className="grid grid-cols-2 gap-2">
-                              {upperBodyParts.map((part) => {
-                                const isSelected = tempSelectedParts.includes(part);
-                                return (
-                                  <button
-                                    key={part}
-                                    type="button"
-                                    onClick={() => handleTogglePart(part)}
-                                    className={`py-3 px-3 rounded-xl text-xs font-bold transition-all text-left flex items-center justify-between border ${
-                                      isSelected 
-                                        ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300' 
-                                        : 'bg-white/5 border-transparent text-slate-300 hover:bg-white/10 hover:border-white/10'
-                                    }`}
-                                  >
-                                    <span>{part}</span>
-                                    {isSelected && <div className="w-2 h-2 rounded-full bg-cyan-400" />}
-                                  </button>
-                                );
-                              })}
+                            <div className="flex border-b border-white/5 p-2 gap-2 bg-white/[0.02]">
+                              <button
+                                type="button"
+                                onClick={() => setActiveCategory('upper')}
+                                className={`flex-1 py-2.5 px-3 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                                  activeCategory === 'upper' 
+                                    ? 'bg-teal-500 text-slate-950 shadow-lg shadow-teal-500/20' 
+                                    : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
+                                }`}
+                              >
+                                Upper Body
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setActiveCategory('lower')}
+                                className={`flex-1 py-2.5 px-3 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                                  activeCategory === 'lower' 
+                                    ? 'bg-teal-500 text-slate-950 shadow-lg shadow-teal-500/20' 
+                                    : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
+                                }`}
+                              >
+                                Lower Body
+                              </button>
                             </div>
-                          )}
 
-                          {activeCategory === 'lower' && (
-                            <div className="grid grid-cols-2 gap-2">
-                              {lowerBodyParts.map((part) => {
-                                const isSelected = tempSelectedParts.includes(part);
-                                return (
-                                  <button
-                                    key={part}
-                                    type="button"
-                                    onClick={() => handleTogglePart(part)}
-                                    className={`py-3 px-3 rounded-xl text-xs font-bold transition-all text-left flex items-center justify-between border ${
-                                      isSelected 
-                                        ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300' 
-                                        : 'bg-white/5 border-transparent text-slate-300 hover:bg-white/10 hover:border-white/10'
-                                    }`}
-                                  >
-                                    <span>{part}</span>
-                                    {isSelected && <div className="w-2 h-2 rounded-full bg-cyan-400" />}
-                                  </button>
-                                );
-                              })}
+                            <div className="p-4 max-h-[220px] overflow-y-auto space-y-1.5 scrollbar-thin">
+                              {activeCategory === 'upper' && (
+                                <div className="grid grid-cols-2 gap-2">
+                                  {upperBodyParts.map((part) => {
+                                    const isSelected = tempSelectedParts.includes(part);
+                                    return (
+                                      <button
+                                        key={part}
+                                        type="button"
+                                        onClick={() => handleTogglePart(part)}
+                                        className={`py-3 px-3 rounded-xl text-xs font-bold transition-all text-left flex items-center justify-between border ${
+                                          isSelected 
+                                            ? 'bg-teal-500/20 border-teal-500 text-teal-300' 
+                                            : 'bg-white/5 border-transparent text-slate-300 hover:bg-white/10 hover:border-white/10'
+                                        }`}
+                                      >
+                                        <span>{part}</span>
+                                        {isSelected && <div className="w-2 h-2 rounded-full bg-teal-400" />}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {activeCategory === 'lower' && (
+                                <div className="grid grid-cols-2 gap-2">
+                                  {lowerBodyParts.map((part) => {
+                                    const isSelected = tempSelectedParts.includes(part);
+                                    return (
+                                      <button
+                                        key={part}
+                                        type="button"
+                                        onClick={() => handleTogglePart(part)}
+                                        className={`py-3 px-3 rounded-xl text-xs font-bold transition-all text-left flex items-center justify-between border ${
+                                          isSelected 
+                                            ? 'bg-teal-500/20 border-teal-500 text-teal-300' 
+                                            : 'bg-white/5 border-transparent text-slate-300 hover:bg-white/10 hover:border-white/10'
+                                        }`}
+                                      >
+                                        <span>{part}</span>
+                                        {isSelected && <div className="w-2 h-2 rounded-full bg-teal-400" />}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
 
-                        {/* OK and Cancel buttons at the bottom */}
-                        <div className="flex border-t border-white/5 p-3 gap-2 bg-white/[0.01]">
+                            <div className="flex border-t border-white/5 p-3 gap-2 bg-white/[0.01]">
+                              <button
+                                type="button"
+                                onClick={() => setIsSelectorOpen(false)}
+                                className="flex-1 py-2.5 px-4 rounded-xl font-bold text-xs bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition-all"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const value = tempSelectedParts.join(', ');
+                                  updateIntake('bodyLocation', value);
+                                  setIsSelectorOpen(false);
+                                }}
+                                className="flex-1 py-2.5 px-4 rounded-xl font-bold text-xs bg-teal-500 text-slate-950 shadow-lg shadow-teal-500/25 hover:bg-teal-400 transition-all"
+                              >
+                                Confirm Selection
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        Exact Location Details (Optional)
+                      </label>
+                      <input 
+                        type="text"
+                        placeholder="e.g. Upper left shoulder blade, 2 inches from spine"
+                        value={intakeForm.exactBodyLocation || ''}
+                        onChange={(e) => updateIntake('exactBodyLocation', e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-3.5 text-sm text-white placeholder-slate-500 outline-none focus:border-teal-400 transition-all"
+                      />
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {['Left side', 'Right side', 'Upper', 'Lower', 'Midline', 'Hidden / under bra or waist'].map(tag => (
                           <button
+                            key={tag}
                             type="button"
                             onClick={() => {
-                              setIsSelectorOpen(false);
+                              const current = intakeForm.exactBodyLocation || '';
+                              if (!current.includes(tag)) {
+                                updateIntake('exactBodyLocation', current ? `${current}, ${tag}` : tag);
+                              }
                             }}
-                            className="flex-1 py-2.5 px-4 rounded-xl font-bold text-xs bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition-all"
+                            className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] text-slate-400 hover:text-teal-300 transition-all border border-white/5"
                           >
-                            Cancel
+                            + {tag}
                           </button>
-                          <button
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        When was this spot first noticed?
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {['< 1 month ago', '1–6 months ago', '6–12 months ago', '1–2 years ago', '> 2 years ago', 'Since childhood'].map(o => (
+                          <button 
+                            key={o}
                             type="button"
-                            onClick={() => {
-                              const value = tempSelectedParts.join(', ');
-                              updateIntake('bodyLocation', value);
-                              setIsSelectorOpen(false);
-                            }}
-                            className="flex-1 py-2.5 px-4 rounded-xl font-bold text-xs bg-cyan-500 text-white shadow-lg shadow-cyan-500/25 hover:bg-cyan-400 transition-all"
+                            onClick={() => updateIntake('lesionFirstNoticedDate', intakeForm.lesionFirstNoticedDate === o ? '' : o)}
+                            className={`py-3 px-2 rounded-xl font-bold text-xs text-center transition-all border ${
+                              intakeForm.lesionFirstNoticedDate === o 
+                                ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20' 
+                                : 'bg-white/5 text-slate-300 border-white/10 hover:border-white/20'
+                            }`}
                           >
-                            OK
+                            {o}
                           </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                        ))}
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Has this specific body part changed on your body?</label>
-                  <div className="grid grid-cols-3 gap-2 w-full">
-                    {['Yes', 'No', "Not sure"].map(o => (
-                      <button 
-                        key={o}
-                        onClick={() => updateIntake('changedRecently', o)}
-                        className={`py-3 px-1 rounded-xl font-bold text-[11px] sm:text-xs text-center transition-all ${intakeForm.changedRecently === o ? 'bg-cyan-500 text-white border border-cyan-400' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+                    <div className="pt-2 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setIntakeStep(2)}
+                        className="px-5 py-2.5 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-300 font-bold text-xs flex items-center gap-1.5 hover:bg-teal-500/25 transition-all"
                       >
-                        {o}
+                        Next: Symptoms & Changes <ArrowRight size={14} />
                       </button>
-                    ))}
-                  </div>
-                </div>
+                    </div>
+                  </motion.div>
+                )}
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Do you regularly use sun protection?</label>
-                  <div className="grid grid-cols-3 gap-2 w-full">
-                    {['Never', 'Sometimes', 'Always'].map(o => (
-                      <button 
-                        key={o}
-                        onClick={() => updateIntake('useSunProtection', o)}
-                        className={`py-3 px-1 rounded-xl font-bold text-[11px] sm:text-xs text-center transition-all ${intakeForm.useSunProtection === o ? 'bg-cyan-500 text-white border border-cyan-400' : 'bg-white/5 text-slate-400 border border-white/10'}`}
-                      >
-                        {o}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                {/* STEP 2: SYMPTOMS & CHANGES */}
+                {intakeStep === 2 && (
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        Color Evolution
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {['No color change', 'Darkened / turned black', 'Multi-colored (red/brown/black)', 'Lightened or faded'].map(o => (
+                          <button 
+                            key={o}
+                            type="button"
+                            onClick={() => updateIntake('colorChange', intakeForm.colorChange === o ? '' : o)}
+                            className={`py-3 px-2 rounded-xl font-bold text-xs text-center transition-all border ${
+                              intakeForm.colorChange === o 
+                                ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20' 
+                                : 'bg-white/5 text-slate-300 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            {o}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3">Does anyone in your bloodline have skin cancer?</label>
-                  <div className="grid grid-cols-3 gap-2 w-full">
-                    {['Yes', 'No', 'Not sure'].map(o => (
-                      <button 
-                        key={o}
-                        onClick={() => updateIntake('cancerHistory', o)}
-                        className={`py-3 px-1 rounded-xl font-bold text-[11px] sm:text-xs text-center transition-all ${intakeForm.cancerHistory === o ? 'bg-cyan-500 text-white border border-cyan-400' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        Size or Shape Change
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {['Stable size & shape', 'Gradually growing', 'Rapidly enlarged', 'Asymmetrical border change'].map(o => (
+                          <button 
+                            key={o}
+                            type="button"
+                            onClick={() => updateIntake('sizeChange', intakeForm.sizeChange === o ? '' : o)}
+                            className={`py-3 px-2 rounded-xl font-bold text-xs text-center transition-all border ${
+                              intakeForm.sizeChange === o 
+                                ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20' 
+                                : 'bg-white/5 text-slate-300 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            {o}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        Bleeding, Crusting, or Oozing
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {['None', 'Bleeds easily', 'Crusting / scabbing', 'Oozing fluid'].map(o => (
+                          <button 
+                            key={o}
+                            type="button"
+                            onClick={() => updateIntake('bleeding', intakeForm.bleeding === o ? '' : o)}
+                            className={`py-3 px-2 rounded-xl font-bold text-xs text-center transition-all border ${
+                              intakeForm.bleeding === o 
+                                ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20' 
+                                : 'bg-white/5 text-slate-300 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            {o}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        Pain, Itching, or Sensation
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {['No sensation', 'Mild itching', 'Tender / painful', 'Burning / stinging'].map(o => (
+                          <button 
+                            key={o}
+                            type="button"
+                            onClick={() => updateIntake('painOrSensation', intakeForm.painOrSensation === o ? '' : o)}
+                            className={`py-3 px-2 rounded-xl font-bold text-xs text-center transition-all border ${
+                              intakeForm.painOrSensation === o 
+                                ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20' 
+                                : 'bg-white/5 text-slate-300 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            {o}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setIntakeStep(1)}
+                        className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 font-bold text-xs hover:bg-white/10 transition-all"
                       >
-                        {o}
+                        Back
                       </button>
-                    ))}
-                  </div>
-                </div>
+                      <button
+                        type="button"
+                        onClick={() => setIntakeStep(3)}
+                        className="px-5 py-2.5 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-300 font-bold text-xs flex items-center gap-1.5 hover:bg-teal-500/25 transition-all"
+                      >
+                        Next: Prior Care & History <ArrowRight size={14} />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* STEP 3: PRIOR CARE & HISTORY */}
+                {intakeStep === 3 && (
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        Last In-Person Dermatology / Skin Exam
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {['Never had one', '< 6 months ago', '6–12 months ago', '1–2 years ago', '> 2 years ago'].map(o => (
+                          <button 
+                            key={o}
+                            type="button"
+                            onClick={() => updateIntake('lastInPersonVisitDate', intakeForm.lastInPersonVisitDate === o ? '' : o)}
+                            className={`py-3 px-2 rounded-xl font-bold text-xs text-center transition-all border ${
+                              intakeForm.lastInPersonVisitDate === o 
+                                ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20' 
+                                : 'bg-white/5 text-slate-300 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            {o}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        Last Exam Clinic / Doctor Location (Optional)
+                      </label>
+                      <input 
+                        type="text"
+                        placeholder="e.g. Piedmont Dermatology Clinic, Dr. Sarah Collins"
+                        value={intakeForm.lastVisitLocation || ''}
+                        onChange={(e) => updateIntake('lastVisitLocation', e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-3.5 text-sm text-white placeholder-slate-500 outline-none focus:border-teal-400 transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        Personal History of Skin Cancer
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {['No personal history', 'Melanoma', 'Basal / Squamous cell', 'Atypical / dysplastic moles'].map(o => (
+                          <button 
+                            key={o}
+                            type="button"
+                            onClick={() => updateIntake('personalCancerHistory', intakeForm.personalCancerHistory === o ? '' : o)}
+                            className={`py-3 px-2 rounded-xl font-bold text-xs text-center transition-all border ${
+                              intakeForm.personalCancerHistory === o 
+                                ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20' 
+                                : 'bg-white/5 text-slate-300 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            {o}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        Family History of Skin Cancer
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {['No family history', 'Melanoma in parent/sibling', 'Non-melanoma skin cancer', 'Not sure'].map(o => (
+                          <button 
+                            key={o}
+                            type="button"
+                            onClick={() => updateIntake('familyCancerHistory', intakeForm.familyCancerHistory === o ? '' : o)}
+                            className={`py-3 px-2 rounded-xl font-bold text-xs text-center transition-all border ${
+                              intakeForm.familyCancerHistory === o 
+                                ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20' 
+                                : 'bg-white/5 text-slate-300 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            {o}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        Other Medical Conditions or Risk Factors
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {['None reported', 'Immunocompromised / organ transplant', 'Autoimmune disease', 'Frequent sun exposure / tanning bed use'].map(o => (
+                          <button 
+                            key={o}
+                            type="button"
+                            onClick={() => updateIntake('otherConditions', intakeForm.otherConditions === o ? '' : o)}
+                            className={`py-3 px-2 rounded-xl font-bold text-xs text-center transition-all border ${
+                              intakeForm.otherConditions === o 
+                                ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20' 
+                                : 'bg-white/5 text-slate-300 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            {o}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex justify-start">
+                      <button
+                        type="button"
+                        onClick={() => setIntakeStep(2)}
+                        className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 font-bold text-xs hover:bg-white/10 transition-all"
+                      >
+                        Back
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
               </div>
             </div>
           </div>
@@ -2589,16 +2888,17 @@ const ScanPage = ({
             style={{ ...styles.analyzeButton, opacity: !intakeForm.bodyLocation || photos.length === 0 || loading ? 0.5 : 1 }}
             disabled={!intakeForm.bodyLocation || photos.length === 0 || loading}
             onClick={() => analyzeSkin()}
+            className="shadow-xl shadow-teal-500/25"
           >
             {loading ? (
               <>
                 <RefreshCw className="animate-spin" size={20} />
-                Analyzing with AI...
+                Analyzing Spot & Preparing Doctor Report...
               </>
             ) : (
               <>
                 <SparklesIcon size={20} />
-                Analyze Now
+                Run Screening & Generate Doctor Report
               </>
             )}
           </button>
@@ -2764,7 +3064,7 @@ const AboutPage = () => {
             <Dna size={40} color="#2dd4bf" />
           </div>
           <h1 className="text-2xl font-black text-white mb-2">Skin Tight</h1>
-          <p className="text-base text-teal-400 font-medium">AI-powered skin cancer monitoring for everyone.</p>
+          <p className="text-base text-teal-400 font-medium">Pre-visit clinical intake and longitudinal tracking bridge.</p>
         </motion.div>
 
         {/* MISSION SECTION */}
@@ -2773,7 +3073,7 @@ const AboutPage = () => {
             <SparklesIcon size={18} className="text-teal-400" /> Our Mission
           </h2>
           <p className="text-sm text-slate-400 leading-relaxed">
-            Skin cancer is the most common cancer in the world, affecting 1 in 5 people. However, when caught early, recovery and survival rates exceed 98%. Skin Tight is a dedicated skin health app created to promote early skin awareness and foster global skin cancer awareness. Our proactive skin assessment tool allows users to scan suspicious skin spots and leverage advanced AI skin monitoring, ensuring they maintain control over their skin wellness.
+            We help patients monitor suspicious skin changes over time and help dermatology providers receive better organized information before a patient ever walks into the office. By structuring symptom onset, lesion history, and longitudinal photographic comparisons, we bring actionable information directly into the clinical encounter.
           </p>
         </motion.div>
 
@@ -2783,16 +3083,16 @@ const AboutPage = () => {
             <Dna size={18} className="text-teal-400" /> Why Skin Tight Exists
           </h2>
           <p className="text-sm text-slate-400 leading-relaxed">
-            Many skin conditions develop gradually and can be easy to overlook. Skin Tight was created as an advanced skin health app to help people become more aware of visible skin changes by providing an easy way to monitor spots over time. Our goal is to encourage proactive skin awareness, facilitate reliable skin change tracking, and support informed conversations with dermatologist monitoring and licensed healthcare professionals.
+            Dermatologists spend valuable exam room minutes piecing together verbal patient recollections: when a spot first appeared, how it changed, and what prior care occurred. Skin Tight bridges this gap by letting patients track concerns across weeks and months, generating an objective 1-page clinical summary so physicians can make faster, better-informed clinical decisions.
           </p>
         </motion.div>
 
         {/* IMPACT STATS */}
         <motion.div variants={itemVariants} className="grid grid-cols-1 gap-4">
           {[
-            { label: '1 in 5 Americans', sub: 'Develop skin cancer' },
-            { label: '98% survival', sub: 'When caught early' },
-            { label: '60 seconds', sub: 'To complete a scan' }
+            { label: '1-Page Doctor Brief', sub: 'Standardized EHR pre-visit intake' },
+            { label: 'Longitudinal Tracking', sub: 'Side-by-side baseline vs. current photos' },
+            { label: '60 Seconds', sub: 'Fast, non-pushy patient questionnaire' }
           ].map((stat, i) => (
             <div key={i} className="glass-card p-4 rounded-xl flex justify-between items-center bg-white/5 border border-white/5">
               <span className="text-sm font-black text-teal-400">{stat.label}</span>
@@ -2803,8 +3103,8 @@ const AboutPage = () => {
 
         {/* SECTIONS */}
         {[
-          { title: 'What Skin Tight does', points: ['Analyze photos of suspicious spots', 'Assess skin cancer risk', 'Track changes over time'], icon: <CheckCircle2 size={16} className="text-teal-400" /> },
-          { title: 'What we do NOT do', points: ['Provide medical diagnoses', 'Replace dermatology care', 'Offer beauty advice'], icon: <X size={16} className="text-red-400" /> }
+          { title: 'What Skin Tight does', points: ['Monitor suspicious skin changes over time', 'Structure pre-visit symptom onset & care history', 'Compare baseline vs. current photos side-by-side', 'Generate 1-page clinical summaries for doctors'], icon: <CheckCircle2 size={16} className="text-teal-400" /> },
+          { title: 'What we do NOT do', points: ['Provide medical diagnoses or replace doctor care', 'Prescribe medications or treatment regimens', 'Perform biopsies or histopathological evaluation'], icon: <X size={16} className="text-red-400" /> }
         ].map((sec, i) => (
           <motion.div key={i} variants={itemVariants} className="space-y-4">
             <h2 className="text-base font-bold text-white pl-2">{sec.title}</h2>
@@ -4044,29 +4344,46 @@ interface AnalysisResult {
 }
 
 interface IntakeForm {
-  // Section 1 (Read-only from profile)
+  // Section 1: Demographics & Baseline (from profile)
   ageRange: string;
   ethnicity: string;
   fitzpatrick: number;
-  // Section 2
-  concernType: string;
+
+  // Section 2: Clinical Encounters & In-Person Visits
+  lastInPersonVisitDate: string; // e.g. "Within 6 months", "6-12 months ago", "Over 1 year ago", "Never had one"
+  lastVisitLocation: string;     // Clinic or doctor name e.g. "Atlanta Dermatology, Dr. Williams"
+
+  // Section 3: Oncological & Disease History
+  personalCancerHistory: string; // "Previous melanoma", "Non-melanoma skin cancer", "No personal history", "Unsure"
+  familyCancerHistory: string;   // "Immediate family (parent/sibling)", "Extended family", "No known history", "Unsure"
+  otherConditions: string;       // "Atypical moles (dysplastic nevi)", "Immunocompromised", "None"
+
+  // Section 4: Spot Location & Timeline
+  bodyLocation: string;
+  exactBodyLocation: string;     // Detailed anatomical spot detail e.g. "Upper left shoulder, near scapula"
+  lesionFirstNoticedDate: string;// "Past 2-4 weeks", "1-3 months ago", "3-6 months ago", "Over 1 year ago", "Always had it"
   duration: string;
+
+  // Section 5: Lesion Evolution & Symptoms
   changedRecently: string;
+  colorChange: string;           // "Darkened / multi-colored", "Lightened", "No color change", "Not sure"
+  sizeChange: string;            // "Grown larger / spreading", "Raised / elevated", "No size change", "Not sure"
+  bleeding: string;              // "Spontaneous bleeding", "Bleeds if bumped or scratched", "No bleeding"
+  painOrSensation: string;       // "Painful / tender", "Frequent itching", "Burning sensation", "No pain / symptoms"
+
+  // Supplemental & legacy compatibility
+  concernType: string;
   whatChanged: string[];
   appearance: string[];
-  bodyLocation: string;
   sensation: string;
   size: string;
-  // Section 3
   dailySunExposure: string;
   severeSunburns: string;
   useSunProtection: string;
-  // Section 4
   cancerHistory: string;
   cancerTypes: string[];
   atypicalMoles: string;
   isImmunocompromised: string;
-  // Section 5
   qualityCheck: {
     clear: boolean;
     lighting: boolean;
@@ -4562,7 +4879,7 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
 (window as any).renderSkinTypeCard = renderSkinTypeCard;
 
 // --- Scan Detail Component ---
-  const ScanDetail = ({ scan, onClose, onCompare, onDownload, styles }: { scan: ScanRecord, onClose: () => void, onCompare?: () => void, onDownload: (photos: string[], result: AnalysisResult) => void, styles: any }) => {
+  const ScanDetail = ({ scan, onClose, onCompare, onDownload, onPreview, styles }: { scan: ScanRecord, onClose: () => void, onCompare?: () => void, onDownload: (photos: string[], result: AnalysisResult, intake?: any, date?: string, scanId?: string) => void, onPreview?: (photos: string[], result: any, intake?: any, date?: string, scanId?: string) => void, styles: any }) => {
     const riskColor = scan.result.risk_level === 'high' ? '#ef4444' : scan.result.risk_level === 'moderate' ? '#f59e0b' : '#10b981';
     
     return (
@@ -4648,19 +4965,27 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
               <div style={{ fontSize: '14px', color: '#f8fafc', fontWeight: '600' }}>{scan.result.urgency}</div>
             </div>
 
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               <button 
-                style={{ flex: 1, padding: '14px', borderRadius: '16px', border: 'none', background: '#2dd4bf', color: '#060818', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                onClick={() => onDownload(scan.photos, scan.result)}
+                style={{ flex: 1, minWidth: '130px', padding: '14px', borderRadius: '16px', border: 'none', background: '#2dd4bf', color: '#060818', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                onClick={() => onDownload(scan.photos, scan.result, (scan as any).intakeData || (scan as any).intake, scan.date, scan.id)}
               >
-                <Download size={18} /> EXPORT PDF
+                <Download size={18} /> EXPORT 1-PG PDF
               </button>
+              {onPreview && (
+                <button 
+                  style={{ flex: 1, minWidth: '130px', padding: '14px', borderRadius: '16px', border: '1px solid #38bdf8', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  onClick={() => onPreview(scan.photos, scan.result, (scan as any).intakeData || (scan as any).intake, scan.date, scan.id)}
+                >
+                  <Eye size={18} /> PREVIEW REPORT
+                </button>
+              )}
               {onCompare && (
                 <button 
-                  style={{ flex: 1, padding: '14px', borderRadius: '16px', border: '1px solid #2dd4bf', background: 'transparent', color: '#2dd4bf', fontWeight: '800', cursor: 'pointer' }}
+                  style={{ flex: 1, minWidth: '110px', padding: '14px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.05)', color: '#ffffff', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   onClick={onCompare}
                 >
-                  COMPARE
+                  <History size={18} /> COMPARE
                 </button>
               )}
             </div>
@@ -4668,6 +4993,307 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
 
           <div style={{ fontSize: '11px', color: '#64748b', textAlign: 'center', lineHeight: '1.5', padding: '0 20px' }}>
             {scan.result.disclaimer}
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
+  // --- 1-Page Clinical Triage Report Preview Modal ---
+  const ReportPreviewModal = ({ 
+    data, 
+    onClose, 
+    onDownload, 
+    scans, 
+    fullUserData 
+  }: { 
+    data: any; 
+    onClose: () => void; 
+    onDownload: (photos?: string[], result?: any, intake?: any, date?: string, scanId?: string) => void; 
+    scans: ScanRecord[]; 
+    fullUserData: any; 
+  }) => {
+    const { photos, result, intake = {}, date, scanId } = data;
+    const targetRegion = intake.bodyLocation || 'Unspecified';
+    const matchingScans = scans.filter(s => s.bodyRegion === targetRegion).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const firstScan = matchingScans.length > 0 ? matchingScans[0] : null;
+    const isBaseline = !firstScan || firstScan.id === scanId || matchingScans.length <= 1;
+    const baselinePhoto = isBaseline ? photos[0] : (firstScan.photos?.[0] || photos[0]);
+    const baselineDate = isBaseline ? date : firstScan.date;
+    const currentPhoto = photos[0];
+    const currentDate = date;
+
+    let trackedDurationText = "Initial Baseline Scan";
+    if (firstScan && firstScan.date && firstScan.id !== scanId) {
+      const days = Math.max(1, Math.round((new Date(date).getTime() - new Date(firstScan.date).getTime()) / (1000 * 3600 * 24)));
+      trackedDurationText = `${days} Days (${Math.max(1, Math.round(days / 7))} Wks)`;
+    } else if (intake.duration) {
+      trackedDurationText = intake.duration;
+    } else if (intake.lesionFirstNoticedDate) {
+      trackedDurationText = `Noticed ${intake.lesionFirstNoticedDate}`;
+    }
+
+    const patientName = fullUserData?.fullName || fullUserData?.username || "Enrolled Patient";
+    const reportDateStr = new Date(date).toLocaleDateString();
+    const docIdStr = scanId ? String(scanId).slice(-8) : String(Date.now()).slice(-8);
+
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 150,
+          background: 'rgba(2, 6, 23, 0.92)',
+          backdropFilter: 'blur(12px)',
+          overflowY: 'auto',
+          padding: '16px'
+        }}
+      >
+        <div style={{ maxWidth: '820px', margin: '0 auto', width: '100%', paddingBottom: '40px' }}>
+          {/* Sticky Action Bar */}
+          <div style={{
+            position: 'sticky',
+            top: '8px',
+            zIndex: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'rgba(15, 23, 42, 0.95)',
+            border: '1px solid rgba(45, 212, 191, 0.3)',
+            borderRadius: '20px',
+            padding: '12px 18px',
+            marginBottom: '20px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(45, 212, 191, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2dd4bf' }}>
+                <FileText size={20} />
+              </div>
+              <div>
+                <span style={{ fontSize: '10px', fontWeight: '900', color: '#2dd4bf', textTransform: 'uppercase', letterSpacing: '1px' }}>EHR Pre-Visit Summary</span>
+                <h4 style={{ fontSize: '14px', fontWeight: '900', color: '#ffffff', margin: 0 }}>1-Page Clinical Triage Report</h4>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => onDownload(photos, result, intake, date, scanId)}
+                style={{
+                  background: '#2dd4bf',
+                  color: '#020617',
+                  border: 'none',
+                  padding: '9px 16px',
+                  borderRadius: '12px',
+                  fontWeight: '800',
+                  fontSize: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(45, 212, 191, 0.3)'
+                }}
+              >
+                <Download size={15} /> Download PDF
+              </button>
+              <button
+                onClick={onClose}
+                style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  color: '#94a3b8',
+                  border: 'none',
+                  padding: '9px 12px',
+                  borderRadius: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* Paper Sheet Preview Container (Strict 1-Page Layout replica) */}
+          <div style={{
+            background: '#ffffff',
+            color: '#0f172a',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
+            border: '1px solid #cbd5e1',
+            fontFamily: 'Inter, system-ui, sans-serif'
+          }}>
+            {/* Header Banner */}
+            <div style={{ background: '#0f172a', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#ffffff' }}>
+              <div>
+                <div style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>SKIN TIGHT</span>
+                  <span style={{ fontSize: '10px', background: 'rgba(45,212,191,0.2)', color: '#2dd4bf', padding: '2px 8px', borderRadius: '6px', fontWeight: '800', border: '1px solid rgba(45,212,191,0.4)' }}>CLINICAL TRIAGE</span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#2dd4bf', fontWeight: '800', marginTop: '2px' }}>
+                  CLINICAL TRIAGE & LONGITUDINAL INTAKE REPORT
+                </div>
+                <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '1px' }}>
+                  Standardized Pre-Visit Patient Brief for Dermatology Providers
+                </div>
+              </div>
+              <div style={{ textAlign: 'right', fontSize: '10px' }}>
+                <div style={{ fontWeight: '800', color: '#ffffff' }}>DATE: {reportDateStr}</div>
+                <div style={{ color: '#94a3b8' }}>DOC ID: #ST-{docIdStr}</div>
+                <div style={{ color: '#2dd4bf', fontWeight: '700', fontSize: '9px' }}>STATUS: Pre-Visit Clinical Intake</div>
+              </div>
+            </div>
+
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Section 1: Demographics & Prior Care History */}
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px 16px' }}>
+                <div style={{ fontSize: '10px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px' }}>
+                  1. Patient Demographics & Clinical Care History
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '8px', fontSize: '11px' }}>
+                  <div>
+                    <div style={{ color: '#64748b' }}>Patient Identifier: <strong style={{ color: '#0f172a' }}>{patientName}</strong></div>
+                    <div style={{ color: '#64748b' }}>Last In-Person Skin Exam: <strong style={{ color: '#0f172a' }}>{intake.lastInPersonVisitDate || 'Not reported by patient'}</strong></div>
+                    <div style={{ color: '#64748b' }}>Last Exam Clinic/Location: <strong style={{ color: '#0f172a' }}>{intake.lastVisitLocation || 'Not reported by patient'}</strong></div>
+                  </div>
+                  <div>
+                    <div style={{ color: '#64748b' }}>Personal Cancer History: <strong style={{ color: '#0f172a' }}>{intake.personalCancerHistory || 'Not reported by patient'}</strong></div>
+                    <div style={{ color: '#64748b' }}>Family Cancer History: <strong style={{ color: '#0f172a' }}>{intake.familyCancerHistory || intake.cancerHistory || 'Not reported by patient'}</strong></div>
+                    <div style={{ color: '#64748b' }}>Other Medical / Immune Conditions: <strong style={{ color: '#0f172a' }}>{intake.otherConditions || 'None reported'}</strong></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: Metrics Bar */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                {[
+                  { title: "EXACT BODY SITE", val: intake.exactBodyLocation ? `${targetRegion} (${intake.exactBodyLocation})` : targetRegion },
+                  { title: "LESION FIRST NOTICED", val: intake.lesionFirstNoticedDate || 'Not reported by patient' },
+                  { title: "TRACKED DURATION", val: trackedDurationText },
+                  { title: "TOTAL SCANS LOGGED", val: `${matchingScans.length > 0 ? matchingScans.length : 1} Recorded` }
+                ].map((m, i) => (
+                  <div key={i} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '8px 10px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '8.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>{m.title}</div>
+                    <div style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.val}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Section 3: Visual Photographic Comparison */}
+              <div>
+                <div style={{ fontSize: '10px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+                  2. Visual Longitudinal Photographic Comparison
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '10px', padding: '8px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '9px', fontWeight: '800', color: '#475569', marginBottom: '6px' }}>
+                      {isBaseline ? "PRIMARY BASELINE PHOTO" : `BASELINE PHOTO (${new Date(baselineDate).toLocaleDateString()})`}
+                    </div>
+                    <img src={baselinePhoto || undefined} alt="Baseline" style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                  </div>
+                  <div style={{ background: '#f8fafc', border: '1px solid #0f172a', borderRadius: '10px', padding: '8px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '9px', fontWeight: '800', color: '#0f172a', marginBottom: '6px' }}>
+                      CURRENT ENCOUNTER PHOTO ({new Date(currentDate).toLocaleDateString()})
+                    </div>
+                    <img src={currentPhoto || undefined} alt="Current" style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 4: Patient-Reported Evolution & Symptoms */}
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px 16px' }}>
+                <div style={{ fontSize: '10px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+                  3. Patient-Reported Lesion Evolution & Symptoms
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', fontSize: '11px' }}>
+                  <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ color: '#64748b' }}>Color Evolution: </span>
+                    <strong style={{ color: '#0f172a' }}>{intake.colorChange || 'Not reported by patient'}</strong>
+                  </div>
+                  <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ color: '#64748b' }}>Size/Shape Delta: </span>
+                    <strong style={{ color: '#0f172a' }}>{intake.sizeChange || intake.changedRecently || 'Not reported by patient'}</strong>
+                  </div>
+                  <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ color: '#64748b' }}>Bleeding / Crusting: </span>
+                    <strong style={{ color: '#0f172a' }}>{intake.bleeding || 'Not reported by patient'}</strong>
+                  </div>
+                  <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ color: '#64748b' }}>Pain or Sensation: </span>
+                    <strong style={{ color: '#0f172a' }}>{intake.painOrSensation || intake.sensation || 'Not reported by patient'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 5: Pre-Visit AI Observations */}
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '10px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    4. Pre-Visit AI Triage Observations (Non-Diagnostic)
+                  </div>
+                  <span style={{
+                    fontSize: '9px',
+                    fontWeight: '900',
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    background: result.risk_level === 'high' ? '#fee2e2' : result.risk_level === 'moderate' ? '#fef3c7' : '#dcfce7',
+                    color: result.risk_level === 'high' ? '#b91c1c' : result.risk_level === 'moderate' ? '#b45309' : '#15803d'
+                  }}>
+                    {result.risk_level?.toUpperCase()} CLINICAL ATTENTION
+                  </span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#334155', lineHeight: '1.5' }}>
+                  {result.findings?.slice(0, 3).map((f: string, i: number) => (
+                    <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '2px' }}>
+                      <span style={{ color: '#0f172a' }}>•</span>
+                      <span>{f}</span>
+                    </div>
+                  ))}
+                  {result.action_card && (
+                    <div style={{ marginTop: '4px', fontSize: '10.5px', fontWeight: '700', color: '#0f172a' }}>
+                      Suggested Provider Action: {result.action_card}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Section 6: Dermatology Provider In-Office Review & Checklist */}
+              <div style={{ background: '#f8fafc', border: '2px solid #0f172a', borderRadius: '10px', padding: '12px 16px' }}>
+                <div style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                  DERMATOLOGY PROVIDER CLINICAL INTAKE (IN-OFFICE USE ONLY)
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', fontSize: '10.5px', color: '#1e293b', marginBottom: '10px' }}>
+                  <div>[  ] In-Person Dermoscopy Performed</div>
+                  <div>[  ] Biopsy Ordered (Punch / Shave / Excision)</div>
+                  <div>[  ] Routine Photo Follow-up in 3–6 Months</div>
+                  <div>[  ] Reassured / Benign Lesion</div>
+                </div>
+                <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '8px', fontSize: '10px', color: '#475569' }}>
+                  Provider Clinical Assessment & Notes:
+                  <div style={{ borderBottom: '1px solid #cbd5e1', height: '14px', marginTop: '2px' }} />
+                  <div style={{ borderBottom: '1px solid #cbd5e1', height: '14px', marginTop: '2px' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', fontSize: '10.5px', fontWeight: '800' }}>
+                  <div>Provider Signature: ____________________________________</div>
+                  <div>Date Examined: _______________</div>
+                </div>
+              </div>
+
+              {/* Footer Notice */}
+              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '8px', fontSize: '8.5px', color: '#64748b', lineHeight: '1.4' }}>
+                <p style={{ margin: '0 0 4px 0' }}>
+                  <strong>STATUTORY CLINICAL NOTICE:</strong> Skin Tight is an educational pre-visit intake and longitudinal photo comparison tool designed to save provider documentation time and organize patient symptom history. It is NOT a medical device, diagnostic test, or substitute for professional medical advice. Clinical diagnosis requires comprehensive in-person dermatoscopic and histopathological evaluation by a licensed healthcare provider.
+                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '800', color: '#475569' }}>
+                  <span>Skin Tight Clinical Intake Engine  |  HIPAA-Aligned Technical Safeguards</span>
+                  <span>Page 1 of 1</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -6411,12 +7037,23 @@ function App() {
     ageRange: '',
     ethnicity: '',
     fitzpatrick: 0,
-    concernType: '',
+    lastInPersonVisitDate: '',
+    lastVisitLocation: '',
+    personalCancerHistory: '',
+    familyCancerHistory: '',
+    otherConditions: '',
+    bodyLocation: '',
+    exactBodyLocation: '',
+    lesionFirstNoticedDate: '',
     duration: '',
     changedRecently: '',
+    colorChange: '',
+    sizeChange: '',
+    bleeding: '',
+    painOrSensation: '',
+    concernType: '',
     whatChanged: [],
     appearance: [],
-    bodyLocation: '',
     sensation: '',
     size: '',
     dailySunExposure: '',
@@ -6462,6 +7099,29 @@ function App() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [recentScan, setRecentScan] = useState<ScanRecord | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [showReportPreviewModal, setShowReportPreviewModal] = useState(false);
+  const [previewReportData, setPreviewReportData] = useState<any>(null);
+
+  const openReportPreview = (
+    scanPhotos?: string[],
+    scanResult?: any,
+    customIntake?: any,
+    customDate?: string,
+    customScanId?: string
+  ) => {
+    const currentPhotos = (scanPhotos && scanPhotos.length > 0) ? scanPhotos : photos;
+    const currentResult = scanResult || result;
+    const activeIntake = customIntake || intakeForm;
+    if (!currentResult || currentPhotos.length === 0) return;
+    setPreviewReportData({
+      photos: currentPhotos,
+      result: currentResult,
+      intake: activeIntake,
+      date: customDate || new Date().toISOString(),
+      scanId: customScanId || String(Date.now()).slice(-8)
+    });
+    setShowReportPreviewModal(true);
+  };
 
   // --- Feature 3: UV State ---
   const [uvData, setUvData] = useState<UVData | null>(null);
@@ -6698,6 +7358,17 @@ function App() {
       cancerTypes: [],
       atypicalMoles: '',
       isImmunocompromised: '',
+      lastInPersonVisitDate: '',
+      lastVisitLocation: '',
+      personalCancerHistory: '',
+      familyCancerHistory: '',
+      otherConditions: '',
+      exactBodyLocation: '',
+      lesionFirstNoticedDate: '',
+      colorChange: '',
+      sizeChange: '',
+      bleeding: '',
+      painOrSensation: '',
       qualityCheck: { clear: false, lighting: false, fillsFrame: false, uploaded: false }
     });
     setScans([]);
@@ -7078,6 +7749,17 @@ function App() {
       cancerTypes: [],
       atypicalMoles: '',
       isImmunocompromised: '',
+      lastInPersonVisitDate: '',
+      lastVisitLocation: '',
+      personalCancerHistory: '',
+      familyCancerHistory: '',
+      otherConditions: '',
+      exactBodyLocation: '',
+      lesionFirstNoticedDate: '',
+      colorChange: '',
+      sizeChange: '',
+      bleeding: '',
+      painOrSensation: '',
       qualityCheck: {
         clear: false,
         lighting: false,
@@ -7291,10 +7973,17 @@ Age range: ${fullUserData?.ageRange || 'Not provided'}
 Ethnicity: ${fullUserData?.ethnicity || 'Not provided'}
 Fitzpatrick skin type: Type ${fullUserData?.fitzpatrick || 'Not provided'}
 
-ABOUT THE SKIN SPOT:
-Duration: ${intakeForm.duration}
-Recent changes: ${intakeForm.changedRecently}
-Location: ${intakeForm.bodyLocation}
+ABOUT THE SKIN SPOT & CLINICAL INTAKE:
+Location: ${intakeForm.bodyLocation} ${intakeForm.exactBodyLocation ? `(Specific area: ${intakeForm.exactBodyLocation})` : ''}
+When first noticed: ${intakeForm.lesionFirstNoticedDate || intakeForm.duration || 'Not specified'}
+Color evolution: ${intakeForm.colorChange || 'Not specified'}
+Size/shape changes: ${intakeForm.sizeChange || intakeForm.changedRecently || 'Not specified'}
+Bleeding or crusting: ${intakeForm.bleeding || 'None reported'}
+Pain, itching, or sensation: ${intakeForm.painOrSensation || 'None reported'}
+Last in-person skin exam: ${intakeForm.lastInPersonVisitDate || 'Not specified'} ${intakeForm.lastVisitLocation ? `(Clinic: ${intakeForm.lastVisitLocation})` : ''}
+Personal cancer history: ${intakeForm.personalCancerHistory || 'None reported'}
+Family cancer history: ${intakeForm.familyCancerHistory || intakeForm.cancerHistory || 'None reported'}
+Other medical conditions: ${intakeForm.otherConditions || 'None reported'}
 
 Respond ONLY with valid JSON with these fields:
 - risk_level: "low", "moderate", or "high"
@@ -7613,111 +8302,355 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
 
 
 
-  const downloadPDF = (scanPhotos?: string[], scanResult?: AnalysisResult) => {
+  const downloadPDF = (
+    scanPhotos?: string[], 
+    scanResult?: AnalysisResult, 
+    customIntake?: IntakeForm,
+    customDate?: string,
+    customScanId?: string
+  ) => {
     const currentPhotos = scanPhotos || photos;
     const currentResult = scanResult || result;
+    const activeIntake = customIntake || intakeForm;
     
     if (!currentResult || currentPhotos.length === 0) return;
     
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    const pw = doc.internal.pageSize.getWidth(); // 210mm
     
-    doc.setFontSize(22);
-    doc.setTextColor(15, 23, 42);
-    doc.text("Skin Tight Analysis Report", 20, 20);
+    // 1. Header Bar (Navy #0f172a, Y: 8 to 28mm)
+    doc.setFillColor(15, 23, 42);
+    doc.rect(10, 8, pw - 20, 20, 'F');
     
-    doc.setFontSize(10);
-    doc.setTextColor(100, 116, 139);
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, 28);
-    doc.text(`Photos Analyzed: ${currentPhotos.length}`, 20, 33);
+    // Title
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.text("SKIN TIGHT", 14, 16);
+    doc.setFontSize(8.5);
+    doc.setTextColor(45, 212, 191);
+    doc.text("CLINICAL TRIAGE & LONGITUDINAL INTAKE REPORT", 14, 21);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(203, 213, 225);
+    doc.text("Standardized Pre-Visit Patient Brief for Dermatology Providers", 14, 25.5);
     
-    // Confidence Level
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    doc.text("Assessment Confidence:", 20, 43);
-    const confColor = currentResult.confidence_level === 'high' ? [16, 185, 129] : currentResult.confidence_level === 'medium' ? [245, 158, 11] : [239, 68, 68];
-    doc.setTextColor(confColor[0], confColor[1], confColor[2]);
-    doc.text(currentResult.confidence_level.toUpperCase(), 75, 43);
-
-    // Risk Level
-    doc.setTextColor(0, 0, 0);
-    doc.text("Risk Level:", 20, 50);
-    const riskColor = currentResult.risk_level === 'high' ? [239, 68, 68] : currentResult.risk_level === 'moderate' ? [245, 158, 11] : [16, 185, 129];
-    doc.setTextColor(riskColor[0], riskColor[1], riskColor[2]);
-    doc.text(currentResult.risk_level.toUpperCase(), 50, 50);
-    
-    // Intake Summary
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(14);
-    doc.text("Patient Intake Summary", 20, 65);
-    doc.setFontSize(10);
-    doc.text(`Age: ${intakeForm.ageRange} | Ethnicity: ${intakeForm.ethnicity}`, 20, 72);
-    doc.text(`Location: ${intakeForm.bodyLocation} | Duration: ${intakeForm.duration}`, 20, 77);
-    doc.text(`Recent Changes: ${intakeForm.changedRecently}`, 20, 82);
-    
-    let y = 92;
-    
-    const addSection = (title: string, items: string[], color: number[] = [0, 0, 0]) => {
-      if (y > 250) {
-        doc.addPage();
-        y = 20;
-      }
-      doc.setFontSize(14);
-      doc.setTextColor(color[0], color[1], color[2]);
-      doc.text(title, 20, y);
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
-      y += 7;
-      items.forEach(item => {
-        const splitItem = doc.splitTextToSize(`• ${item}`, pageWidth - 40);
-        if (y + (splitItem.length * 5) > 280) {
-          doc.addPage();
-          y = 20;
-        }
-        doc.text(splitItem, 20, y);
-        y += splitItem.length * 5 + 2;
-      });
-      y += 5;
-    };
-    
-    addSection("Findings:", currentResult.findings, [45, 212, 191]);
-    addSection("Concerning Signs:", currentResult.concerning_signs, [239, 68, 68]);
-    addSection("Risk Factors Identified:", currentResult.risk_factors_identified, [168, 85, 247]);
-    addSection("Personalized Suggestions:", currentResult.suggestions, [59, 130, 246]);
-    
-    if (y > 250) {
-      doc.addPage();
-      y = 20;
-    }
-    doc.setFontSize(14);
-    doc.text("Urgency:", 20, y);
-    doc.setFontSize(10);
-    doc.text(currentResult.urgency, 20, y + 7);
-    
-    y += 20;
-    if (y > 250) {
-      doc.addPage();
-      y = 20;
-    }
-    doc.setFontSize(8);
+    // Right side header metadata
+    const reportDateStr = customDate ? new Date(customDate).toLocaleDateString() : new Date().toLocaleDateString();
+    const docIdStr = customScanId ? String(customScanId).slice(-8) : String(Date.now()).slice(-8);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`DATE: ${reportDateStr}`, pw - 14, 14.5, { align: 'right' });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
     doc.setTextColor(148, 163, 184);
-    const splitDisclaimer = doc.splitTextToSize(`Disclaimer: ${currentResult.disclaimer}`, pageWidth - 40);
-    doc.text(splitDisclaimer, 20, y);
+    doc.text(`DOC ID: #ST-${docIdStr}`, pw - 14, 19.5, { align: 'right' });
+    doc.text("STATUS: Pre-Visit Clinical Intake", pw - 14, 24.5, { align: 'right' });
     
-    // Add images on next pages
-    currentPhotos.forEach((p, index) => {
-      doc.addPage();
-      doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0);
-      doc.text(`Captured Image ${index + 1}:`, 20, 20);
-      try {
-        doc.addImage(p, 'JPEG', 20, 30, pageWidth - 40, (pageWidth - 40) * (4/3));
-      } catch (e) {
-        doc.text("Image could not be rendered in PDF.", 20, 40);
+    // 2. Patient & Encounter Demographics Box (30mm to 56mm)
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(10, 30, pw - 20, 26, 1.5, 1.5, 'FD');
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(15, 23, 42);
+    doc.text("1. PATIENT DEMOGRAPHICS & CLINICAL CARE HISTORY", 14, 35);
+    
+    // Left Column
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(71, 85, 105);
+    const patientName = fullUserData?.username || fullUserData?.displayName || "Enrolled Patient";
+    doc.text(`Patient Identifier: ${patientName}`, 14, 40);
+    
+    const ageEthStr = [
+      activeIntake.ageRange ? `Age: ${activeIntake.ageRange}` : null,
+      activeIntake.fitzpatrick ? `Fitzpatrick: Type ${activeIntake.fitzpatrick}` : null,
+      activeIntake.ethnicity ? `Ethnicity: ${activeIntake.ethnicity}` : null
+    ].filter(Boolean).join("  |  ") || "Not reported by patient";
+    doc.text(`Demographics: ${ageEthStr}`, 14, 44.5);
+    
+    const lastVisitDate = activeIntake.lastInPersonVisitDate ? activeIntake.lastInPersonVisitDate : "Not reported by patient";
+    const lastVisitLoc = activeIntake.lastVisitLocation ? activeIntake.lastVisitLocation : "Not reported by patient";
+    doc.text(`Last In-Person Skin Exam: ${lastVisitDate}`, 14, 49);
+    doc.text(`Last Exam Location/Clinic: ${lastVisitLoc}`, 14, 53.5);
+    
+    // Right Column (Oncological history & diseases)
+    const personalHx = activeIntake.personalCancerHistory ? activeIntake.personalCancerHistory : "Not reported by patient";
+    const familyHx = activeIntake.familyCancerHistory ? activeIntake.familyCancerHistory : (activeIntake.cancerHistory ? activeIntake.cancerHistory : "Not reported by patient");
+    const otherCond = activeIntake.otherConditions ? activeIntake.otherConditions : (activeIntake.isImmunocompromised ? `Immunocompromised: ${activeIntake.isImmunocompromised}` : "None reported");
+    
+    doc.text(`Personal Skin Cancer History: ${personalHx}`, 110, 40);
+    doc.text(`Family Skin Cancer History: ${familyHx}`, 110, 44.5);
+    doc.text(`Other Medical / Immune Conditions: ${otherCond}`, 110, 49);
+
+    // 3. Longitudinal Tracking & Lesion Overview Metrics (58mm to 72mm)
+    const targetRegion = activeIntake.bodyLocation || 'Unspecified';
+    const matchingScans = scans.filter(s => s.bodyRegion === targetRegion).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const firstScan = matchingScans.length > 0 ? matchingScans[0] : null;
+    const totalScansForSpot = matchingScans.length > 0 ? matchingScans.length : 1;
+    
+    let trackedDurationText = "Initial Baseline Scan";
+    if (firstScan && firstScan.date) {
+      const days = Math.max(1, Math.round((new Date(reportDateStr).getTime() - new Date(firstScan.date).getTime()) / (1000 * 3600 * 24)));
+      trackedDurationText = `${days} Days (${Math.max(1, Math.round(days / 7))} Wks)`;
+    } else if (activeIntake.duration) {
+      trackedDurationText = activeIntake.duration;
+    } else if (activeIntake.lesionFirstNoticedDate) {
+      trackedDurationText = `Noticed ${activeIntake.lesionFirstNoticedDate}`;
+    }
+    
+    const firstNoticedText = activeIntake.lesionFirstNoticedDate ? activeIntake.lesionFirstNoticedDate : "Not reported by patient";
+    const exactLocationText = activeIntake.exactBodyLocation ? `${targetRegion} (${activeIntake.exactBodyLocation})` : targetRegion;
+
+    const boxWidth = (pw - 20 - 9) / 4; // ~44mm each
+    const metrics = [
+      { title: "EXACT BODY SITE", val: exactLocationText },
+      { title: "LESION FIRST NOTICED", val: firstNoticedText },
+      { title: "TRACKED DURATION", val: trackedDurationText },
+      { title: "TOTAL SCANS LOGGED", val: `${totalScansForSpot} Recorded` }
+    ];
+    
+    metrics.forEach((m, idx) => {
+      const bx = 10 + idx * (boxWidth + 3);
+      doc.setFillColor(241, 245, 249);
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(bx, 58, boxWidth, 13, 1, 1, 'FD');
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text(m.title, bx + boxWidth / 2, 62, { align: 'center' });
+      doc.setFontSize(7.5);
+      doc.setTextColor(15, 23, 42);
+      const valText = doc.splitTextToSize(m.val, boxWidth - 3);
+      doc.text(valText[0] || '', bx + boxWidth / 2, 67.5, { align: 'center' });
+    });
+
+    // 4. Side-by-Side Photographic Comparison & Patient-Reported Evolution (73mm to 123mm)
+    const firstPhotoData = (firstScan && firstScan.photos && firstScan.photos.length > 0) ? firstScan.photos[0] : (currentPhotos.length > 1 ? currentPhotos[1] : currentPhotos[0]);
+    const currentPhotoData = currentPhotos[0];
+    const firstPhotoDate = firstScan ? new Date(firstScan.date).toLocaleDateString() : (activeIntake.lesionFirstNoticedDate || 'Baseline Scan');
+    
+    const imgBoxW = 46;
+    const imgBoxH = 49;
+    
+    // Left Box: Baseline Image
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(203, 213, 225);
+    doc.roundedRect(10, 73, imgBoxW, imgBoxH, 1, 1, 'FD');
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(15, 23, 42);
+    doc.text("1. BASELINE / FIRST PHOTO", 10 + imgBoxW / 2, 77.5, { align: 'center' });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Date: ${firstPhotoDate}`, 10 + imgBoxW / 2, 81.5, { align: 'center' });
+    
+    try {
+      if (firstPhotoData && (firstPhotoData.startsWith('data:image') || firstPhotoData.startsWith('http'))) {
+        doc.addImage(firstPhotoData, 'JPEG', 12, 83.5, imgBoxW - 4, imgBoxH - 12);
+      } else {
+        doc.setFontSize(7);
+        doc.setTextColor(148, 163, 184);
+        doc.text("Baseline Photo Attached", 10 + imgBoxW / 2, 103, { align: 'center' });
       }
+    } catch (e) {
+      doc.setFontSize(7);
+      doc.setTextColor(148, 163, 184);
+      doc.text("Baseline Photo Attached", 10 + imgBoxW / 2, 103, { align: 'center' });
+    }
+
+    // Middle Box: Current Encounter Photo
+    const midX = 10 + imgBoxW + 4;
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(13, 148, 136);
+    doc.roundedRect(midX, 73, imgBoxW, imgBoxH, 1, 1, 'FD');
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(13, 148, 136);
+    doc.text("2. CURRENT ENCOUNTER PHOTO", midX + imgBoxW / 2, 77.5, { align: 'center' });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Date: ${reportDateStr}`, midX + imgBoxW / 2, 81.5, { align: 'center' });
+    
+    try {
+      if (currentPhotoData && (currentPhotoData.startsWith('data:image') || currentPhotoData.startsWith('http'))) {
+        doc.addImage(currentPhotoData, 'JPEG', midX + 2, 83.5, imgBoxW - 4, imgBoxH - 12);
+      } else {
+        doc.setFontSize(7);
+        doc.setTextColor(148, 163, 184);
+        doc.text("Current Photo Attached", midX + imgBoxW / 2, 103, { align: 'center' });
+      }
+    } catch (e) {
+      doc.setFontSize(7);
+      doc.setTextColor(148, 163, 184);
+      doc.text("Current Photo Attached", midX + imgBoxW / 2, 103, { align: 'center' });
+    }
+
+    // Right Box: Patient-Reported Evolution & Symptoms Table (Y: 73 to 122mm, width: ~90mm)
+    const rightX = midX + imgBoxW + 4;
+    const rightW = pw - 10 - rightX;
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(rightX, 73, rightW, imgBoxH, 1, 1, 'FD');
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text("PATIENT-REPORTED SYMPTOMS & EVOLUTION", rightX + 4, 78);
+    
+    const symptomRows = [
+      { label: "Color Evolution:", val: activeIntake.colorChange ? activeIntake.colorChange : "Not reported by patient" },
+      { label: "Size / Shape Delta:", val: activeIntake.sizeChange ? activeIntake.sizeChange : "Not reported by patient" },
+      { label: "Bleeding History:", val: activeIntake.bleeding ? activeIntake.bleeding : "Not reported by patient" },
+      { label: "Pain / Tenderness:", val: activeIntake.painOrSensation ? activeIntake.painOrSensation : "Not reported by patient" },
+      { label: "Recent Noticeable Change:", val: activeIntake.changedRecently ? activeIntake.changedRecently : "Not reported by patient" }
+    ];
+    
+    symptomRows.forEach((r, idx) => {
+      const rowY = 84 + idx * 7.8;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(6.8);
+      doc.setTextColor(51, 65, 85);
+      doc.text(r.label, rightX + 4, rowY);
+      
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.8);
+      const isReported = r.val !== "Not reported by patient";
+      doc.setTextColor(isReported ? 15 : 148, isReported ? 23 : 163, isReported ? 42 : 184);
+      const splitVal = doc.splitTextToSize(r.val, rightW - 8);
+      doc.text(splitVal[0] || '', rightX + 4, rowY + 3.6);
+    });
+
+    // 5. Pre-Visit Triage Observations (124mm to 184mm)
+    const riskColor = currentResult.risk_level === 'high' ? [220, 38, 38] : currentResult.risk_level === 'moderate' ? [217, 119, 6] : [13, 148, 136];
+    const triageLabel = currentResult.risk_level === 'high' 
+      ? 'EXPEDITED CLINICAL REVIEW WARRANTED (RECOMMENDED 1-2 WEEKS)'
+      : currentResult.risk_level === 'moderate'
+      ? 'SCHEDULED PROFESSIONAL EVALUATION RECOMMENDED (4-6 WEEKS)'
+      : 'ROUTINE CLINICAL EVALUATION / LONGITUDINAL MONITORING';
+      
+    doc.setFillColor(riskColor[0], riskColor[1], riskColor[2]);
+    doc.roundedRect(10, 124, pw - 20, 8, 1, 1, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.text(`PRE-VISIT TRIAGE INDICATION: ${triageLabel}`, 14, 129.5);
+    
+    // Observations Box
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(10, 134, pw - 20, 48, 1, 1, 'FD');
+    
+    // Left: Objective Visual Patterns Observed
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text("OBJECTIVE VISUAL PATTERNS OBSERVED (FOR CLINICIAN CONTEXT):", 14, 139);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(51, 65, 85);
+    
+    let obsY = 144;
+    const findingsList = currentResult.findings || [];
+    findingsList.slice(0, 3).forEach(f => {
+      const wrapped = doc.splitTextToSize(`• ${f}`, 88);
+      doc.text(wrapped, 14, obsY);
+      obsY += wrapped.length * 3.3 + 1;
     });
     
-    doc.save(`SkinScan_Report_${new Date().getTime()}.pdf`);
+    if (currentResult.concerning_signs && currentResult.concerning_signs.length > 0) {
+      currentResult.concerning_signs.slice(0, 2).forEach(cs => {
+        const wrapped = doc.splitTextToSize(`! ${cs}`, 88);
+        doc.setTextColor(185, 28, 28);
+        doc.text(wrapped, 14, obsY);
+        doc.setTextColor(51, 65, 85);
+        obsY += wrapped.length * 3.3 + 1;
+      });
+    }
+
+    // Right Sub-column: Clinical Urgency & Risk Factors
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text("PATIENT RISK FACTORS & SUGGESTED TIMELINE:", 110, 139);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    let rfY = 144;
+    const rfList = currentResult.risk_factors_identified || [];
+    rfList.slice(0, 2).forEach(rf => {
+      const wrapped = doc.splitTextToSize(`• ${rf}`, 85);
+      doc.text(wrapped, 110, rfY);
+      rfY += wrapped.length * 3.3 + 1;
+    });
+    
+    doc.setFont("helvetica", "bold");
+    doc.text("Suggested Provider Action:", 110, rfY + 1.5);
+    doc.setFont("helvetica", "normal");
+    const summaryWrap = doc.splitTextToSize(currentResult.summary || "No immediate acute concerns flagged.", 85);
+    doc.text(summaryWrap.slice(0, 3), 110, rfY + 5.5);
+
+    // 6. Provider In-Office Review & Action Checklist (184mm to 238mm)
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(15, 23, 42);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(10, 184, pw - 20, 52, 1.5, 1.5, 'FD');
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(15, 23, 42);
+    doc.text("DERMATOLOGY PROVIDER CLINICAL INTAKE (IN-OFFICE USE ONLY)", 14, 189);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.2);
+    doc.setTextColor(30, 41, 59);
+    doc.text("[  ] In-Person Dermoscopy Performed", 14, 195);
+    doc.text("[  ] Biopsy Ordered (Punch / Shave / Excision)", 95, 195);
+    doc.text("[  ] Routine Photo Follow-up in 3-6 Months", 14, 200);
+    doc.text("[  ] Reassured / Benign Lesion", 95, 200);
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(71, 85, 105);
+    doc.text("Provider Clinical Assessment & Notes:", 14, 206);
+    
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.3);
+    doc.line(14, 212, pw - 14, 212);
+    doc.line(14, 218, pw - 14, 218);
+    doc.line(14, 224, pw - 14, 224);
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text("Provider Signature: ____________________________________", 14, 232);
+    doc.text("Date Examined: _______________", pw - 60, 232);
+
+    // 7. Compliance Disclaimer Footer (238mm to 264mm)
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.2);
+    doc.setTextColor(100, 116, 139);
+    const disclaimerText = "STATUTORY CLINICAL NOTICE: Skin Tight is an educational pre-visit intake and longitudinal photo comparison tool designed to save provider documentation time and organize patient symptom history. It is NOT a medical device, diagnostic test, or substitute for professional medical advice. Clinical diagnosis requires comprehensive in-person dermatoscopic and histopathological evaluation by a licensed healthcare provider.";
+    const splitDisclaimer = doc.splitTextToSize(disclaimerText, pw - 20);
+    doc.text(splitDisclaimer, 10, 241);
+    
+    doc.setDrawColor(226, 232, 240);
+    doc.line(10, 250, pw - 10, 250);
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text("Skin Tight Clinical Intake Engine  |  HIPAA-Aligned Technical Safeguards  |  Atlanta Innovation Cup Healthcare Pilot", 10, 254);
+    doc.text("Page 1 of 1", pw - 10, 254, { align: 'right' });
+    
+    doc.save(`SkinTight_Clinical_Report_${targetRegion.replace(/[^a-zA-Z0-9]/g, '_')}_${docIdStr}.pdf`);
   };
 
 
@@ -8008,8 +8941,8 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                   <div style={{ fontWeight: '950', fontSize: '26px', color: '#ffffff', letterSpacing: '-0.02em', textShadow: '0 2px 10px rgba(0,0,0,0.5)', marginBottom: '4px' }}>
                     START NEW SCAN
                   </div>
-                  <div style={{ fontSize: '14px', color: '#e9d5ff', fontWeight: '800', letterSpacing: '0.5px' }}>
-                    ✨ Tap Here for Immediate AI Skin Analysis
+                  <div style={{ fontSize: '13.5px', color: '#e9d5ff', fontWeight: '800', letterSpacing: '0.4px' }}>
+                    ✨ Track Skin Concerns & Prepare Doctor Pre-Visit Summary
                   </div>
                 </div>
               </motion.div>
@@ -8038,28 +8971,28 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 </div>
                 <div>
                   <span style={{ fontSize: '11px', fontWeight: '900', color: '#2dd4bf', letterSpacing: '1.5px', textTransform: 'uppercase', display: 'block' }}>Skin Tight</span>
-                  <h3 style={{ fontSize: '18px', fontWeight: '900', margin: 0, color: '#ffffff', letterSpacing: '-0.01em' }}>Your Key Benefits</h3>
+                  <h3 style={{ fontSize: '18px', fontWeight: '900', margin: 0, color: '#ffffff', letterSpacing: '-0.01em' }}>Clinical Pre-Visit Intake</h3>
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '12px' }}>
                 {[
                   {
-                    title: "100% Free & Fast",
-                    desc: "Instant clinical screening in under 60 seconds (vs. $150+ clinic visits).",
-                    icon: Zap,
+                    title: "Pre-Visit Triage & Intake",
+                    desc: "We help patients monitor suspicious skin changes over time and help dermatology providers receive better organized information before a patient ever walks into the office.",
+                    icon: ClipboardList,
                     color: "#38bdf8"
                   },
                   {
-                    title: "High Clinical Accuracy",
-                    desc: "Powered by AI models trained on thousands of verified dermatology cases.",
-                    icon: Globe,
+                    title: "Longitudinal Photo Tracking",
+                    desc: "Track skin concerns over time and bring structured, actionable visual history and baseline comparisons directly into your clinical appointment.",
+                    icon: History,
                     color: "#c084fc"
                   },
                   {
-                    title: "Private & Secure",
-                    desc: "Your uploaded images and diagnostic records remain strictly encrypted.",
-                    icon: Lock,
+                    title: "1-Page Doctor Report",
+                    desc: "Export an organized 1-page clinical summary (symptom onset, changes, prior visits, photo comparisons) ready for doctor review.",
+                    icon: FileText,
                     color: "#2dd4bf"
                   }
                 ].map((item, idx) => {
@@ -8071,7 +9004,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                       </div>
                       <div>
                         <div style={{ fontWeight: '800', fontSize: '14px', color: '#ffffff', marginBottom: '3px' }}>{item.title}</div>
-                        <div style={{ fontSize: '12.5px', color: '#cbd5e1', lineHeight: 1.45 }}>{item.desc}</div>
+                        <div style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: 1.45 }}>{item.desc}</div>
                       </div>
                     </div>
                   );
@@ -8079,7 +9012,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               </div>
 
               <p style={{ fontSize: '12px', color: '#cbd5e1', textAlign: 'center', margin: '16px 0 0', lineHeight: 1.5 }}>
-                Informational screening tool only; does not replace medical doctor advice.
+                Clinical pre-visit intake and longitudinal tracking tool. Not a substitute for in-person dermatology diagnosis.
               </p>
             </div>
 
@@ -8108,7 +9041,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 {[
                   {
                     step: "1",
-                    label: "SCAN",
+                    label: "SNAP",
                     title: "Snap or Upload Photo",
                     desc: "Take a clear, close-up photo of any suspicious spots, moles, or lesions of concern.",
                     color: "#c084fc",
@@ -8117,27 +9050,27 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                   },
                   {
                     step: "2",
-                    label: "ANALYZE",
-                    title: "Instant AI Screening",
-                    desc: "Our dermatologist-trained AI checks risk factors, ABCDE indicators, and pattern symmetries.",
+                    label: "INTAKE",
+                    title: "60-Second Clinical History",
+                    desc: "Fill out an easy, non-pushy pre-visit intake (symptom onset, prior skin exams, color & size evolution).",
                     color: "#38bdf8",
                     bgGradient: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
-                    icon: SparklesIcon
+                    icon: ClipboardList
                   },
                   {
                     step: "3",
                     label: "TRACK",
-                    title: "Monitor Developments",
-                    desc: "Compare pictures over time to monitor changes, build your skin journal, and view timeline trends.",
+                    title: "Longitudinal Evolution",
+                    desc: "Compare pictures over time to monitor changes, track against baseline photos, and view timeline trends.",
                     color: "#2dd4bf",
                     bgGradient: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)",
                     icon: History
                   },
                   {
                     step: "4",
-                    label: "CONSULT",
-                    title: "Export & Share Report",
-                    desc: "Generate clinical PDF summary reports ready to present directly to your doctor or dermatologist.",
+                    label: "REPORT",
+                    title: "1-Page Doctor Report",
+                    desc: "Export a structured 1-page clinical triage PDF ready to hand to your dermatologist or office triage nurse.",
                     color: "#f43f5e",
                     bgGradient: "linear-gradient(135deg, #e11d48 0%, #be123c 100%)",
                     icon: FileText
@@ -8351,6 +9284,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
             analyzeSkin={analyzeSkin}
             retakePhoto={retakePhoto}
             downloadPDF={downloadPDF}
+            openReportPreview={openReportPreview}
             setCompareScanId={setCompareScanId}
             setSelectedScanId={setSelectedScanId}
             setIsComparing={setIsComparing}
@@ -8391,6 +9325,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
             scan={scans.find(s => s.id === selectedScanId)!} 
             onClose={() => setSelectedScanId(null)}
             onDownload={downloadPDF}
+            onPreview={openReportPreview}
             onCompare={scans.filter(s => s.bodyRegion === scans.find(sc => sc.id === selectedScanId)?.bodyRegion).length > 1 ? () => {
               const currentScan = scans.find(s => s.id === selectedScanId)!;
               const otherScans = scans.filter(s => s.bodyRegion === currentScan.bodyRegion && s.id !== currentScan.id);
@@ -8413,7 +9348,19 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
             styles={styles}
           />
         )}
-        </AnimatePresence>
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showReportPreviewModal && previewReportData && (
+          <ReportPreviewModal 
+            data={previewReportData}
+            onClose={() => setShowReportPreviewModal(false)}
+            onDownload={downloadPDF}
+            scans={scans}
+            fullUserData={fullUserData}
+          />
+        )}
+      </AnimatePresence>
 
         {activeTab === 'profile' && (
           <div className="page-container" style={{ ...styles.tabContent, paddingBottom: '100px' }}>
