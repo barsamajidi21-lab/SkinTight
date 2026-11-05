@@ -3083,7 +3083,7 @@ const AboutPage = () => {
             <Dna size={18} className="text-teal-400" /> Why Skin Tight Exists
           </h2>
           <p className="text-sm text-slate-400 leading-relaxed">
-            Dermatologists spend valuable exam room minutes piecing together verbal patient recollections: when a spot first appeared, how it changed, and what prior care occurred. Skin Tight bridges this gap by letting patients track concerns across weeks and months, generating an objective 1-page clinical summary so physicians can make faster, better-informed clinical decisions.
+            Dermatologists and primary care teams spend valuable exam room minutes piecing together verbal patient recollections. Skin Tight bridges this gap by letting patients track concerns at home, generating an objective 1-page clinical summary so clinics can streamline intake and make faster, better-informed decisions.
           </p>
         </motion.div>
 
@@ -8942,7 +8942,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                     START NEW SCAN
                   </div>
                   <div style={{ fontSize: '13.5px', color: '#e9d5ff', fontWeight: '800', letterSpacing: '0.4px' }}>
-                    ✨ Track Skin Concerns & Prepare Doctor Pre-Visit Summary
+                    Track Skin Concerns & Prepare Doctor Pre-Visit Summary
                   </div>
                 </div>
               </motion.div>
@@ -8979,19 +8979,19 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 {[
                   {
                     title: "Pre-Visit Triage & Intake",
-                    desc: "We help patients monitor suspicious skin changes over time and help dermatology providers receive better organized information before a patient ever walks into the office.",
+                    desc: "We help patients monitor skin changes and help clinic staff receive structured pre-visit summaries before the patient arrives.",
                     icon: ClipboardList,
                     color: "#38bdf8"
                   },
                   {
                     title: "Longitudinal Photo Tracking",
-                    desc: "Track skin concerns over time and bring structured, actionable visual history and baseline comparisons directly into your clinical appointment.",
+                    desc: "Track skin concerns over time with side-by-side visual history and baseline comparisons.",
                     icon: History,
                     color: "#c084fc"
                   },
                   {
-                    title: "1-Page Doctor Report",
-                    desc: "Export an organized 1-page clinical summary (symptom onset, changes, prior visits, photo comparisons) ready for doctor review.",
+                    title: "1-Page Doctor Brief",
+                    desc: "Export an organized clinical summary ready for nurse intake and doctor review.",
                     icon: FileText,
                     color: "#2dd4bf"
                   }
