@@ -16,9 +16,9 @@ export interface Article {
   sources?: ArticleSource[];
 }
 
-export const BLOG_REVIEW_STAMP = "Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.";
+export const BLOG_REVIEW_STAMP = "";
 
-export const BLOG_DISCLAIMER = "Skin Tight is an educational wellness tool and not a medical device. This content is for informational purposes only and should not be considered medical advice. Always consult a qualified healthcare professional regarding medical concerns.";
+export const BLOG_DISCLAIMER = "SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.";
 
 export const BLOG_ARTICLES: Article[] = [
   {
@@ -141,9 +141,7 @@ export const BLOG_ARTICLES: Article[] = [
   </details>
 </div>
 
-<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
-  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
-</p>`
+`
   },
   {
     slug: "suspicious-mole-warning-signs",
@@ -171,7 +169,7 @@ export const BLOG_ARTICLES: Article[] = [
 
 <p>But how do we draw the line between a normal, healthy spot and a suspicious lesion? The key lies in understanding the structural, color, and geographic characteristics that indicate cellular instability.</p>
 
-<h4>Anatomy of a Typical Benign Skin Mole</h4>
+<h4>Anatomy of a Typical Stable Skin Mole</h4>
 <p>Most standard moles (known medically as melanocytic nevi) appear during childhood and young adulthood. They are typically characterized by:</p>
 <ul>
   <li><strong>Symmetrical balance:</strong> Both halves appear practically identical in size, curvature, and density.</li>
@@ -186,7 +184,7 @@ export const BLOG_ARTICLES: Article[] = [
     <thead>
       <tr style="background: rgba(45, 212, 191, 0.1); color: #2dd4bf; font-weight: bold;">
         <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">Criterion</th>
-        <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">Normal Benign Nevus</th>
+        <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">Common Stable Nevus</th>
         <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">Dysplastic (Atypical) Mole</th>
         <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">Melanoma Indicator</th>
       </tr>
@@ -240,9 +238,7 @@ export const BLOG_ARTICLES: Article[] = [
   </details>
 </div>
 
-<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
-  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
-</p>`
+`
   },
   {
     slug: "when-to-see-a-dermatologist",
@@ -325,9 +321,7 @@ export const BLOG_ARTICLES: Article[] = [
   </details>
 </div>
 
-<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
-  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
-</p>`
+`
   },
   {
     slug: "abcde-rule-for-moles",
@@ -375,7 +369,7 @@ export const BLOG_ARTICLES: Article[] = [
       <tr style="background: rgba(45, 212, 191, 0.1); color: #2dd4bf; font-weight: bold;">
         <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">Letter</th>
         <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">Key Parameter</th>
-        <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">Benign Baseline</th>
+        <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">Stable Baseline</th>
         <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">Clinical Concern Flag</th>
       </tr>
     </thead>
@@ -430,9 +424,7 @@ export const BLOG_ARTICLES: Article[] = [
   </details>
 </div>
 
-<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
-  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
-</p>`
+`
   },
   {
     slug: "how-to-monitor-skin-changes",
@@ -481,9 +473,7 @@ export const BLOG_ARTICLES: Article[] = [
   </details>
 </div>
 
-<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
-  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
-</p>`
+`
   },
   {
     slug: "ugly-duckling-sign-moles",
@@ -521,9 +511,7 @@ export const BLOG_ARTICLES: Article[] = [
 <h4>How to Check for Ugly Ducklings at Home</h4>
 <p>Step back from the mirror to observe the overall distribution of your moles before zooming in. Look for the outlier that catches your eye immediately from a distance of two to three feet. If you find one, log a high-resolution photo in Skin Tight and consult a dermatologist.</p>
 
-<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
-  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
-</p>`
+`
   },
   {
     slug: "skin-cancer-darker-skin-tones",
@@ -561,9 +549,7 @@ export const BLOG_ARTICLES: Article[] = [
 <h4>Crucial Self-Check Habits</h4>
 <p>During your monthly self-check, remember to remove nail polish, check between your toes, inspect the soles of your feet with a handheld mirror, and log any new dark pigmentation changes in Skin Tight.</p>
 
-<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
-  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
-</p>`
+`
   },
   {
     slug: "basal-cell-vs-squamous-cell-carcinoma",
@@ -657,9 +643,7 @@ export const BLOG_ARTICLES: Article[] = [
 <h4>When to Seek Dermatologic Evaluation</h4>
 <p>If you notice a bleeding nodule, a stubborn crust that persists for longer than 3 to 4 weeks, or a pink pearly bump on your nose or cheek that doesn't disappear like a common blemish, document the area in Skin Tight and book a clinical examination.</p>
 
-<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
-  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
-</p>`
+`
   },
   {
     slug: "mineral-vs-chemical-sunscreen-science",
@@ -714,9 +698,7 @@ export const BLOG_ARTICLES: Article[] = [
   <li>Apply an adequate volume: most adults require roughly one ounce (equivalent to a shot glass full) for the entire body, reapplying every <strong>two hours</strong> or immediately after towel drying.</li>
 </ul>
 
-<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
-  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
-</p>`
+`
   },
   {
     slug: "fitzpatrick-skin-type-scale-guide",
@@ -763,9 +745,7 @@ export const BLOG_ARTICLES: Article[] = [
 <h4>How Skin Tight Customizes Your Guidance</h4>
 <p>When you set your Fitzpatrick profile in Skin Tight, our system automatically recalibrates your UV sensitivity alerts, reminder frequency, and lesion self-check recommendations to match your biological risk profile.</p>
 
-<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
-  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
-</p>`
+`
   },
   {
     slug: "dermoscopy-clinical-imaging-guide",
@@ -811,9 +791,7 @@ export const BLOG_ARTICLES: Article[] = [
 <h4>Bridging Patient Self-Checks and Professional Dermoscopy</h4>
 <p>Consumer mobile apps and high-resolution cameras provide an invaluable longitudinal timeline of visual change. When you present your documented mole history to a dermatologist, they can focus their dermatoscope on the precise spot that has evolved, cross-referencing sub-surface optics with your sequential photographic logs.</p>
 
-<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
-  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
-</p>`
+`
   },
   {
     slug: "actinic-keratosis-precancer-warning-signs",
@@ -864,9 +842,7 @@ export const BLOG_ARTICLES: Article[] = [
   <li><strong>Photodynamic Therapy (PDT):</strong> A photosensitizing chemical agent is applied to the skin and activated with specialized blue or red light, destroying precancerous cells while sparing normal tissue.</li>
 </ul>
 
-<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
-  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
-</p>`
+`
   },
   {
     slug: "childhood-sunburns-melanoma-risk-prevention",
@@ -911,8 +887,6 @@ export const BLOG_ARTICLES: Article[] = [
 <h4>Creating Proactive Sun Habits</h4>
 <p>Habits instilled in childhood shape lifelong behavior. By modeling sun-safe practices—wearing hats, seeking shade during peak hours, and normalizing skin health checks—families safeguard their long-term health.</p>
 
-<p style="font-size: 11px; color: #2dd4bf; margin-top: 28px; padding: 10px; background: rgba(45, 212, 191, 0.08); border-radius: 8px; border: 1px solid rgba(45, 212, 191, 0.2);">
-  ✓ <strong>Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.</strong>
-</p>`
+`
   }
 ];

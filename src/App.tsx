@@ -84,13 +84,34 @@ import {
 import { BLOG_ARTICLES, BLOG_DISCLAIMER } from './data/blogData';
 import { PSEO_LANDING_PAGES, PseoPage } from './data/pSEOData';
 import { PseoLandingPage } from './components/PseoLandingPage';
-import { SkinShowcaseCarousel } from './components/SkinShowcaseCarousel';
-import { Reviews3DCarousel } from './components/Reviews3DCarousel';
 import { PricingPlansPage } from './components/PricingPlansPage';
+import { ClinicDashboard } from './components/clinic/ClinicDashboard';
+import { ClinicIntakePage } from './components/clinic/ClinicIntakePage';
+import { TEST_CLINIC } from './lib/clinicService';
 import { ensureLeafletLoaded, ensureChartJsLoaded } from './lib/scriptLoader';
 
 import { db, auth, storage } from './lib/firebase';
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
+import { AI_SUMMARY_ENABLED } from './config/compliance';
+
+// Memory cache for private Cloud Storage authenticated URLs
+const resolvedUrlCache: Record<string, string> = {};
+export async function resolvePhotoUrl(pathOrUrl: string): Promise<string> {
+  if (!pathOrUrl) return '';
+  if (pathOrUrl.startsWith('data:') || pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://') || pathOrUrl.startsWith('blob:')) {
+    return pathOrUrl;
+  }
+  if (resolvedUrlCache[pathOrUrl]) {
+    return resolvedUrlCache[pathOrUrl];
+  }
+  try {
+    const url = await getDownloadURL(storageRef(storage, pathOrUrl));
+    resolvedUrlCache[pathOrUrl] = url;
+    return url;
+  } catch {
+    return '';
+  }
+}
 import { 
   collection, 
   doc, 
@@ -1072,58 +1093,6 @@ const styles = {
     );
   };
 
-  const SkinScoreGauge = ({ score }: { score: number }) => {
-    const getColor = (s: number) => {
-      if (s >= 80) return '#2dd4bf';
-      if (s >= 60) return '#f59e0b';
-      return '#ef4444';
-    };
-    
-    const color = getColor(score);
-    const radius = 70;
-    const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (score / 100) * circumference;
-
-    return (
-      <div style={styles.scoreGauge}>
-        <svg width="180" height="180" viewBox="0 0 180 180" style={{ transform: 'rotate(-90deg)' }}>
-          <circle
-            cx="90"
-            cy="90"
-            r={radius}
-            fill="transparent"
-            stroke="rgba(255,255,255,0.05)"
-            strokeWidth="12"
-          />
-          <motion.circle
-            cx="90"
-            cy="90"
-            r={radius}
-            fill="transparent"
-            stroke={color}
-            strokeWidth="12"
-            strokeDasharray={circumference}
-            initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset: offset }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
-            strokeLinecap="round"
-            style={{ filter: `drop-shadow(0 0 8px ${color}66)` }}
-          />
-        </svg>
-        <div style={{ position: 'absolute', textAlign: 'center' }}>
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            style={styles.scoreValue(color)}
-          >
-            {score}
-          </motion.div>
-          <div style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>Skin Health</div>
-        </div>
-      </div>
-    );
-  };
-
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 6371; // km
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -1267,7 +1236,7 @@ const styles = {
           latitude = customCoords.latitude;
           longitude = customCoords.longitude;
           setUserLocation([latitude, longitude]);
-          setStatusMessage("Finding verified local dermatology & skin health clinics...");
+          setStatusMessage("Finding nearby local dermatology & skin health clinics...");
         } else {
           setStatusMessage("Detecting your location...");
           if (!navigator.geolocation) {
@@ -1286,7 +1255,7 @@ const styles = {
                   latitude = ipData.latitude;
                   longitude = ipData.longitude;
                   setUserLocation([latitude, longitude]);
-                  setStatusMessage(`Located search hub: ${ipData.city || 'local region'}. Finding certified skin clinics...`);
+                  setStatusMessage(`Located search hub: ${ipData.city || 'local region'}. Finding nearby clinics...`);
                   showToast(`Mapped clinics near ${ipData.city || 'your area'}!`, "success");
                 } else {
                   throw new Error("Invalid IP geo response");
@@ -1302,7 +1271,7 @@ const styles = {
                       latitude = pos.coords.latitude;
                       longitude = pos.coords.longitude;
                       setUserLocation([latitude, longitude]);
-                      setStatusMessage("Searching verified skin health clinics...");
+                      setStatusMessage("Searching nearby skin health clinics...");
                       resolve();
                     },
                     (err) => reject(err),
@@ -1399,7 +1368,7 @@ const styles = {
             html: '<div style="width: 22px; height: 22px; background: #2dd4bf; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 18px rgba(45, 212, 191, 0.8);"></div>',
             iconSize: [22, 22]
           })
-        }).addTo(mapInstance.current).bindPopup("<b>Your Search Hub</b><br>Finding verified clinics nearby.");
+        }).addTo(mapInstance.current).bindPopup("<b>Your Search Hub</b><br>Finding nearby clinics.");
 
         // Optimized Overpass Query strictly for dermatology and skin healthcare centers
         const query = `
@@ -1524,7 +1493,7 @@ const styles = {
 
         setClinics(parsedClinics);
         setStatusMessage(null);
-        showToast(`Located ${parsedClinics.length} verified skin care locations!`, "success");
+        showToast(`Located ${parsedClinics.length} nearby skin care locations!`, "success");
 
         // Render Clinic Pins on Leaflet Map
         parsedClinics.slice(0, 10).forEach((clinic: any) => {
@@ -1614,7 +1583,7 @@ const styles = {
           const { lat, lon, display_name } = data[0];
           const primaryName = display_name.split(',')[0] || addressInput;
           showToast(`Located ${primaryName}! Finding clinics...`, "success");
-          setStatusMessage(`Found: ${primaryName}. Finding verified local clinics...`);
+          setStatusMessage(`Found: ${primaryName}. Finding nearby clinics...`);
           await findClinics(12000, { latitude: parseFloat(lat), longitude: parseFloat(lon) });
         } else {
           showToast("Location not recognized. Include a city name or ZIP code!", "warning");
@@ -1713,7 +1682,7 @@ const styles = {
                   Always Visit a Real Dermatologist Regularly
                 </h3>
                 <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.55', margin: '0 0 14px 0' }}>
-                  AI screening is an educational tool and <strong style={{ color: '#ffffff' }}>does not replace a clinical doctor examination</strong>. We strongly recommend scheduling routine, in-person full-body skin checkups with a board-certified dermatologist. Our Clinic Finder connects you directly to affordable, trusted practices near you.
+                  Photo logging is an educational pre-visit tool and <strong style={{ color: '#ffffff' }}>does not replace a clinical doctor examination</strong>. We strongly recommend scheduling routine, in-person full-body skin checkups with a board-certified dermatologist. Our Clinic Finder helps you locate nearby practices.
                 </p>
 
                 {/* Feature Chips */}
@@ -1736,7 +1705,7 @@ const styles = {
           <div className="glass-card" style={{ padding: '20px', borderRadius: '24px', display: 'flex', flexDirection: 'column', gap: '14px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(30, 41, 59, 0.4)', backdropFilter: 'blur(12px)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Globe size={14} className="text-teal-400" />
-              <p className="text-xs text-teal-400 font-extrabold uppercase tracking-widest" style={{ margin: 0 }}>Find Verified Clinics Near Any Address, City or ZIP</p>
+              <p className="text-xs text-teal-400 font-extrabold uppercase tracking-widest" style={{ margin: 0 }}>Find Nearby Clinics Near Any Address, City or ZIP</p>
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
@@ -1833,7 +1802,7 @@ const styles = {
               {/* Filter Tabs */}
               <div style={{ display: 'flex', gap: '8px', marginTop: '4px', overflowX: 'auto', paddingBottom: '4px' }}>
                 {[
-                  { id: 'all', label: `All Verified (${clinics.length})` },
+                  { id: 'all', label: `Nearby Clinics (${clinics.length})` },
                   { id: 'specialist', label: `Dermatology Specialists (${clinics.filter(c => c.isDermSpecialist).length})` },
                   { id: 'openNow', label: `Open Now (${clinics.filter(c => getOpenStatus(c.hours).isOpen === true).length})` }
                 ].map((f) => (
@@ -1953,7 +1922,7 @@ const styles = {
                       </div>
                     </div>
 
-                    {/* Services Verified Badges */}
+                    {/* Services Badges */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px', padding: '10px 12px', background: 'rgba(15, 23, 42, 0.5)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                       <span style={{ fontSize: '11px', fontWeight: '800', color: '#2dd4bf' }}>
                         ✓ General Skin & Mole Checks
@@ -2201,6 +2170,7 @@ const ScanPage = ({
   handleFileChange,
   removePhoto,
   analyzeSkin,
+  summarizeIntake,
   retakePhoto,
   downloadPDF,
   openReportPreview,
@@ -2238,77 +2208,70 @@ const ScanPage = ({
           animate={{ opacity: 1, scale: 1 }}
           style={styles.resultCard}
         >
-          <div className="flex items-center gap-2 mb-4 text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-            <Info size={12} className="text-slate-400" />
-            Skin cancer screening assessment — Not a medical diagnosis
+          {/* Phase 2: Exact Post-Submission Confirmation Message */}
+          <div className="p-5 rounded-2xl bg-teal-500/10 border border-teal-500/30 mb-6 text-slate-100 text-sm sm:text-base leading-relaxed font-medium">
+            Thank you. Your information has been received. If a spot is bleeding heavily, growing quickly, or you feel unwell, contact your doctor or seek care now. Otherwise, bring this report to your appointment. Call 911 for emergencies.
           </div>
-          
-          <div className="mb-6">
-            <div style={styles.riskBadge(result.risk_level)}>
-              {result.risk_level === 'high' ? <AlertTriangle size={20} /> : <CheckCircle2 size={20} />}
-              <span>
-                {result.risk_level === 'high' ? 'HIGH RISK' : result.risk_level === 'moderate' ? 'MODERATE RISK' : 'LOW RISK'}
-              </span>
+
+          {/* Patient-Reported Plain-Language Summary */}
+          <div className="glass-card p-6 rounded-3xl mb-6 border border-white/10">
+            <div className="flex items-center gap-2 mb-3 text-xs font-bold uppercase tracking-wider text-teal-400">
+              <ClipboardList size={16} />
+              <span>Patient-Reported Pre-Visit Summary</span>
             </div>
-            <p className="text-sm font-bold text-white mt-3 px-1">{result.summary}</p>
+            <p className="text-base text-white font-medium leading-relaxed">{result.summary}</p>
             {result.detected_body_part && (
-              <div className="mt-3 px-1.5 py-1 inline-flex items-center gap-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-300 font-mono">
-                <SparklesIcon size={12} className="text-cyan-400 animate-pulse" />
-                <span>AI Detected Body Part: <strong className="text-white">{result.detected_body_part}</strong></span>
+              <div className="mt-4 px-3 py-1.5 inline-flex items-center gap-2 rounded-xl bg-teal-500/10 border border-teal-500/20 text-xs text-teal-300 font-medium">
+                <MapPin size={13} className="text-teal-400" />
+                <span>Recorded Body Region: <strong className="text-white">{result.detected_body_part}</strong></span>
               </div>
             )}
           </div>
 
-          <div className="glass-card p-6 rounded-3xl mb-6 border border-cyan-500/20">
-            <h3 style={styles.sectionTitle} className="text-cyan-400"><Activity size={20} /> <span>What the AI noticed</span></h3>
-            <div className="space-y-3">
-              {result.findings?.slice(0, 3).map((f: any, i: number) => (
-                <div key={i} className="flex gap-3 text-sm text-slate-200 leading-relaxed">
-                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 shrink-0 mt-1.5" />
-                  {f}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className={`p-6 rounded-3xl mb-6 border ${
-            result.risk_level === 'high' ? 'bg-red-500/10 border-red-500/30' :
-            result.risk_level === 'moderate' ? 'bg-amber-500/10 border-amber-500/30' :
-            'bg-emerald-500/10 border-emerald-500/30'
-          }`}>
-            <h3 className={`text-sm font-black uppercase tracking-widest mb-3 flex items-center gap-2 ${
-              result.risk_level === 'high' ? 'text-red-400' :
-              result.risk_level === 'moderate' ? 'text-amber-400' :
-              'text-emerald-400'
-            }`}>
-              <AlertCircle size={18} /> <span>Do you need to act?</span>
+          {/* Structured Patient-Reported Intake Points */}
+          <div className="glass-card p-6 rounded-3xl mb-6 border border-white/10">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 mb-4 flex items-center gap-2">
+              <Activity size={16} className="text-teal-400" />
+              <span>Reported Symptoms & History for Provider Review</span>
             </h3>
-            <p className="text-sm font-bold text-white leading-relaxed">{result.action_card}</p>
-          </div>
-
-          <div className="glass-card p-6 rounded-3xl mb-6 border border-purple-500/20">
-            <h3 style={styles.sectionTitle} className="text-purple-400"><ShieldCheck size={20} /> <span>Your personal risk factors</span></h3>
-            <div className="space-y-3">
-              {result.risk_factors_identified?.slice(0, 2).map((rf: any, i: number) => (
+            <div className="space-y-2.5">
+              {result.findings?.map((f: any, i: number) => (
                 <div key={i} className="flex gap-3 text-sm text-slate-200 leading-relaxed">
-                  <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0 mt-1.5" />
-                  {rf}
+                  <div className="w-1.5 h-1.5 rounded-full bg-teal-400 shrink-0 mt-2" />
+                  <span>{f}</span>
                 </div>
               ))}
             </div>
           </div>
+
+          {/* Recorded Photos Display */}
+          {photos.length > 0 && (
+            <div className="glass-card p-5 rounded-3xl mb-6 border border-white/10">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Recorded Photos</span>
+                <span className="text-[11px] text-teal-400 font-semibold">{photos.length} photo{photos.length > 1 ? 's' : ''} logged</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {photos.map((p: string, idx: number) => (
+                  <div key={idx} className="relative rounded-xl overflow-hidden border border-white/10 aspect-square">
+                    <img src={p} alt={`Logged skin spot ${idx + 1}`} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {saveStatus === 'success' && (
-            <div className="p-4 bg-emerald-500/20 border border-emerald-500/50 rounded-2xl flex items-center gap-3 mb-6 animate-bounce">
+            <div className="p-4 bg-emerald-500/20 border border-emerald-500/50 rounded-2xl flex items-center gap-3 mb-6">
               <CheckCircle2 size={20} className="text-emerald-400" />
-              <span className="text-sm font-bold text-emerald-300">Scan saved to your account</span>
+              <span className="text-sm font-bold text-emerald-300">Photo log and intake saved to your account</span>
             </div>
           )}
 
           {saveStatus === 'error' && (
             <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-2xl flex items-center gap-3 mb-6">
               <AlertTriangle size={20} className="text-red-400" />
-              <span className="text-sm font-bold text-red-300">Error saving scan. Please try again.</span>
+              <span className="text-sm font-bold text-red-300">Error saving photo log. Please try again.</span>
             </div>
           )}
 
@@ -2347,8 +2310,12 @@ const ScanPage = ({
               onClick={retakePhoto}
               className="w-full py-4 bg-white/5 border border-white/10 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-white/10 transition-all"
             >
-              <RotateCcw size={20} /> Retake Assessment
+              <RotateCcw size={20} /> Log Another Skin Photo
             </button>
+          </div>
+
+          <div className="mt-6 text-center text-xs text-slate-400 leading-relaxed px-4">
+            SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.
           </div>
         </motion.div>
       ) : (
@@ -2643,6 +2610,50 @@ const ScanPage = ({
                       </div>
                     </div>
 
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        Is this a new spot or an existing spot?
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {['New spot', 'Existing spot that changed', 'Stable baseline spot', 'Not sure'].map(o => (
+                          <button 
+                            key={o}
+                            type="button"
+                            onClick={() => updateIntake('newOrChanged', intakeForm.newOrChanged === o ? '' : o)}
+                            className={`py-3 px-2 rounded-xl font-bold text-xs text-center transition-all border ${
+                              intakeForm.newOrChanged === o 
+                                ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20' 
+                                : 'bg-white/5 text-slate-300 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            {o}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        Approximate Size (If known)
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {['< 6mm (smaller than pencil eraser)', '~6mm (pencil eraser size)', '> 6mm (larger)', 'Not sure'].map(o => (
+                          <button 
+                            key={o}
+                            type="button"
+                            onClick={() => updateIntake('approximateSize', intakeForm.approximateSize === o ? '' : o)}
+                            className={`py-3 px-2 rounded-xl font-bold text-xs text-center transition-all border ${
+                              intakeForm.approximateSize === o 
+                                ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20' 
+                                : 'bg-white/5 text-slate-300 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            {o}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <div className="pt-2 flex justify-end">
                       <button
                         type="button"
@@ -2658,6 +2669,28 @@ const ScanPage = ({
                 {/* STEP 2: SYMPTOMS & CHANGES */}
                 {intakeStep === 2 && (
                   <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        Over what time period did you notice changes?
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {['< 1 month', '1–3 months', '3–6 months', 'Over 1 year', 'Unchanged / Not sure'].map(o => (
+                          <button 
+                            key={o}
+                            type="button"
+                            onClick={() => updateIntake('changeTimePeriod', intakeForm.changeTimePeriod === o ? '' : o)}
+                            className={`py-3 px-2 rounded-xl font-bold text-xs text-center transition-all border ${
+                              intakeForm.changeTimePeriod === o 
+                                ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20' 
+                                : 'bg-white/5 text-slate-300 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            {o}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <div>
                       <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
                         Color Evolution
@@ -2707,13 +2740,35 @@ const ScanPage = ({
                         Bleeding, Crusting, or Oozing
                       </label>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {['None', 'Bleeds easily', 'Crusting / scabbing', 'Oozing fluid'].map(o => (
+                        {['No bleeding', 'Bleeds easily', 'Crusting / scabbing', 'Bleeds if bumped'].map(o => (
                           <button 
                             key={o}
                             type="button"
                             onClick={() => updateIntake('bleeding', intakeForm.bleeding === o ? '' : o)}
                             className={`py-3 px-2 rounded-xl font-bold text-xs text-center transition-all border ${
                               intakeForm.bleeding === o 
+                                ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20' 
+                                : 'bg-white/5 text-slate-300 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            {o}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        Has this spot or sore failed to heal for more than 3–4 weeks?
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {['Yes — non-healing sore > 3-4 weeks', 'No — heals normally', 'Unsure'].map(o => (
+                          <button 
+                            key={o}
+                            type="button"
+                            onClick={() => updateIntake('nonHealing', intakeForm.nonHealing === o ? '' : o)}
+                            className={`py-3 px-2 rounded-xl font-bold text-xs text-center transition-all border ${
+                              intakeForm.nonHealing === o 
                                 ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20' 
                                 : 'bg-white/5 text-slate-300 border-white/10 hover:border-white/20'
                             }`}
@@ -2744,6 +2799,19 @@ const ScanPage = ({
                           </button>
                         ))}
                       </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        Patient Comments or Questions for Doctor (Optional)
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="Any additional details, questions, or previous treatments you want to note for your clinician..."
+                        value={intakeForm.patientComments || ''}
+                        onChange={(e) => updateIntake('patientComments', e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-3 text-xs text-white placeholder-slate-500 outline-none focus:border-teal-400 transition-all resize-none"
+                      />
                     </div>
 
                     <div className="pt-2 flex justify-between">
@@ -2827,10 +2895,10 @@ const ScanPage = ({
 
                     <div>
                       <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                        Family History of Skin Cancer
+                        Family History of Melanoma or Skin Cancer
                       </label>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {['No family history', 'Melanoma in parent/sibling', 'Non-melanoma skin cancer', 'Not sure'].map(o => (
+                        {['No family history', 'Family history of melanoma', 'Other skin cancer in family', 'Not sure'].map(o => (
                           <button 
                             key={o}
                             type="button"
@@ -2849,16 +2917,16 @@ const ScanPage = ({
 
                     <div>
                       <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                        Other Medical Conditions or Risk Factors
+                        History of Severe Sunburns or Tanning Bed Use
                       </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {['None reported', 'Immunocompromised / organ transplant', 'Autoimmune disease', 'Frequent sun exposure / tanning bed use'].map(o => (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {['None', 'Multiple blistering sunburns', 'Regular tanning bed use', 'Occasional severe sunburns'].map(o => (
                           <button 
                             key={o}
                             type="button"
-                            onClick={() => updateIntake('otherConditions', intakeForm.otherConditions === o ? '' : o)}
+                            onClick={() => updateIntake('sunburnOrTanningHistory', intakeForm.sunburnOrTanningHistory === o ? '' : o)}
                             className={`py-3 px-2 rounded-xl font-bold text-xs text-center transition-all border ${
-                              intakeForm.otherConditions === o 
+                              intakeForm.sunburnOrTanningHistory === o 
                                 ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20' 
                                 : 'bg-white/5 text-slate-300 border-white/10 hover:border-white/20'
                             }`}
@@ -2867,6 +2935,41 @@ const ScanPage = ({
                           </button>
                         ))}
                       </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        Immune-Suppressing Conditions or Medications
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {['No', 'Yes', 'Unsure'].map(o => (
+                          <button 
+                            key={o}
+                            type="button"
+                            onClick={() => updateIntake('immuneSuppressing', intakeForm.immuneSuppressing === o ? '' : o)}
+                            className={`py-3 px-2 rounded-xl font-bold text-xs text-center transition-all border ${
+                              intakeForm.immuneSuppressing === o 
+                                ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20' 
+                                : 'bg-white/5 text-slate-300 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            {o}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                        Other Medical Conditions (Optional)
+                      </label>
+                      <input 
+                        type="text"
+                        placeholder="e.g. Hypertension, Diabetes, Thyroid condition, etc."
+                        value={intakeForm.otherConditions || ''}
+                        onChange={(e) => updateIntake('otherConditions', e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-3 text-xs text-white placeholder-slate-500 outline-none focus:border-teal-400 transition-all"
+                      />
                     </div>
 
                     <div className="pt-2 flex justify-start">
@@ -2887,18 +2990,18 @@ const ScanPage = ({
           <button 
             style={{ ...styles.analyzeButton, opacity: !intakeForm.bodyLocation || photos.length === 0 || loading ? 0.5 : 1 }}
             disabled={!intakeForm.bodyLocation || photos.length === 0 || loading}
-            onClick={() => analyzeSkin()}
+            onClick={() => (summarizeIntake || analyzeSkin)()}
             className="shadow-xl shadow-teal-500/25"
           >
             {loading ? (
               <>
                 <RefreshCw className="animate-spin" size={20} />
-                Analyzing Spot & Preparing Doctor Report...
+                Generating Pre-Visit Clinical Summary...
               </>
             ) : (
               <>
-                <SparklesIcon size={20} />
-                Run Screening & Generate Doctor Report
+                <FileText size={20} />
+                Save Photo Log & Generate Pre-Visit Summary
               </>
             )}
           </button>
@@ -2964,14 +3067,14 @@ const WelcomePage = ({ onComplete }: { onComplete: () => void }) => {
               color: "#0ea5e9"
             },
             {
-              title: "High Clinical Accuracy",
-              desc: "Powered by AI models trained on thousands of verified dermatology cases.",
+              title: "Structured Clinical Intake",
+              desc: "Designed to organize symptom onset and photo history before clinic visits.",
               icon: Globe,
               color: "#a855f7"
             },
             {
               title: "Private & Secure",
-              desc: "Your uploaded images and diagnostic records remain strictly encrypted.",
+              desc: "Your uploaded images and photo history remain strictly encrypted.",
               icon: Lock,
               color: "#2dd4bf"
             }
@@ -3047,8 +3150,9 @@ const AboutPage = () => {
             We value your experience and safety. Our team is here to help with any questions or issues you may have.
           </p>
           
+          {/* TODO: Replace with finalized domain email once configured */}
           <div className="inline-flex items-center gap-3 px-6 py-3 bg-teal-500 text-slate-950 rounded-full font-black text-sm shadow-xl shadow-teal-500/20 hover:scale-105 transition-transform cursor-pointer">
-            <Mail size={16} /> support.skintight@gmail.com
+            <Mail size={16} /> support@[DOMAIN-TBD]
           </div>
           
           <div className="mt-6 pt-6 border-t border-white/5">
@@ -3125,7 +3229,7 @@ const AboutPage = () => {
             <AlertTriangle size={18} /> Medical Disclaimer
           </h2>
           <p className="text-xs text-amber-200/60 leading-relaxed text-left">
-            Skin Tight is an AI-powered wellness and educational tool designed to help users monitor visible skin changes over time. Skin Tight is NOT a medical device and does NOT provide medical diagnoses, treatment plans, prescriptions, or professional medical advice. Always consult a licensed dermatologist.
+            SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.
           </p>
         </motion.div>
 
@@ -3792,72 +3896,7 @@ const PlansPage = ({ setActiveTab }: { setActiveTab: (tab: any) => void }) => {
   );
 };
 
-const EducationCard = ({ result, onClose }: { result: any, onClose: () => void }) => {
-  const [showQuiz, setShowQuiz] = useState(false);
-  const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
-
-  const quiz = {
-    question: "What is the 'E' in the ABCDE rule for skin cancer?",
-    options: ["Elevation", "Evolving", "Edge", "Enlarging"],
-    correct: 1,
-    explanation: "E stands for Evolving. Any change in size, shape, color, or elevation of a spot on your skin, or any new symptom in it, such as bleeding, itching or crusting, may be a warning sign of melanoma."
-  };
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
-      className="fixed inset-x-4 bottom-24 z-50 glass-card p-6 rounded-3xl border-cyan-500/30 shadow-2xl"
-    >
-      <div className="flex justify-between items-start mb-4">
-        <h3 className="text-lg font-black text-white flex items-center gap-2">
-          <BookOpen size={20} className="text-cyan-400" /> 
-          {showQuiz ? "Quick Quiz" : "Did you know?"}
-        </h3>
-        <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-lg"><X size={20} /></button>
-      </div>
-
-      {!showQuiz ? (
-        <>
-          <p className="text-sm text-slate-300 leading-relaxed mb-6">
-            Based on your scan, you should know that {result.risk_level === 'high' ? 'melanoma can often look like a normal mole but changes rapidly.' : 'regular self-exams are the best way to catch skin cancer early.'}
-          </p>
-          <button 
-            onClick={() => setShowQuiz(true)}
-            className="w-full py-3 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-bold rounded-xl text-sm"
-          >
-            Test your knowledge
-          </button>
-        </>
-      ) : (
-        <div className="space-y-4">
-          <p className="text-sm font-bold text-white">{quiz.question}</p>
-          <div className="grid grid-cols-2 gap-2">
-            {quiz.options.map((opt, i) => (
-              <button 
-                key={i}
-                onClick={() => setQuizAnswer(i)}
-                className={`p-3 rounded-xl text-xs font-bold transition-all ${
-                  quizAnswer === i 
-                    ? (i === quiz.correct ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white')
-                    : 'bg-white/5 text-slate-400 border border-white/10'
-                }`}
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
-          {quizAnswer !== null && (
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[11px] text-slate-400 italic leading-relaxed">
-              {quiz.explanation}
-            </motion.p>
-          )}
-        </div>
-      )}
-    </motion.div>
-  );
-};
+const EducationCard = () => null;
 
     const OverdueBanner = () => null; // Removed as requested
 
@@ -3961,6 +4000,7 @@ const SideMenu = ({
 }) => {
   const menuItems = [
     { id: 'home', label: 'Home', icon: Home },
+    { id: 'clinic_portal', label: 'Clinic Staff Portal (B2B)', icon: Building2 },
     { id: 'profile', label: 'My Profile', icon: UserCircle },
     ...(currentUser ? [
       { id: 'timeline', label: 'Timeline and Schedule', icon: Calendar },
@@ -4343,7 +4383,7 @@ interface AnalysisResult {
   detected_body_part?: string; // AI Detected Body Part
 }
 
-interface IntakeForm {
+export interface IntakeForm {
   // Section 1: Demographics & Baseline (from profile)
   ageRange: string;
   ethnicity: string;
@@ -4355,8 +4395,10 @@ interface IntakeForm {
 
   // Section 3: Oncological & Disease History
   personalCancerHistory: string; // "Previous melanoma", "Non-melanoma skin cancer", "No personal history", "Unsure"
-  familyCancerHistory: string;   // "Immediate family (parent/sibling)", "Extended family", "No known history", "Unsure"
-  otherConditions: string;       // "Atypical moles (dysplastic nevi)", "Immunocompromised", "None"
+  familyCancerHistory: string;   // "Family history of melanoma", "Other skin cancer in family", "No known history", "Unsure"
+  otherConditions: string;       // General medical conditions
+  sunburnOrTanningHistory: string; // "Multiple blistering sunburns", "Regular tanning bed use", "Occasional severe sunburns", "None", "Unsure"
+  immuneSuppressing: string;     // "Yes", "No", "Unsure"
 
   // Section 4: Spot Location & Timeline
   bodyLocation: string;
@@ -4365,13 +4407,19 @@ interface IntakeForm {
   duration: string;
 
   // Section 5: Lesion Evolution & Symptoms
-  changedRecently: string;
+  newOrChanged: string;          // "New spot", "Existing spot that changed", "Stable existing spot (baseline)", "Not sure"
+  changeTimePeriod: string;      // "Past 2–4 weeks", "1–3 months", "3–6 months", "Over 1 year", "Unchanged"
   colorChange: string;           // "Darkened / multi-colored", "Lightened", "No color change", "Not sure"
   sizeChange: string;            // "Grown larger / spreading", "Raised / elevated", "No size change", "Not sure"
-  bleeding: string;              // "Spontaneous bleeding", "Bleeds if bumped or scratched", "No bleeding"
+  shapeChange: string;           // "Irregular / asymmetric border", "Stable symmetric shape", "Not sure"
+  bleeding: string;              // "Spontaneous bleeding", "Bleeds if bumped or scratched", "Crusting / scabbing", "No bleeding"
+  nonHealing: string;            // "Yes — non-healing sore > 3-4 weeks", "No — heals normally", "Unsure"
   painOrSensation: string;       // "Painful / tender", "Frequent itching", "Burning sensation", "No pain / symptoms"
+  approximateSize: string;       // "< 6mm (smaller than pencil eraser)", "~6mm (pencil eraser size)", "> 6mm (larger)", "Unsure"
+  patientComments: string;       // Plain-text patient comments for doctor
 
   // Supplemental & legacy compatibility
+  changedRecently: string;
   concernType: string;
   whatChanged: string[];
   appearance: string[];
@@ -4614,30 +4662,7 @@ const fitzpatrickDescriptions: Record<number, any> = {
   }
 };
 
-function renderSkinTypeCard(fitzpatrickType: any) {
-  const type = parseInt(fitzpatrickType) || 2;
-  const info = fitzpatrickDescriptions[type];
- 
-  const container = document.getElementById("skinTypeDisplay");
-  if (!container) return;
- 
-  container.innerHTML = `
-    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;">
-      <div style="color:rgba(255,255,255,0.5);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Your Skin Type</div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-        <div style="width:44px;height:44px;border-radius:50%;background:${info.color};border:2px solid rgba(255,255,255,0.15);flex-shrink:0;"></div>
-        <div>
-          <div style="color:#fff;font-size:15px;font-weight:600;">${info.label}</div>
-          <div style="color:rgba(255,255,255,0.5);font-size:12px;margin-top:2px;">${info.description}</div>
-        </div>
-      </div>
-      <div style="background:rgba(0,180,216,0.08);border:1px solid rgba(0,180,216,0.2);border-radius:8px;padding:10px;">
-        <div style="color:#00B4D8;font-size:12px;font-weight:500;">⚠️ What this means for you</div>
-        <div style="color:rgba(255,255,255,0.6);font-size:12px;margin-top:4px;line-height:1.5;">${info.riskNote}</div>
-      </div>
-    </div>
-  `;
-}
+function renderSkinTypeCard() {}
 
 function shouldRegenerateProtocol(userData: any) {
   if (!userData.howToImproveGeneratedAt) return true;
@@ -4673,215 +4698,15 @@ const mapScanData = (docId: string, data: any): ScanRecord => {
   };
 };
 
-function renderHowToImprove(data: any, currentScore: number) {
-  const contentEl = document.getElementById("howToImproveContent");
-  if (!contentEl) return;
- 
-  const impactColors: Record<string, string> = {
-    high: "#E24B4A",
-    medium: "#EF9F27",
-    low: "#5DCAA5"
-  };
- 
-  let stepsHTML = data.steps.map(function(step: any) {
-    return `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start;">
-      <div style="font-size:24px;flex-shrink:0;">${step.icon}</div>
-      <div style="flex:1;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <div style="color:#fff;font-size:14px;font-weight:600;">${step.title}</div>
-          <div style="background:${impactColors[step.impact]};color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;text-transform:uppercase;">${step.impact} impact</div>
-        </div>
-        <div style="color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5;">${step.description}</div>
-      </div>
-    </div>`;
-  }).join("");
- 
-  contentEl.innerHTML = `
-    <div style="text-align:center;margin-bottom:20px;">
-      <div style="color:rgba(255,255,255,0.5);font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Your Action Plan</div>
-      <div style="color:#fff;font-size:15px;line-height:1.5;">${data.headline}</div>
-    </div>
-    ${stepsHTML}
-    <div style="text-align:center;margin-top:16px;color:rgba(255,255,255,0.3);font-size:11px;">Personalized based on your skin profile and scan history</div>
-  `;
-}
+function renderHowToImprove() {}
 
-async function loadHowToImprove() {
-  const user = auth.currentUser;
-  if (!user) return;
- 
-  const panel = document.getElementById("howToImprovePanel");
-  if (panel) panel.style.display = "flex";
- 
-  const contentEl = document.getElementById("howToImproveContent");
-  if (contentEl) contentEl.innerHTML = '<div style="text-align:center;padding:40px;color:#00B4D8;">Generating your personal action plan...</div>';
- 
-  try {
-    let userDoc;
-    try {
-      userDoc = await getDoc(doc(db, "users", user.uid));
-    } catch (err) {
-      handleFirestoreError(err, OperationType.GET, `users/${user.uid}`);
-      return;
-    }
-    
-    let profile = userDoc?.exists() ? userDoc.data() : null;
-    
-    if (!profile) {
-      // Auto-create basic profile if missing from Firestore, keeping the system 100% robust
-      try {
-        const defaultProfile = {
-          fullName: user.displayName || user.email?.split('@')[0] || "User",
-          username: (user.email?.split('@')[0] || "user_" + user.uid.slice(0, 5)).toLowerCase(),
-          email: user.email || "",
-          ageRange: "25-34",
-          fitzpatrickType: 2,
-          profileColor: "#2dd4bf",
-          skinScore: 100,
-          streakDays: 0,
-          createdAt: new Date().toISOString(),
-          scansCompleted: 0
-        };
-        await setDoc(doc(db, "users", user.uid), defaultProfile);
-        profile = defaultProfile;
-      } catch (createErr) {
-        console.error("Auto-creation of fallback profile failed:", createErr);
-        if (contentEl) {
-          contentEl.innerHTML = `
-            <div style="text-align:center;padding:32px 16px;color:#f43f5e;font-family:'Inter',sans-serif;">
-              <div style="font-size:36px;margin-bottom:12px;">👤</div>
-              <div style="font-weight:900;font-size:16px;margin-bottom:8px;color:#ffffff;text-transform:uppercase;letter-spacing:0.04em;">Profile Setup Required</div>
-              <p style="font-size:13px;color:#94a3b8;line-height:1.5;margin:0 auto;max-width:320px;">
-                User profile not found. Please ensure you have completed your profile setup or registration, and log in again to sync skin credentials.
-              </p>
-            </div>
-          `;
-        }
-        return;
-      }
-    }
-
-    // Check cache
-    if (profile.howToImproveCache && !shouldRegenerateProtocol(profile)) {
-      renderHowToImprove(profile.howToImproveCache, profile.skinScore || 100);
-      return;
-    }
-
-    let snapshot;
-    try {
-      snapshot = await getDocs(query(collection(db, "users", user.uid, "scans"), orderBy("date", "desc"), limit(3)));
-    } catch (err) {
-      handleFirestoreError(err, OperationType.GET, `users/${user.uid}/scans`);
-      return;
-    }
-       
-    const recentScans: any[] = [];
-    snapshot.forEach(function(d: any) { 
-      const data = d.data();
-      const mapped = mapScanData(d.id, data);
-      recentScans.push({
-        region: mapped.bodyRegion,
-        risk: mapped.result.risk_level || "none",
-        date: mapped.date
-      }); 
-    });
-       
-    const currentScore = profile.skinScore || 100;
-    const scanHistoryText = recentScans.map(s => `- ${s.region} (${s.risk} risk, scanned on ${new Date(s.date).toLocaleDateString()})`).join("\n");
-       
-    const prompt = `You are an AI skin wellness and prevention support assistant. Based on this user profile give them a personalized actionable support checklist to encourage self-monitoring habits and skin wellness.
-    
-CRITICAL SAFETY AND LEGAL RULES:
-1. NEVER sound like you are giving a medical diagnosis, definitive clinical assessment, or health guarantee. Avoid any certainty, diagnostic language, or promising any accuracy.
-2. ALWAYS encourage active self-monitoring, monthly self-checks, and scheduling a professional consultation with a licensed or board-certified dermatologist.
-3. NEVER use definitive phrases such as: "no signs of skin cancer", "you are safe", "dangerous moles", "no cancer detected".
-4. INSTEAD, ALWAYS use softer wellness-focused and non-definitive phrases such as: "No obvious visual warning signs were detected", "The AI did not detect clear visual patterns commonly associated with high-risk lesions", "Low visual concern based on the uploaded images", "Monitor for changes and consult a dermatologist if concerned".
-
-User profile:
-- Current SkinScore: ${currentScore} out of 100
-- Fitzpatrick skin type: ${profile.fitzpatrickType || "unknown"}
-- Age range: ${profile.ageRange || "unknown"}
-- Ethnicity: ${profile.ethnicity || "unknown"}
-- Most recent scan risk level: ${recentScans.length > 0 ? recentScans[0].risk : "none"}
-- Total scans completed: ${profile.scansCompleted || 0}
-
-Generate exactly 5 specific actionable wellness steps this person can take RIGHT NOW to improve their self-monitoring score and prioritize skin care. Each step must be directly relevant to their Fitzpatrick skin type and risk level.
- 
-Format your response as JSON only with this structure:
-{
-  "headline": "one motivating non-definitive wellness sentence for this specific person",
-  "steps": [
-    {
-      "icon": "emoji",
-      "title": "short action title max 5 words",
-      "description": "specific non-definitive instruction max 20 words",
-      "impact": "low" or "medium" or "high"
-    }
-  ]
-}
-
-Focus only on skin wellness and screening prevention. No general beauty or cosmetic advice. No filler content. Be direct and specific.`;
-
-    const responseData = await callAI(prompt, "gemini-3.8-flash", {
-      responseMimeType: "application/json"
-    });
-
-    const aiText = responseData.text;
-
-    if (!aiText) {
-      throw new Error("AI response was empty or blocked by safety filters.");
-    }
-
-    let parsedToChecklist;
-    try {
-      parsedToChecklist = safeParseAIJSON(aiText);
-    } catch (e) {
-      console.warn("[Checklist Parser Fallback] Error parsing checklist JSON, using self healing fallback:", e);
-      parsedToChecklist = null;
-    }
-
-    const result = validateAndFallbackHowToImprove(parsedToChecklist);
-    
-    // Save to cache
-    try {
-      await setDoc(doc(db, "users", user.uid), {
-        howToImproveCache: result,
-        howToImproveGeneratedAt: getServerTimestamp()
-      }, { merge: true });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `users/${user.uid}`);
-    }
-    
-    renderHowToImprove(result, currentScore);
-  } catch (error: any) {
-    console.error("How to improve error:", error);
-    if (contentEl) {
-      let message = "Could not load your action plan.";
-      if (error.message) {
-        if (error.message.includes("candidates") || error.message.includes("object")) {
-          message = "AI response was blocked or interrupted. Please try again.";
-        } else {
-          message = error.message;
-        }
-      }
-      
-      contentEl.innerHTML = `<div style="color:#E24B4A;text-align:center;padding:20px;">
-        <div style="font-weight:bold;margin-bottom:10px;">Analysis Interrupted</div>
-        <div style="font-size:13px;opacity:0.8;line-height:1.4;">${message}</div>
-        <button onclick="loadHowToImprove()" style="margin-top:20px;background:rgba(226,75,74,0.1);border:1px solid rgba(226,75,74,0.2);color:#E24B4A;padding:8px 20px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s ease;">Try Again</button>
-      </div>`;
-    }
-  }
-}
-
+async function loadHowToImprove() {}
 // Expose to window for HTML onclick handlers
 (window as any).loadHowToImprove = loadHowToImprove;
 (window as any).renderSkinTypeCard = renderSkinTypeCard;
 
 // --- Scan Detail Component ---
   const ScanDetail = ({ scan, onClose, onCompare, onDownload, onPreview, styles }: { scan: ScanRecord, onClose: () => void, onCompare?: () => void, onDownload: (photos: string[], result: AnalysisResult, intake?: any, date?: string, scanId?: string) => void, onPreview?: (photos: string[], result: any, intake?: any, date?: string, scanId?: string) => void, styles: any }) => {
-    const riskColor = scan.result.risk_level === 'high' ? '#ef4444' : scan.result.risk_level === 'moderate' ? '#f59e0b' : '#10b981';
-    
     return (
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -4898,7 +4723,7 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
             <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', padding: '8px', color: 'white', cursor: 'pointer' }}>
               <ChevronLeft size={24} />
             </button>
-            <h2 style={{ fontSize: '20px', fontWeight: '800', margin: 0 }}>Scan Analysis</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: '800', margin: 0 }}>Photo Log Entry</h2>
             <div style={{ width: '40px' }} />
           </div>
 
@@ -4909,60 +4734,27 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
                 <h3 style={{ fontSize: '24px', fontWeight: '900', marginTop: '4px' }}>{scan.bodyRegion}</h3>
                 {scan.result.detected_body_part && (
                   <div style={{ marginTop: '6px', fontSize: '12px', color: '#2dd4bf', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    ✨ AI Detected Region: {scan.result.detected_body_part}
+                    Recorded Region: {scan.result.detected_body_part}
                   </div>
                 )}
-              </div>
-              <div style={{ 
-                padding: '6px 12px', borderRadius: '10px', background: `${riskColor}22`, color: riskColor, 
-                border: `1px solid ${riskColor}44`, fontSize: '12px', fontWeight: '900' 
-              }}>
-                {scan.result.risk_level.toUpperCase()} RISK
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px', marginBottom: '24px' }}>
               {scan.photos?.map((photo, i) => (
-                <img key={i} src={photo || undefined} alt={`Scan ${i}`} style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', borderRadius: '16px', border: '2px solid rgba(255,255,255,0.05)' }} />
+                <img key={i} src={photo || undefined} alt={`Photo Log ${i}`} style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', borderRadius: '16px', border: '2px solid rgba(255,255,255,0.05)' }} />
               ))}
             </div>
 
             <div style={{ marginBottom: '24px' }}>
               <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#2dd4bf', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Activity size={16} /> CLINICAL FINDINGS
+                <Activity size={16} /> LOGGED OBSERVATIONS
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {scan.result.findings?.map((f, i) => (
                   <div key={i} style={{ fontSize: '14px', color: '#cbd5e1', lineHeight: '1.5', paddingLeft: '12px', borderLeft: '2px solid rgba(45, 212, 191, 0.3)' }}>{f}</div>
                 ))}
               </div>
-            </div>
-
-            <div style={{ marginBottom: '24px' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#a855f7', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <AlertCircle size={16} /> CONCERNING SIGNS
-              </h4>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {scan.result.concerning_signs?.map((s, i) => (
-                  <span key={i} style={{ padding: '6px 12px', borderRadius: '8px', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', fontSize: '12px', fontWeight: '700', border: '1px solid rgba(168, 85, 247, 0.2)' }}>{s}</span>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '24px' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#3b82f6', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <SparklesIcon size={16} /> AI SUGGESTIONS
-              </h4>
-              <ul style={{ margin: 0, paddingLeft: '20px', color: '#cbd5e1', fontSize: '14px', lineHeight: '1.6' }}>
-                {scan.result.suggestions?.map((s, i) => (
-                  <li key={i} style={{ marginBottom: '8px' }}>{s}</li>
-                ))}
-              </ul>
-            </div>
-
-            <div style={{ padding: '16px', borderRadius: '20px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', marginBottom: '24px' }}>
-              <div style={{ fontSize: '12px', fontWeight: '800', color: '#f59e0b', marginBottom: '4px' }}>URGENCY LEVEL</div>
-              <div style={{ fontSize: '14px', color: '#f8fafc', fontWeight: '600' }}>{scan.result.urgency}</div>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
@@ -4992,7 +4784,7 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
           </div>
 
           <div style={{ fontSize: '11px', color: '#64748b', textAlign: 'center', lineHeight: '1.5', padding: '0 20px' }}>
-            {scan.result.disclaimer}
+            SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.
           </div>
         </div>
       </motion.div>
@@ -5022,6 +4814,24 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
     const baselineDate = isBaseline ? date : firstScan.date;
     const currentPhoto = photos[0];
     const currentDate = date;
+
+    const [resolvedBaseline, setResolvedBaseline] = useState<string>(baselinePhoto || '');
+    const [resolvedCurrent, setResolvedCurrent] = useState<string>(currentPhoto || '');
+
+    useEffect(() => {
+      let isMounted = true;
+      if (baselinePhoto) {
+        resolvePhotoUrl(baselinePhoto).then(u => {
+          if (isMounted && u) setResolvedBaseline(u);
+        });
+      }
+      if (currentPhoto) {
+        resolvePhotoUrl(currentPhoto).then(u => {
+          if (isMounted && u) setResolvedCurrent(u);
+        });
+      }
+      return () => { isMounted = false; };
+    }, [baselinePhoto, currentPhoto]);
 
     let trackedDurationText = "Initial Baseline Scan";
     if (firstScan && firstScan.date && firstScan.id !== scanId) {
@@ -5174,7 +4984,7 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
                   { title: "EXACT BODY SITE", val: intake.exactBodyLocation ? `${targetRegion} (${intake.exactBodyLocation})` : targetRegion },
                   { title: "LESION FIRST NOTICED", val: intake.lesionFirstNoticedDate || 'Not reported by patient' },
                   { title: "TRACKED DURATION", val: trackedDurationText },
-                  { title: "TOTAL SCANS LOGGED", val: `${matchingScans.length > 0 ? matchingScans.length : 1} Recorded` }
+                  { title: "TOTAL PHOTOS LOGGED", val: `${matchingScans.length > 0 ? matchingScans.length : 1} Recorded` }
                 ].map((m, i) => (
                   <div key={i} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '8px 10px', textAlign: 'center' }}>
                     <div style={{ fontSize: '8.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>{m.title}</div>
@@ -5193,13 +5003,13 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
                     <div style={{ fontSize: '9px', fontWeight: '800', color: '#475569', marginBottom: '6px' }}>
                       {isBaseline ? "PRIMARY BASELINE PHOTO" : `BASELINE PHOTO (${new Date(baselineDate).toLocaleDateString()})`}
                     </div>
-                    <img src={baselinePhoto || undefined} alt="Baseline" style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                    <img src={resolvedBaseline || baselinePhoto || undefined} alt="Baseline" style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
                   </div>
                   <div style={{ background: '#f8fafc', border: '1px solid #0f172a', borderRadius: '10px', padding: '8px', textAlign: 'center' }}>
                     <div style={{ fontSize: '9px', fontWeight: '800', color: '#0f172a', marginBottom: '6px' }}>
                       CURRENT ENCOUNTER PHOTO ({new Date(currentDate).toLocaleDateString()})
                     </div>
-                    <img src={currentPhoto || undefined} alt="Current" style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                    <img src={resolvedCurrent || currentPhoto || undefined} alt="Current" style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
                   </div>
                 </div>
               </div>
@@ -5211,66 +5021,76 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', fontSize: '11px' }}>
                   <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ color: '#64748b' }}>Spot Type: </span>
+                    <strong style={{ color: '#0f172a' }}>{intake.newOrChanged || 'Not reported by patient'}</strong>
+                  </div>
+                  <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ color: '#64748b' }}>Approximate Size: </span>
+                    <strong style={{ color: '#0f172a' }}>{intake.approximateSize || 'Not reported by patient'}</strong>
+                  </div>
+                  <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
                     <span style={{ color: '#64748b' }}>Color Evolution: </span>
                     <strong style={{ color: '#0f172a' }}>{intake.colorChange || 'Not reported by patient'}</strong>
                   </div>
                   <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                    <span style={{ color: '#64748b' }}>Size/Shape Delta: </span>
+                    <span style={{ color: '#64748b' }}>Size/Shape Evolution: </span>
                     <strong style={{ color: '#0f172a' }}>{intake.sizeChange || intake.changedRecently || 'Not reported by patient'}</strong>
                   </div>
                   <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                    <span style={{ color: '#64748b' }}>Bleeding / Crusting: </span>
+                    <span style={{ color: '#64748b' }}>Bleeding History: </span>
                     <strong style={{ color: '#0f172a' }}>{intake.bleeding || 'Not reported by patient'}</strong>
+                  </div>
+                  <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ color: '#64748b' }}>{"Non-Healing (> 3-4 Wks): "}</span>
+                    <strong style={{ color: '#0f172a' }}>{intake.nonHealing || 'Not reported by patient'}</strong>
                   </div>
                   <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
                     <span style={{ color: '#64748b' }}>Pain or Sensation: </span>
                     <strong style={{ color: '#0f172a' }}>{intake.painOrSensation || intake.sensation || 'Not reported by patient'}</strong>
                   </div>
+                  <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ color: '#64748b' }}>Change Period: </span>
+                    <strong style={{ color: '#0f172a' }}>{intake.changeTimePeriod || 'Not reported by patient'}</strong>
+                  </div>
                 </div>
+                {intake.patientComments && (
+                  <div style={{ marginTop: '8px', background: '#ffffff', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '11px' }}>
+                    <span style={{ color: '#64748b' }}>Patient Notes/Comments: </span>
+                    <strong style={{ color: '#0f172a' }}>{intake.patientComments}</strong>
+                  </div>
+                )}
               </div>
 
-              {/* Section 5: Pre-Visit AI Observations */}
+              {/* Section 5: Pre-Visit Patient-Reported Observations */}
               <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px 16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <div style={{ fontSize: '10px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    4. Pre-Visit AI Triage Observations (Non-Diagnostic)
+                    4. Pre-Visit Patient-Reported Summary (Non-Diagnostic)
                   </div>
-                  <span style={{
-                    fontSize: '9px',
-                    fontWeight: '900',
-                    padding: '2px 8px',
-                    borderRadius: '6px',
-                    background: result.risk_level === 'high' ? '#fee2e2' : result.risk_level === 'moderate' ? '#fef3c7' : '#dcfce7',
-                    color: result.risk_level === 'high' ? '#b91c1c' : result.risk_level === 'moderate' ? '#b45309' : '#15803d'
-                  }}>
-                    {result.risk_level?.toUpperCase()} CLINICAL ATTENTION
-                  </span>
                 </div>
+                <p style={{ fontSize: '11px', color: '#0f172a', fontWeight: '600', marginBottom: '8px', lineHeight: '1.5' }}>
+                  {result.summary}
+                </p>
                 <div style={{ fontSize: '11px', color: '#334155', lineHeight: '1.5' }}>
-                  {result.findings?.slice(0, 3).map((f: string, i: number) => (
+                  {result.findings?.map((f: string, i: number) => (
                     <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '2px' }}>
                       <span style={{ color: '#0f172a' }}>•</span>
                       <span>{f}</span>
                     </div>
                   ))}
-                  {result.action_card && (
-                    <div style={{ marginTop: '4px', fontSize: '10.5px', fontWeight: '700', color: '#0f172a' }}>
-                      Suggested Provider Action: {result.action_card}
-                    </div>
-                  )}
                 </div>
               </div>
 
               {/* Section 6: Dermatology Provider In-Office Review & Checklist */}
               <div style={{ background: '#f8fafc', border: '2px solid #0f172a', borderRadius: '10px', padding: '12px 16px' }}>
                 <div style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
-                  DERMATOLOGY PROVIDER CLINICAL INTAKE (IN-OFFICE USE ONLY)
+                  FOR CLINICIAN USE ONLY — IN-OFFICE CLINICAL DISPOSITION
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', fontSize: '10.5px', color: '#1e293b', marginBottom: '10px' }}>
                   <div>[  ] In-Person Dermoscopy Performed</div>
                   <div>[  ] Biopsy Ordered (Punch / Shave / Excision)</div>
                   <div>[  ] Routine Photo Follow-up in 3–6 Months</div>
-                  <div>[  ] Reassured / Benign Lesion</div>
+                  <div>[  ] Routine Non-Urgent Periodic Follow-Up</div>
                 </div>
                 <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '8px', fontSize: '10px', color: '#475569' }}>
                   Provider Clinical Assessment & Notes:
@@ -5286,10 +5106,10 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
               {/* Footer Notice */}
               <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '8px', fontSize: '8.5px', color: '#64748b', lineHeight: '1.4' }}>
                 <p style={{ margin: '0 0 4px 0' }}>
-                  <strong>STATUTORY CLINICAL NOTICE:</strong> Skin Tight is an educational pre-visit intake and longitudinal photo comparison tool designed to save provider documentation time and organize patient symptom history. It is NOT a medical device, diagnostic test, or substitute for professional medical advice. Clinical diagnosis requires comprehensive in-person dermatoscopic and histopathological evaluation by a licensed healthcare provider.
+                  SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.
                 </p>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '800', color: '#475569' }}>
-                  <span>Skin Tight Clinical Intake Engine  |  HIPAA-Aligned Technical Safeguards</span>
+                  <span>Skin Tight Clinical Intake Engine  |  Standardized Pre-Visit Patient Brief</span>
                   <span>Page 1 of 1</span>
                 </div>
               </div>
@@ -5301,25 +5121,7 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
   };
 
   // --- Compare View Component ---
-  const CompareView = ({ scan1, scan2, onClose, styles }: { scan1: ScanRecord, scan2: ScanRecord, onClose: () => void, styles: any }) => {
-    const getScore = (result: any) => {
-      let score = 100;
-      if (result.risk_level === 'high') score -= 50;
-      else if (result.risk_level === 'moderate') score -= 25;
-      score -= (result.concerning_signs?.length || 0) * 5;
-      return Math.max(0, score);
-    };
-
-    const score1 = getScore(scan1.result);
-    const score2 = getScore(scan2.result);
-    
-    // Calculate percentage change relative to the previous scan (scan2)
-    // If score2 is 0, we avoid division by zero
-    const diff = score1 - score2;
-    const percentChange = score2 !== 0 ? (diff / score2) * 100 : (diff > 0 ? 100 : 0);
-    const improved = diff > 0;
-    const stable = diff === 0;
-
+  const CompareView = ({ scan1, scan2, onClose }: { scan1: ScanRecord, scan2: ScanRecord, onClose: () => void, styles?: any }) => {
     return (
       <motion.div 
         initial={{ opacity: 0 }}
@@ -5330,87 +5132,56 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
           background: '#060818', zIndex: 110, overflowY: 'auto', padding: '20px'
         }}
       >
-        <div style={{ width: '100%' }}>
+        <div style={{ width: '100%', maxWidth: '720px', margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
             <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', padding: '8px', color: 'white', cursor: 'pointer' }}>
               <X size={24} />
             </button>
-            <h2 style={{ fontSize: '20px', fontWeight: '800', margin: 0 }}>Evolution Comparison</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: '800', margin: 0 }}>Side-by-Side Photo Comparison</h2>
             <div style={{ width: '40px' }} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-            <div className="glass-card p-6 rounded-3xl">
-              <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '800', marginBottom: '8px' }}>PREVIOUS: {new Date(scan2.date).toLocaleDateString()}</div>
-              <div style={{ fontSize: '32px', fontWeight: '900', color: 'white', marginBottom: '4px' }}>{score2}</div>
-              <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>HEALTH SCORE</div>
-              <div style={{ 
-                marginTop: '12px',
-                padding: '4px 8px', borderRadius: '6px', background: scan2.result.risk_level === 'high' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                color: scan2.result.risk_level === 'high' ? '#ef4444' : '#10b981', fontSize: '10px', fontWeight: '900', textAlign: 'center'
-              }}>
-                {scan2.result.risk_level.toUpperCase()} RISK
+            {/* Earlier Photo */}
+            <div className="glass-card p-5 rounded-3xl border border-white/10">
+              <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>
+                EARLIER: {new Date(scan2.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
               </div>
+              <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', overflow: 'hidden', background: 'rgba(255,255,255,0.05)', marginBottom: '12px' }}>
+                {scan2.photos?.[0] ? (
+                  <img src={scan2.photos[0]} alt="Earlier log" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b', fontSize: '12px' }}>No photo recorded</div>
+                )}
+              </div>
+              <div style={{ fontSize: '14px', fontWeight: '700', color: '#ffffff' }}>{scan2.bodyRegion}</div>
+              <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>Logged Entry</div>
             </div>
-            <div className="glass-card p-6 rounded-3xl" style={{ border: '1px solid #2dd4bf' }}>
-              <div style={{ fontSize: '10px', color: '#2dd4bf', fontWeight: '800', marginBottom: '8px' }}>LATEST: {new Date(scan1.date).toLocaleDateString()}</div>
-              <div style={{ fontSize: '32px', fontWeight: '900', color: 'white', marginBottom: '4px' }}>{score1}</div>
-              <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>HEALTH SCORE</div>
-              <div style={{ 
-                marginTop: '12px',
-                padding: '4px 8px', borderRadius: '6px', background: scan1.result.risk_level === 'high' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                color: scan1.result.risk_level === 'high' ? '#ef4444' : '#10b981', fontSize: '10px', fontWeight: '900', textAlign: 'center'
-              }}>
-                {scan1.result.risk_level.toUpperCase()} RISK
+
+            {/* Later Photo */}
+            <div className="glass-card p-5 rounded-3xl" style={{ border: '1px solid rgba(45, 212, 191, 0.4)' }}>
+              <div style={{ fontSize: '11px', color: '#2dd4bf', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>
+                LATER: {new Date(scan1.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
               </div>
+              <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', overflow: 'hidden', background: 'rgba(255,255,255,0.05)', marginBottom: '12px' }}>
+                {scan1.photos?.[0] ? (
+                  <img src={scan1.photos[0]} alt="Later log" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b', fontSize: '12px' }}>No photo recorded</div>
+                )}
+              </div>
+              <div style={{ fontSize: '14px', fontWeight: '700', color: '#ffffff' }}>{scan1.bodyRegion}</div>
+              <div style={{ fontSize: '11px', color: '#2dd4bf', marginTop: '4px' }}>Most Recent Entry</div>
             </div>
           </div>
 
-          <div className="glass-card p-8 rounded-[32px] mb-6 text-center" style={{ border: '1px solid rgba(45, 212, 191, 0.2)' }}>
-            <div style={{ 
-              width: '64px', height: '64px', borderRadius: '20px', 
-              background: stable ? 'rgba(148, 163, 184, 0.1)' : improved ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 0 20px'
-            }}>
-              {stable ? <Activity size={32} color="#94a3b8" /> : improved ? <TrendingUp size={32} color="#10b981" /> : <TrendingDown size={32} color="#ef4444" />}
-            </div>
-            
-            <h3 style={{ fontSize: '24px', fontWeight: '900', marginBottom: '8px' }}>
-              {stable ? 'Status Stable' : improved ? 'Condition Improved' : 'Condition Declined'}
+          <div className="glass-card p-6 rounded-3xl mb-6">
+            <h3 style={{ fontSize: '15px', fontWeight: '800', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px', color: '#2dd4bf' }}>
+              <Activity size={18} /> Visual Timeline Notes
             </h3>
-            
-            <div style={{ fontSize: '48px', fontWeight: '900', color: stable ? '#94a3b8' : improved ? '#10b981' : '#ef4444', marginBottom: '8px' }}>
-              {stable ? '0%' : `${Math.abs(Math.round(percentChange))}%`}
-            </div>
-            <p style={{ color: '#94a3b8', fontSize: '14px', fontWeight: '600' }}>
-              {stable 
-                ? "No significant changes detected in skin health metrics." 
-                : improved 
-                  ? `Your skin health score has increased by ${Math.round(percentChange)}% since your last scan.`
-                  : `Your skin health score has decreased by ${Math.abs(Math.round(percentChange))}% since your last scan.`}
+            <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.6', margin: 0 }}>
+              Use this side-by-side photographic record during your clinical consultation to help your dermatology provider review changes in size, color, or borders over time.
             </p>
-          </div>
-
-          <div className="glass-card p-6 rounded-3xl">
-            <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Activity size={20} color="#2dd4bf" /> Detailed Comparison
-            </h3>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div>
-                <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '700', marginBottom: '8px' }}>FINDINGS EVOLUTION</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.4', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px' }}>
-                    <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '4px' }}>PREVIOUS</div>
-                    {scan2.result.findings?.[0] || 'No findings recorded'}
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#f8fafc', lineHeight: '1.4', fontWeight: '600', padding: '12px', background: 'rgba(45, 212, 191, 0.05)', borderRadius: '12px', border: '1px solid rgba(45, 212, 191, 0.1)' }}>
-                    <div style={{ fontSize: '10px', color: '#2dd4bf', marginBottom: '4px' }}>LATEST</div>
-                    {scan1.result.findings?.[0] || 'No findings recorded'}
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </motion.div>
@@ -5460,102 +5231,7 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
   }
 
   const Timeline = ({ scans, setSelectedScanId, setActiveTab, styles, streakData, nextScanDate, cycleProgress, lastFullWeekCompletionDate }: TimelineProps) => {
-    const chartRef = useRef<HTMLCanvasElement>(null);
-    const chartInstance = useRef<any>(null);
 
-    useEffect(() => {
-      let isMounted = true;
-      const initChart = async () => {
-        if (!isMounted) return;
-        if (chartRef.current && scans.length > 0) {
-          try {
-            const Chart = await ensureChartJsLoaded();
-            if (!isMounted) return;
-            const ctx = chartRef.current.getContext('2d');
-            if (ctx) {
-              if (chartInstance.current) {
-                chartInstance.current.destroy();
-              }
-
-              const sortedScansForChart = [...scans].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-              const labels = sortedScansForChart.map(s => new Date(s.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }));
-              const data = sortedScansForChart.map(s => {
-                if (s.result?.risk_level === 'high') return 3;
-                if (s.result?.risk_level === 'moderate') return 2;
-                if (s.result?.risk_level === 'low') return 1;
-                return 0;
-              });
-
-              chartInstance.current = new (window as any).Chart(ctx, {
-                type: 'line',
-                data: {
-                  labels,
-                  datasets: [{
-                    label: 'Risk Level',
-                    data,
-                    borderColor: '#2dd4bf',
-                    backgroundColor: 'rgba(45, 212, 191, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: '#2dd4bf',
-                    pointBorderColor: '#060818',
-                    pointBorderWidth: 2,
-                    pointRadius: 4
-                  }]
-                },
-                options: {
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      max: 4,
-                      ticks: {
-                        stepSize: 1,
-                        callback: (value: any) => {
-                          if (value === 3) return 'High';
-                          if (value === 2) return 'Mod';
-                          if (value === 1) return 'Low';
-                          return '';
-                        },
-                        color: '#94a3b8',
-                        font: { size: 10, weight: 'bold' }
-                      },
-                      grid: { color: 'rgba(255,255,255,0.05)' }
-                    },
-                    x: {
-                      ticks: { color: '#94a3b8', font: { size: 10 } },
-                      grid: { display: false }
-                    }
-                  },
-                  plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                      backgroundColor: '#1e293b',
-                      titleColor: '#f8fafc',
-                      bodyColor: '#94a3b8',
-                      borderColor: 'rgba(255,255,255,0.1)',
-                      borderWidth: 1,
-                      padding: 12,
-                      displayColors: false
-                    }
-                  }
-                }
-              });
-            }
-          } catch (err) {
-            console.error("Chart initialization failed:", err);
-          }
-        }
-      };
-
-      const timer = setTimeout(initChart, 500);
-      
-      return () => {
-        isMounted = false;
-        clearTimeout(timer);
-      };
-    }, [scans]);
 
     const sortedScans = [...scans].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -5695,35 +5371,6 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
           </div>
         </div>
 
-        {/* Risk Trend Chart */}
-        <div className="glass-card p-6 rounded-3xl border border-white/5 mb-6">
-          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-            <Activity size={18} className="text-cyan-400" /> Risk Trend Analysis
-          </h3>
-          <div style={{ height: '200px', width: '100%', position: 'relative' }}>
-            {scans.length === 0 ? (
-              <div style={{
-                position: 'absolute',
-                inset: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'rgba(15, 23, 42, 0.4)',
-                borderRadius: '20px',
-                border: '1px dashed rgba(255,255,255,0.05)',
-                padding: '20px',
-                textAlign: 'center'
-              }}>
-                <Activity size={32} color="#475569" style={{ marginBottom: '12px' }} />
-                <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#f8fafc', marginBottom: '6px' }}>No Data Available</h4>
-                <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0, maxWidth: '280px', lineHeight: '1.4' }}>Complete virtual scans of your skin areas to display a risk level over time analysis chart.</p>
-              </div>
-            ) : (
-              <canvas ref={chartRef}></canvas>
-            )}
-          </div>
-        </div>
 
         {/* Monitoring Protocol Section (Updated) */}
         <div className="glass-card p-6 rounded-3xl border border-white/5 mb-6">
@@ -5781,11 +5428,8 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
             ) : (
               Array.from(new Set(scans?.map(s => s.bodyRegion))).map(region => {
                 const latestScan = scans?.find(s => s.bodyRegion === region);
-                const riskColor = latestScan?.result.risk_level === 'high' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 
-                                 latestScan?.result.risk_level === 'moderate' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 
-                                 'bg-slate-500/20 text-slate-400 border-white/10';
                 return (
-                  <div key={region} className={`px-4 py-2 rounded-xl text-xs font-bold border ${riskColor} flex items-center gap-2`}>
+                  <div key={region} className="px-4 py-2 rounded-xl text-xs font-bold border bg-teal-500/10 text-teal-300 border-teal-500/20 flex items-center gap-2">
                     {region}
                   </div>
                 );
@@ -5794,15 +5438,15 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
           </div>
         </div>
         
-        {/* Scan History List */}
-        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Scan History</h3>
+        {/* Photo History List */}
+        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Photo History</h3>
         {sortedScans.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '32px', border: '1px dashed rgba(255,255,255,0.1)' }}>
             <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 0 20px' }}>
               <History size={32} color="#475569" />
             </div>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px' }}>No Scans Found</h3>
-            <p style={{ fontSize: '14px', color: '#94a3b8', width: '100%', margin: '0 0 20px' }}>Complete your first scan to start tracking your skin health journey.</p>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px' }}>No Photo Logs Found</h3>
+            <p style={{ fontSize: '14px', color: '#94a3b8', width: '100%', margin: '0 0 20px' }}>Complete your first photo log to start tracking your skin over time.</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -5819,11 +5463,10 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <div style={{ fontSize: '14px', fontWeight: '700' }}>{scan.bodyRegion}</div>
                     <div style={{ 
-                      padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: '900',
-                      background: scan.result.risk_level === 'high' ? 'rgba(239, 68, 68, 0.1)' : scan.result.risk_level === 'moderate' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                      color: scan.result.risk_level === 'high' ? '#ef4444' : scan.result.risk_level === 'moderate' ? '#f59e0b' : '#10b981'
+                      padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: '800',
+                      background: 'rgba(45, 212, 191, 0.1)', color: '#2dd4bf'
                     }}>
-                      {scan.result.risk_level.toUpperCase()}
+                      PHOTO LOGGED
                     </div>
                   </div>
                   <div style={{ fontSize: '12px', color: '#94a3b8' }}>{new Date(scan.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</div>
@@ -5841,17 +5484,13 @@ Focus only on skin wellness and screening prevention. No general beauty or cosme
 const MEDICAL_DISCLAIMER_TEXT = `MEDICAL DISCLAIMER
 Last Updated: May 24, 2026
 
-Skin Tight is an AI-powered wellness and educational tool designed to help users monitor visible skin changes over time. Skin Tight is NOT a medical device and does NOT provide medical diagnoses, treatment plans, prescriptions, or professional medical advice.
+SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.
 
-The AI-generated assessments are informational only and may be inaccurate, incomplete, or incorrect. Results can be affected by factors such as image quality, lighting conditions, camera resolution, skin tone variations, and incomplete user information.
+The photo logs and intake notes are informational only. Image records can be affected by factors such as camera resolution, lighting conditions, and user technique.
 
-Skin Tight does not guarantee the detection, prevention, or prediction of skin cancer or any other medical condition. Terms such as “low risk,” “moderate risk,” or “high risk” are automated AI-generated wellness indicators and are not medical conclusions.
+SkinTight does not provide medical verdicts or diagnoses. Always consult a licensed clinician or qualified healthcare professional for any medical concerns regarding your skin. Never ignore, delay, or replace professional medical advice because of information stored in this application.
 
-Always consult a licensed dermatologist or qualified healthcare professional for any medical concerns regarding your skin. Never ignore, delay, or replace professional medical advice because of information provided by this application.
-
-If you notice rapid skin changes, bleeding lesions, painful growths, or any urgent medical symptoms, seek professional medical attention immediately.
-
-Skin Tight is not intended for emergency use. If you believe you may have a serious or life-threatening medical condition, contact emergency services or seek immediate professional medical care.`;
+If a spot is bleeding heavily, growing quickly, or you feel unwell, contact your doctor or seek care now. Call 911 for emergencies.`;
 
 const TERMS_AND_CONDITIONS = `TERMS & CONDITIONS
 Last Updated: May 24, 2026
@@ -5981,7 +5620,7 @@ By using Skin Tight, you understand that your data may be processed or stored on
 
 
 7. Your Rights & Data Deletion
-You retain the right to access, review, or request the permanent deletion of your account and associated data at any time. Upon receiving a verifiable deletion request via support.skintight@gmail.com, we will permanently purge your personal data, profile info, and uploaded images from our active production databases within a reasonable timeframe, not to exceed thirty (30) days, subject to any legal data retention obligations. 
+You retain the right to access, review, or request the permanent deletion of your account and associated data at any time. Upon receiving a verifiable deletion request via support@[DOMAIN-TBD] /* TODO: Replace with finalized domain email once configured */, we will permanently purge your personal data, profile info, and uploaded images from our active production databases within a reasonable timeframe, not to exceed thirty (30) days, subject to any legal data retention obligations. 
 
 Please note that while data is removed immediately from active systems, residual copies may temporarily persist in secure, encrypted cloud backups (such as Firebase backup cycles) for a limited duration before being completely overwritten.
 
@@ -5989,7 +5628,7 @@ Please note that while data is removed immediately from active systems, residual
 8. Changes to This Privacy Policy
 We may update this Privacy Policy periodically. Continued use of the application after updates means you accept the revised policy.`;
 
-const DISCLAIMER_TEXT = `MEDICAL DISCLAIMER: Skin Tight is NOT a medical device and does NOT provide medical diagnoses, treatment plans, prescriptions, or professional medical advice. The assessments are educational/informational only. Always consult a licensed dermatologist.`;
+const DISCLAIMER_TEXT = `SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.`;
 
 // --- Onboarding Screen Component ---
 const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
@@ -6067,7 +5706,7 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
             {
               step: "04",
               title: "Dermatologist Booking",
-              desc: "Locate verified clinic specialists near you to schedule professional in-person exams.",
+              desc: "Locate nearby clinic specialists to schedule professional in-person exams.",
               icon: MapPinned,
               color: "#3b82f6",
               bg: "rgba(59, 130, 246, 0.15)"
@@ -6780,9 +6419,6 @@ const Footer = ({ onShowLegal }: { onShowLegal: (type: 'terms' | 'privacy' | 'di
       <button onClick={() => onShowLegal('privacy')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Privacy</button>
       <button onClick={() => onShowLegal('disclaimer')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Disclaimer</button>
     </div>
-    <div style={{ maxWidth: '640px', margin: '0 auto', fontSize: '11px', color: '#2dd4bf', padding: '10px 14px', borderRadius: '10px', background: 'rgba(45, 212, 191, 0.06)', border: '1px solid rgba(45, 212, 191, 0.15)', marginBottom: '14px', fontWeight: 600 }}>
-      ✓ Reviewed for educational accuracy by clinical skin health references and dermatologist guidelines.
-    </div>
     <p style={{ fontSize: '11px', color: '#64748b', width: '100%', maxWidth: '640px', margin: '0 auto', lineHeight: '1.6' }}>
       Disclaimer: Skin Tight is an educational AI skin monitoring and photo-journaling tool, not a diagnostic medical device. It does not provide medical advice, diagnosis, or treatment. Always consult a licensed dermatologist or medical professional for any skin health concerns. © 2026 Skin Tight. <span style={{ opacity: 0.25, fontSize: '10px' }}>•</span>
     </p>
@@ -6845,7 +6481,8 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 
 function App() {
   // --- Navigation State ---
-  const [activeTab, setActiveTab] = useState<'home' | 'scan' | 'timeline' | 'routine' | 'plans' | 'profile' | 'clinic' | 'welcome' | 'auth' | 'learn'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'scan' | 'timeline' | 'routine' | 'plans' | 'profile' | 'clinic' | 'welcome' | 'auth' | 'learn' | 'clinic_portal' | 'clinic_intake'>('home');
+  const [activeClinicId, setActiveClinicId] = useState<string>('austin-derm-associates');
   const [selectedArticleSlug, setSelectedArticleSlug] = useState<string | null>(null);
   const [activePseoPage, setActivePseoPage] = useState<PseoPage | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -6890,6 +6527,12 @@ function App() {
       return;
     }
     switch (activeTab) {
+      case 'clinic_portal':
+        document.title = 'Clinic Portal | Austin Dermatology & Skin Surgery Center | Skin Tight';
+        break;
+      case 'clinic_intake':
+        document.title = 'Pre-Visit Intake | Austin Dermatology & Skin Surgery Center';
+        break;
       case 'home':
         document.title = 'Skin Tight – AI Skin Monitoring & Skin Cancer Awareness Tool';
         break;
@@ -6939,6 +6582,16 @@ function App() {
   useEffect(() => {
     const handleUrlPath = () => {
       const path = window.location.pathname;
+      if (path.startsWith('/intake/')) {
+        const slug = path.replace('/intake/', '').replace(/\/$/, '');
+        setActiveClinicId(slug || 'austin-derm-associates');
+        setActiveTab('clinic_intake');
+        return;
+      }
+      if (path === '/clinic-portal' || path === '/portal' || path === '/clinic/portal') {
+        setActiveTab('clinic_portal');
+        return;
+      }
       if (path.startsWith('/track/')) {
         const slug = path.replace('/track/', '');
         const found = PSEO_LANDING_PAGES.find(p => p.slug === slug);
@@ -6986,7 +6639,11 @@ function App() {
   useEffect(() => {
     const currentPath = window.location.pathname;
     let expectedPath = '/';
-    if (activePseoPage) {
+    if (activeTab === 'clinic_portal') {
+      expectedPath = '/clinic-portal';
+    } else if (activeTab === 'clinic_intake') {
+      expectedPath = `/intake/${activeClinicId}`;
+    } else if (activePseoPage) {
       expectedPath = `/track/${activePseoPage.slug}`;
     } else if (activeTab === 'learn') {
       expectedPath = selectedArticleSlug ? `/learn/${selectedArticleSlug}` : '/learn';
@@ -7005,7 +6662,7 @@ function App() {
     if (currentPath !== expectedPath) {
       window.history.pushState(null, '', expectedPath);
     }
-  }, [activeTab, selectedArticleSlug, activePseoPage]);
+  }, [activeTab, activeClinicId, selectedArticleSlug, activePseoPage]);
 
   // --- Connectivity Check ---
   useEffect(() => {
@@ -7042,15 +6699,23 @@ function App() {
     personalCancerHistory: '',
     familyCancerHistory: '',
     otherConditions: '',
+    sunburnOrTanningHistory: '',
+    immuneSuppressing: '',
     bodyLocation: '',
     exactBodyLocation: '',
     lesionFirstNoticedDate: '',
     duration: '',
-    changedRecently: '',
+    newOrChanged: '',
+    changeTimePeriod: '',
     colorChange: '',
     sizeChange: '',
+    shapeChange: '',
     bleeding: '',
+    nonHealing: '',
     painOrSensation: '',
+    approximateSize: '',
+    patientComments: '',
+    changedRecently: '',
     concernType: '',
     whatChanged: [],
     appearance: [],
@@ -7249,16 +6914,6 @@ function App() {
     };
   }, []);
 
-  useEffect(() => {
-    if (activeTab === 'profile' && userProfile.fitzpatrick) {
-      // Small delay to ensure the DOM element is rendered
-      setTimeout(() => {
-        if (typeof (window as any).renderSkinTypeCard === 'function') {
-          (window as any).renderSkinTypeCard(userProfile.fitzpatrick);
-        }
-      }, 100);
-    }
-  }, [activeTab, userProfile.fitzpatrick]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
@@ -7363,12 +7018,20 @@ function App() {
       personalCancerHistory: '',
       familyCancerHistory: '',
       otherConditions: '',
+      sunburnOrTanningHistory: '',
+      immuneSuppressing: '',
       exactBodyLocation: '',
       lesionFirstNoticedDate: '',
+      newOrChanged: '',
+      changeTimePeriod: '',
       colorChange: '',
       sizeChange: '',
+      shapeChange: '',
       bleeding: '',
+      nonHealing: '',
       painOrSensation: '',
+      approximateSize: '',
+      patientComments: '',
       qualityCheck: { clear: false, lighting: false, fillsFrame: false, uploaded: false }
     });
     setScans([]);
@@ -7636,24 +7299,9 @@ function App() {
   };
 
   const checkImageQuality = async (photo: string) => {
-    setCheckingQuality(true);
-    try {
-      const response = await callAIVision(
-        [
-          { inlineData: { mimeType: "image/jpeg", data: extractBase64FromDataUrl(photo) } },
-          { text: "Look at this image. Is it a clear close-up photo of a skin lesion or skin area? Rate the image quality as: GOOD (clear, well-lit, close-up, lesion visible), POOR (blurry, dark, too far away, or lesion not clearly visible), or NOT_SKIN (this is not a photo of skin). Respond with only one word: GOOD, POOR, or NOT_SKIN." }
-        ],
-        "gemini-3.5-flash-lite"
-      );
-      const result = response.text.trim().toUpperCase() as 'GOOD' | 'POOR' | 'NOT_SKIN';
-      setImageQuality(result);
-    } catch (err: any) {
-      console.warn("Image quality advisory check (non-blocking fallback):", err);
-      // Soft-fallback to GOOD so users and competition evaluators are never blocked from running an analysis
-      setImageQuality('GOOD');
-    } finally {
-      setCheckingQuality(false);
-    }
+    // Phase 2: AI image analysis turned off. Photos are collected, dated, and stored only.
+    setImageQuality('GOOD');
+    setCheckingQuality(false);
   };
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -7754,12 +7402,20 @@ function App() {
       personalCancerHistory: '',
       familyCancerHistory: '',
       otherConditions: '',
+      sunburnOrTanningHistory: '',
+      immuneSuppressing: '',
       exactBodyLocation: '',
       lesionFirstNoticedDate: '',
+      newOrChanged: '',
+      changeTimePeriod: '',
       colorChange: '',
       sizeChange: '',
+      shapeChange: '',
       bleeding: '',
+      nonHealing: '',
       painOrSensation: '',
+      approximateSize: '',
+      patientComments: '',
       qualityCheck: {
         clear: false,
         lighting: false,
@@ -7771,48 +7427,35 @@ function App() {
 
   const saveScanToFirestore = async (scanData: any) => {
     const user = auth.currentUser;
-    if (!user) {
-      console.error("No user logged in — cannot save scan");
-      return;
-    }
+    if (!user) return;
     
     setSaveStatus('idle');
     
-    const uploadedUrls: string[] = [];
-    console.log(`[Firebase Storage Tooling] Initiating upload flow for user "${user.uid}"...`);
-    console.log(`[Firebase Storage Tooling] Target bucket from config: "${(storage as any).app?.options?.storageBucket || 'gen-lang-client-0650598239.firebasestorage.app'}"`);
-    console.log(`[Firebase Storage Tooling] Total images to upload in queue: ${scanData.photos?.length || 0}`);
+    const storedPaths: string[] = [];
     
     if (scanData.photos && scanData.photos.length > 0) {
       for (let i = 0; i < scanData.photos.length; i++) {
         const photo = scanData.photos[i];
         if (photo && photo.startsWith('data:')) {
           try {
-            const fileName = `${Date.now()}_img_${i}.jpg`;
-            const storagePath = `users/${user.uid}/scans/${fileName}`;
-            console.log(`[Firebase Storage Tooling] Preparing to upload image #${i + 1} to storage path: "${storagePath}"`);
+            const photoId = `${Date.now()}_img_${i}.jpg`;
+            const storagePath = `users/${user.uid}/photos/${photoId}`;
             const fileRef = storageRef(storage, storagePath);
-            
-            console.log(`[Firebase Storage Tooling] Uploading image #${i + 1} (base64 string size: ${photo.length} characters) using "data_url" format...`);
-            const uploadResult = await uploadString(fileRef, photo, 'data_url');
-            console.log(`[Firebase Storage Tooling] Upload successful for image #${i + 1}! Metadata ref:`, uploadResult.ref.fullPath);
-            
-            const downloadUrl = await getDownloadURL(uploadResult.ref);
-            console.log(`[Firebase Storage Tooling] Download URL retrieved for image #${i + 1}: ${downloadUrl}`);
-            uploadedUrls.push(downloadUrl);
+            await uploadString(fileRef, photo, 'data_url');
+            // Store strictly the private Cloud Storage path in Firestore
+            storedPaths.push(storagePath);
           } catch (uploadError: any) {
-            console.error(`[Firebase Storage Tooling] FAILED to upload image #${i + 1} to Storage. Falling back to local data/base64 representation:`, uploadError);
-            uploadedUrls.push(photo);
+            // In case of transient upload error, fallback to keeping image reference
+            storedPaths.push(photo);
           }
         } else if (photo) {
-          console.log(`[Firebase Storage Tooling] Image #${i + 1} is already a URL or non-base64 format, preserving as-is.`);
-          uploadedUrls.push(photo);
+          storedPaths.push(photo);
         }
       }
     }
 
     try {
-      const docRef = await addDoc(collection(db, "users", user.uid, "scans"), {
+      await addDoc(collection(db, "users", user.uid, "scans"), {
         date: getServerTimestamp(),
         riskLevel: scanData.result.risk_level,
         confidence: scanData.result.confidence_level,
@@ -7823,12 +7466,11 @@ function App() {
         bodyRegion: scanData.bodyRegion,
         skinScore: scanData.skinScore,
         intakeData: scanData.intake,
-        photoBase64: null, // Avoid base64 bloat in Firestore
-        photos: uploadedUrls, // Store GCS download URLs
+        photoBase64: null, // Avoid base64 in Firestore
+        photos: storedPaths, // Store strictly Cloud Storage paths
         result: scanData.result
       });
       
-      console.log("Scan saved to Firestore with ID:", docRef.id);
       tagUserScanCompleted();
       updateSkinScoreInFirestore(user.uid, scanData.skinScore);
       setSaveStatus('success');
@@ -7860,9 +7502,13 @@ function App() {
       const snapshot = await getDocs(query(collection(db, "users", id, "scans"), orderBy("date", "desc"), limit(50)));
       
       const loadedScans: ScanRecord[] = [];
-      snapshot.forEach(function(doc: any) {
-        loadedScans.push(mapScanData(doc.id, doc.data()));
-      });
+      for (const docSnap of snapshot.docs) {
+        const scan = mapScanData(docSnap.id, docSnap.data());
+        if (scan.photos && scan.photos.length > 0) {
+          scan.photos = await Promise.all(scan.photos.map(p => resolvePhotoUrl(p)));
+        }
+        loadedScans.push(scan);
+      }
       
       setScans(loadedScans);
       setHistoryLoading(false);
@@ -7896,6 +7542,9 @@ function App() {
       const snapshot = await getDocs(query(collection(db, "users", id, "scans"), orderBy("date", "desc"), limit(1)));
       if (!snapshot.empty) {
         const scan = mapScanData(snapshot.docs[0].id, snapshot.docs[0].data());
+        if (scan.photos && scan.photos.length > 0) {
+          scan.photos = await Promise.all(scan.photos.map(p => resolvePhotoUrl(p)));
+        }
         setRecentScan(scan);
         return scan;
       } else {
@@ -7937,7 +7586,7 @@ function App() {
     }).catch(err => handleFirestoreError(err, OperationType.GET, `users/${user.uid}`));
   };
 
-  const analyzeSkin = async (force = false) => {
+  const summarizeIntake = async (force = false) => {
     const today = new Date();
     if (photos.length === 0) return;
     
@@ -7946,98 +7595,108 @@ function App() {
     setShowConfidenceWarning(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     try {
-      const ai = getAI();
-      const imageParts = photos.map(p => ({
-        inlineData: {
-          mimeType: "image/jpeg",
-          data: extractBase64FromDataUrl(p),
-        },
-      }));
+      // Deterministic structured summary from patient questionnaire (Phase 3.5 Safety Switch)
+      const locationStr = [intakeForm.bodyLocation, intakeForm.exactBodyLocation].filter(Boolean).join(' - ') || 'Not specified';
+      const timelineStr = intakeForm.lesionFirstNoticedDate || intakeForm.duration || 'Not specified';
+      const evolutionStr = [intakeForm.newOrChanged, intakeForm.changeTimePeriod].filter(Boolean).join(' ') || 'Status not specified';
+      const changeStr = [intakeForm.colorChange, intakeForm.sizeChange, intakeForm.shapeChange].filter(Boolean).join('; ') || 'No size, shape, or color changes reported';
+      const symptomsStr = [
+        intakeForm.bleeding && `Bleeding: ${intakeForm.bleeding}`,
+        intakeForm.painOrSensation && `Sensation: ${intakeForm.painOrSensation}`,
+        intakeForm.nonHealing && `Non-healing: ${intakeForm.nonHealing}`
+      ].filter(Boolean).join('; ') || 'No acute bleeding, pain, or non-healing sore reported';
 
-      const fitzpatrickDescriptions = [
-        "",
-        "Always burns never tans",
-        "Usually burns rarely tans",
-        "Sometimes burns gradually tans",
-        "Rarely burns tans easily",
-        "Very rarely burns tans darkly",
-        "Never burns always dark"
+      let summaryText = `Patient logged a spot on the ${locationStr}, first noticed ${timelineStr} (${evolutionStr}). Changes: ${changeStr}. Symptoms: ${symptomsStr}.`;
+      let findingsList = [
+        `Reported Location: ${locationStr}`,
+        `Timeline & Evolution: First noticed ${timelineStr} (${evolutionStr})`,
+        `Reported Changes: ${changeStr}`,
+        `Reported Symptoms: ${symptomsStr}`,
+        `Prior In-Person Exam: ${intakeForm.lastInPersonVisitDate || 'Not specified'}${intakeForm.lastVisitLocation ? ` (${intakeForm.lastVisitLocation})` : ''}`,
+        `Clinical & Family History: Personal: ${intakeForm.personalCancerHistory || 'None reported'}; Family: ${intakeForm.familyCancerHistory || 'None reported'}`
       ];
-      
-      const prompt = `${AI_SYSTEM_PROMPT}
-You are an expert AI dermatology screening assistant. Analyze the provided skin images together with the patient profile.
-Format your response as clear simple language that a 16 year old can understand. No medical jargon. If you must use a medical term explain it immediately in plain words in parentheses. Keep each section short — maximum 3 sentences or 3 bullet points per section. Be direct and honest. Do not over-explain.
 
-PATIENT PROFILE:
-Age range: ${fullUserData?.ageRange || 'Not provided'}
-Ethnicity: ${fullUserData?.ethnicity || 'Not provided'}
-Fitzpatrick skin type: Type ${fullUserData?.fitzpatrick || 'Not provided'}
+      // If AI_SUMMARY_ENABLED is active, request model synthesis on Vertex AI
+      if (AI_SUMMARY_ENABLED) {
+        const patientSummaryPrompt = `You are a clinical intake assistant for a dermatology practice.
+Synthesize the patient's self-reported questionnaire answers into a concise, professional, plain-language pre-visit summary for the doctor.
+CRITICAL SAFETY AND REGULATORY RULES:
+1. Do NOT diagnose, label conditions, or evaluate skin risk.
+2. NEVER use diagnostic or verdict words such as "benign", "malignant", "cancer", "melanoma", "normal", "harmless", or "safe".
+3. Do NOT comment on or interpret photographs.
+4. Synthesize ONLY what the PATIENT REPORTED regarding their spot location, timeline, changes, symptoms, and medical background.
+5. Format your output strictly as valid JSON:
+{
+  "summary": "A 1-2 sentence plain-language clinical summary of what the patient reported.",
+  "findings": [
+    "Location and timeline reported by patient",
+    "Reported changes in size, shape, or color",
+    "Reported symptoms (bleeding, non-healing, itching/pain)",
+    "Relevant patient medical or family history reported"
+  ]
+}
 
-ABOUT THE SKIN SPOT & CLINICAL INTAKE:
-Location: ${intakeForm.bodyLocation} ${intakeForm.exactBodyLocation ? `(Specific area: ${intakeForm.exactBodyLocation})` : ''}
-When first noticed: ${intakeForm.lesionFirstNoticedDate || intakeForm.duration || 'Not specified'}
-Color evolution: ${intakeForm.colorChange || 'Not specified'}
-Size/shape changes: ${intakeForm.sizeChange || intakeForm.changedRecently || 'Not specified'}
-Bleeding or crusting: ${intakeForm.bleeding || 'None reported'}
-Pain, itching, or sensation: ${intakeForm.painOrSensation || 'None reported'}
-Last in-person skin exam: ${intakeForm.lastInPersonVisitDate || 'Not specified'} ${intakeForm.lastVisitLocation ? `(Clinic: ${intakeForm.lastVisitLocation})` : ''}
-Personal cancer history: ${intakeForm.personalCancerHistory || 'None reported'}
-Family cancer history: ${intakeForm.familyCancerHistory || intakeForm.cancerHistory || 'None reported'}
-Other medical conditions: ${intakeForm.otherConditions || 'None reported'}
+PATIENT SELF-REPORTED DATA:
+- Body Location: ${locationStr}
+- When First Noticed: ${timelineStr}
+- Evolution: ${evolutionStr}
+- Changes: ${changeStr}
+- Symptoms: ${symptomsStr}
+- Prior Exam: ${intakeForm.lastInPersonVisitDate || 'Not specified'}
+- History: Personal: ${intakeForm.personalCancerHistory || 'None reported'}; Family: ${intakeForm.familyCancerHistory || 'None reported'}
+`;
 
-Respond ONLY with valid JSON with these fields:
-- risk_level: "low", "moderate", or "high"
-- confidence_level: "low", "medium", or "high"
-- detected_body_part: string (Recognize which body part/parts or region is shown in the uploaded photo/photos by yourself based on the visual context. Be specific, e.g. "Arm", "Face", "Chest", etc.)
-- findings: array of max 3 bullet points. Each bullet point max 15 words. Plain language only.
-- concerning_signs: array of ABCDE assessment findings (will be saved but UI will show simplified).
-- risk_factors_identified: array of max 2 bullet points pulled from their profile. Short and specific.
-- summary: one single sentence summary maximum 20 words.
-- cancer_type_indicators: short string identifying indicators of BCC, SCC, or Melanoma if any.
-- comparison_notes: If multiple photos provided, note any differences or stability.
-- action_card: One of three specific strings:
-  1. "Low visual concern based on the uploaded images. Monitor for changes and consult a dermatologist if concerned." (for low risk)
-  2. "No obvious visual warning signs were detected, but scheduled professional evaluation is recommended. Consider scheduling a dermatology consultation within 4-6 weeks for further review." (for moderate risk)
-  3. "Observation patterns suggest professional assessment is warranted. Please consult a dermatologist as soon as possible (ideally within 1-2 weeks) for a clinical evaluation." (for high risk)
-- suggestions: array of action items (will be saved).
-- urgency: string recommendation (will be saved).
-- data_quality_note: string.
-- disclaimer: always include.`;
-      
-      const responseData = await callAIVision(
-        [
-          ...imageParts,
-          { text: prompt }
-        ],
-        "gemini-3.5-flash-lite",
-        { responseMimeType: "application/json" }
-      );
-      
-      const text = responseData.text;
-      if (!text) throw new Error("Empty response from AI");
-      
-      let parsed;
-      try {
-        parsed = safeParseAIJSON(text);
-      } catch (e: any) {
-        console.warn("[JSON Fallback Mode] AI returned malformed response, using structural healing:", e);
-        parsed = null;
+        try {
+          const responseData = await callAI(
+            patientSummaryPrompt,
+            "gemini-2.5-flash",
+            { responseMimeType: "application/json" }
+          );
+          if (responseData?.text) {
+            const parsed = safeParseAIJSON(responseData.text);
+            if (parsed?.summary) summaryText = parsed.summary;
+            if (Array.isArray(parsed?.findings) && parsed.findings.length > 0) {
+              findingsList = parsed.findings;
+            }
+          }
+        } catch {
+          // Plain deterministic template is already populated
+        }
       }
-      const jsonResult = validateAndFallbackAnalysisResult(parsed);
+
+      const reportedRiskFactors = [
+        intakeForm.personalCancerHistory && intakeForm.personalCancerHistory !== 'No personal history' ? `Personal history: ${intakeForm.personalCancerHistory}` : null,
+        intakeForm.familyCancerHistory && intakeForm.familyCancerHistory !== 'No family history' ? `Family history: ${intakeForm.familyCancerHistory}` : null,
+        intakeForm.sunburnOrTanningHistory && intakeForm.sunburnOrTanningHistory !== 'None' ? `Sun exposure: ${intakeForm.sunburnOrTanningHistory}` : null,
+        intakeForm.immuneSuppressing && intakeForm.immuneSuppressing !== 'No' ? `Immune condition: ${intakeForm.immuneSuppressing}` : null,
+      ].filter(Boolean) as string[];
+
+      const jsonResult: AnalysisResult = {
+        risk_level: 'insufficient_data',
+        confidence_level: 'medium',
+        findings: findingsList,
+        concerning_signs: [],
+        risk_factors_identified: reportedRiskFactors,
+        summary: summaryText,
+        action_card: "Please bring this photo log and 1-page clinical summary to your upcoming dermatology appointment.",
+        suggestions: ["Bring this 1-page summary to your clinic check-in."],
+        urgency: "Bring this report to your appointment.",
+        data_quality_note: "Patient self-reported intake and photo log.",
+        disclaimer: "SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.",
+        detected_body_part: intakeForm.bodyLocation || undefined
+      };
+
       setResult(jsonResult);
 
       // Calculate Next Scan Date (Weekly Rotation)
       const currentWeekIndex = cycleProgress % 4;
       const currentWeek = WEEK_DEFINITIONS[currentWeekIndex];
       
-      // Check which parts of the current week are completed
-      // Scans since the last full week completion
       const scansSinceLastCompletion = scans.filter(s => {
         if (!lastFullWeekCompletionDate) return true;
         return new Date(s.date).getTime() > new Date(lastFullWeekCompletionDate).getTime();
       });
 
-      // Include the current scan in the check
       const currentScanRegion = intakeForm.bodyLocation || 'Unspecified';
       const allScansForCheck = [...scansSinceLastCompletion, { bodyRegion: currentScanRegion, date: new Date().toISOString() }];
 
@@ -8048,7 +7707,6 @@ Respond ONLY with valid JSON with these fields:
       const isNowFullyComplete = completionStatus.every(s => s === true);
 
       if (isNowFullyComplete) {
-        // Check if we already completed a week today
         const todayStr = today.toISOString().split('T')[0];
         const lastCompletionDateStr = lastFullWeekCompletionDate ? new Date(lastFullWeekCompletionDate).toISOString().split('T')[0] : null;
 
@@ -8078,7 +7736,6 @@ Respond ONLY with valid JSON with these fields:
       setStreakData(prev => {
         let newStreak = prev.currentStreak;
         if (prev.lastScanMonth !== currentMonth) {
-          // Check if it's the consecutive month
           const lastDate = prev.lastScanMonth ? new Date(prev.lastScanMonth + '-01') : null;
           const isConsecutive = lastDate && (today.getMonth() - lastDate.getMonth() + (12 * (today.getFullYear() - lastDate.getFullYear()))) === 1;
           
@@ -8103,7 +7760,7 @@ Respond ONLY with valid JSON with these fields:
         return updated;
       });
 
-      // Calculate SkinScore
+      // Keep skinScore constant at 100 in Firestore without random risk fluctuations
       const newScore = calculateSkinScore(jsonResult);
       setSkinScore(newScore);
       if (currentUser) {
@@ -8140,7 +7797,6 @@ Respond ONLY with valid JSON with these fields:
         const isMale = bodyGender === 'male';
         const torsoWidth = isMale ? 1.2 : 1.0;
         const armOffset = torsoWidth / 2 + 0.15;
-        const legOffset = 0.3;
         
         const posMap: Record<string, [number, number, number]> = {
           "face": [0, 2.8, 0],
@@ -8155,7 +7811,7 @@ Respond ONLY with valid JSON with these fields:
         const newDot: BodyDot = {
           id: Date.now().toString(),
           region: intakeForm.bodyLocation,
-          risk: jsonResult.risk_level,
+          risk: 'low',
           position: posMap[intakeForm.bodyLocation] || [0, 0, 0]
         };
         setBodyDots(prev => {
@@ -8169,51 +7825,26 @@ Respond ONLY with valid JSON with these fields:
         });
       }
 
-      // Compare with previous scan of same region
-      const prevScan = scans.find(s => s.bodyRegion === newScan.bodyRegion);
-      if (prevScan && jsonResult.risk_level === 'high') {
-        setNotifications(prev => [...prev, {
-          id: Date.now().toString(),
-          text: `The spot on your ${newScan.bodyRegion} has changed since your last scan.`,
-          type: 'alert',
-          read: false,
-          date: new Date().toISOString()
-        }]);
-      }
-
       setScans(prev => [newScan, ...prev]);
       setShowEduCard(true);
 
     } catch (err: any) {
-      console.error("Analysis error:", err);
       if (err.message?.includes("429") || err.status === 429 || err.message?.includes("quota")) {
         setError("AI service is currently busy (Rate Limit). Please wait a minute and try again.");
       } else {
-        setError(err.message || "AI analysis failed. Please try again.");
+        setError(err.message || "Summary generation failed. Please try again.");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const calculateSkinScore = (analysisResult: AnalysisResult) => {
-    let currentScore = skinScore;
-    let change = 0;
-    
-    if (analysisResult.risk_level === 'low') {
-      // +2 to +5 increase for low risk
-      change = Math.floor(Math.random() * 4) + 2;
-    } else if (analysisResult.risk_level === 'moderate') {
-      // -5 to -10 decrease for moderate risk
-      change = -(Math.floor(Math.random() * 6) + 5);
-    } else if (analysisResult.risk_level === 'high') {
-      // -15 to -25 decrease for high risk
-      change = -(Math.floor(Math.random() * 11) + 15);
-    }
-    
-    const newScore = Math.max(0, Math.min(100, currentScore + change));
-    return newScore;
+  const calculateSkinScore = (_analysisResult?: AnalysisResult) => {
+    return 100;
   };
+
+  const analyzeSkin = summarizeIntake;
+
 
   const saveProfile = async () => {
     if (!currentUser) return;
@@ -8249,6 +7880,13 @@ Respond ONLY with valid JSON with these fields:
     setLoadingProtocol(true);
     setProtocolError(null);
     try {
+      if (!AI_SUMMARY_ENABLED) {
+        const newProtocol = validateAndFallbackProtocol(null);
+        setProtocol(newProtocol);
+        saveProtocolToFirestore(newProtocol);
+        return;
+      }
+
       const prompt = `${AI_SYSTEM_PROMPT}
 Generate a personalized "Skin Cancer Prevention Protocol" for a ${userProfile.age} year old with Fitzpatrick type ${userProfile.fitzpatrick} skin. 
 The output must ONLY contain cancer prevention and monitoring content, nothing cosmetic.
@@ -8260,20 +7898,18 @@ STRICT LENGTH LIMITS:
 - nextExamSchedule: ONE clear sentence with a specific timeframe. (High risk: 2 weeks, Moderate: 4-6 weeks, Low: 6-12 months).
 Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"], "priorityCheckAreas": ["string"], "warningSigns": ["string"], "nextExamSchedule": "string" }`;
 
-      const responseData = await callAI(prompt, "gemini-3.8-flash", { responseMimeType: "application/json" });
+      const responseData = await callAI(prompt, "gemini-2.5-flash", { responseMimeType: "application/json" });
 
       let parsedProtocol;
       try {
         parsedProtocol = safeParseAIJSON(responseData.text || '{}');
-      } catch (parseErr) {
-        console.warn("[Protocol Parser Fallback] Failed to parse protocol JSON:", parseErr);
+      } catch {
         parsedProtocol = null;
       }
       const newProtocol = validateAndFallbackProtocol(parsedProtocol);
       setProtocol(newProtocol);
       saveProtocolToFirestore(newProtocol);
     } catch (err: any) {
-      console.error("Protocol generation error:", err);
       if (err.message?.includes("429") || err.status === 429 || err.message?.includes("quota")) {
         setProtocolError("AI service is currently busy (Rate Limit). Please wait a minute and try again.");
       } else {
@@ -8302,14 +7938,16 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
 
 
 
-  const downloadPDF = (
+  const downloadPDF = async (
     scanPhotos?: string[], 
     scanResult?: AnalysisResult, 
     customIntake?: IntakeForm,
     customDate?: string,
     customScanId?: string
   ) => {
-    const currentPhotos = scanPhotos || photos;
+    const rawPhotos = scanPhotos || photos;
+    const resolvedPhotos = await Promise.all((rawPhotos || []).map(p => resolvePhotoUrl(p)));
+    const currentPhotos = resolvedPhotos.length > 0 ? resolvedPhotos : rawPhotos;
     const currentResult = scanResult || result;
     const activeIntake = customIntake || intakeForm;
     
@@ -8411,7 +8049,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
       { title: "EXACT BODY SITE", val: exactLocationText },
       { title: "LESION FIRST NOTICED", val: firstNoticedText },
       { title: "TRACKED DURATION", val: trackedDurationText },
-      { title: "TOTAL SCANS LOGGED", val: `${totalScansForSpot} Recorded` }
+      { title: "TOTAL PHOTOS LOGGED", val: `${totalScansForSpot} Recorded` }
     ];
     
     metrics.forEach((m, idx) => {
@@ -8505,97 +8143,104 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     doc.text("PATIENT-REPORTED SYMPTOMS & EVOLUTION", rightX + 4, 78);
     
     const symptomRows = [
-      { label: "Color Evolution:", val: activeIntake.colorChange ? activeIntake.colorChange : "Not reported by patient" },
-      { label: "Size / Shape Delta:", val: activeIntake.sizeChange ? activeIntake.sizeChange : "Not reported by patient" },
-      { label: "Bleeding History:", val: activeIntake.bleeding ? activeIntake.bleeding : "Not reported by patient" },
-      { label: "Pain / Tenderness:", val: activeIntake.painOrSensation ? activeIntake.painOrSensation : "Not reported by patient" },
-      { label: "Recent Noticeable Change:", val: activeIntake.changedRecently ? activeIntake.changedRecently : "Not reported by patient" }
+      { label: "Spot Type:", val: activeIntake.newOrChanged || "Not reported by patient" },
+      { label: "Approximate Size:", val: activeIntake.approximateSize || "Not reported by patient" },
+      { label: "Color Evolution:", val: activeIntake.colorChange || "Not reported by patient" },
+      { label: "Size/Shape Delta:", val: activeIntake.sizeChange || activeIntake.changedRecently || "Not reported by patient" },
+      { label: "Bleeding History:", val: activeIntake.bleeding || "Not reported by patient" },
+      { label: "Non-Healing (> 3-4 Wks):", val: activeIntake.nonHealing || "Not reported by patient" },
+      { label: "Pain / Tenderness:", val: activeIntake.painOrSensation || activeIntake.sensation || "Not reported by patient" }
     ];
     
     symptomRows.forEach((r, idx) => {
-      const rowY = 84 + idx * 7.8;
+      const rowY = 83.5 + idx * 5.8;
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(6.8);
+      doc.setFontSize(6.5);
       doc.setTextColor(51, 65, 85);
       doc.text(r.label, rightX + 4, rowY);
       
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(6.8);
+      doc.setFontSize(6.5);
       const isReported = r.val !== "Not reported by patient";
       doc.setTextColor(isReported ? 15 : 148, isReported ? 23 : 163, isReported ? 42 : 184);
       const splitVal = doc.splitTextToSize(r.val, rightW - 8);
-      doc.text(splitVal[0] || '', rightX + 4, rowY + 3.6);
+      doc.text(splitVal[0] || '', rightX + 4, rowY + 3.0);
     });
 
-    // 5. Pre-Visit Triage Observations (124mm to 184mm)
-    const riskColor = currentResult.risk_level === 'high' ? [220, 38, 38] : currentResult.risk_level === 'moderate' ? [217, 119, 6] : [13, 148, 136];
-    const triageLabel = currentResult.risk_level === 'high' 
-      ? 'EXPEDITED CLINICAL REVIEW WARRANTED (RECOMMENDED 1-2 WEEKS)'
-      : currentResult.risk_level === 'moderate'
-      ? 'SCHEDULED PROFESSIONAL EVALUATION RECOMMENDED (4-6 WEEKS)'
-      : 'ROUTINE CLINICAL EVALUATION / LONGITUDINAL MONITORING';
-      
-    doc.setFillColor(riskColor[0], riskColor[1], riskColor[2]);
+    // 5. Pre-Visit Patient-Reported Summary (124mm to 184mm)
+    doc.setFillColor(30, 41, 59);
     doc.roundedRect(10, 124, pw - 20, 8, 1, 1, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7.5);
-    doc.text(`PRE-VISIT TRIAGE INDICATION: ${triageLabel}`, 14, 129.5);
+    doc.text("PRE-VISIT PATIENT-REPORTED SUMMARY & INTAKE CONTEXT", 14, 129.5);
     
     // Observations Box
     doc.setFillColor(255, 255, 255);
     doc.setDrawColor(226, 232, 240);
     doc.roundedRect(10, 134, pw - 20, 48, 1, 1, 'FD');
     
-    // Left: Objective Visual Patterns Observed
+    // Left: Patient-Reported Clinical Summary
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7.5);
     doc.setTextColor(15, 23, 42);
-    doc.text("OBJECTIVE VISUAL PATTERNS OBSERVED (FOR CLINICIAN CONTEXT):", 14, 139);
+    doc.text("PATIENT-REPORTED CLINICAL SUMMARY:", 14, 139);
     
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.setTextColor(51, 65, 85);
     
     let obsY = 144;
+    const summaryLines = doc.splitTextToSize(currentResult.summary || "Patient logged skin spot for pre-visit clinical intake.", 88);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text(summaryLines, 14, obsY);
+    obsY += summaryLines.length * 3.4 + 2;
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(51, 65, 85);
     const findingsList = currentResult.findings || [];
-    findingsList.slice(0, 3).forEach(f => {
+    findingsList.forEach(f => {
       const wrapped = doc.splitTextToSize(`• ${f}`, 88);
       doc.text(wrapped, 14, obsY);
-      obsY += wrapped.length * 3.3 + 1;
+      obsY += wrapped.length * 3.2 + 0.8;
     });
-    
-    if (currentResult.concerning_signs && currentResult.concerning_signs.length > 0) {
-      currentResult.concerning_signs.slice(0, 2).forEach(cs => {
-        const wrapped = doc.splitTextToSize(`! ${cs}`, 88);
-        doc.setTextColor(185, 28, 28);
-        doc.text(wrapped, 14, obsY);
-        doc.setTextColor(51, 65, 85);
-        obsY += wrapped.length * 3.3 + 1;
-      });
-    }
 
-    // Right Sub-column: Clinical Urgency & Risk Factors
+    // Right Sub-column: Patient-Reported Risk Factors & Notes
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7.5);
     doc.setTextColor(15, 23, 42);
-    doc.text("PATIENT RISK FACTORS & SUGGESTED TIMELINE:", 110, 139);
+    doc.text("PATIENT-REPORTED HISTORY & CONTEXT:", 110, 139);
     
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     let rfY = 144;
     const rfList = currentResult.risk_factors_identified || [];
-    rfList.slice(0, 2).forEach(rf => {
-      const wrapped = doc.splitTextToSize(`• ${rf}`, 85);
-      doc.text(wrapped, 110, rfY);
-      rfY += wrapped.length * 3.3 + 1;
-    });
+    if (rfList.length > 0) {
+      rfList.forEach(rf => {
+        const wrapped = doc.splitTextToSize(`• ${rf}`, 85);
+        doc.text(wrapped, 110, rfY);
+        rfY += wrapped.length * 3.3 + 1;
+      });
+    } else {
+      doc.text("• No specific cancer history reported by patient.", 110, rfY);
+      rfY += 5;
+    }
     
-    doc.setFont("helvetica", "bold");
-    doc.text("Suggested Provider Action:", 110, rfY + 1.5);
-    doc.setFont("helvetica", "normal");
-    const summaryWrap = doc.splitTextToSize(currentResult.summary || "No immediate acute concerns flagged.", 85);
-    doc.text(summaryWrap.slice(0, 3), 110, rfY + 5.5);
+    if (activeIntake.patientComments) {
+      doc.setFont("helvetica", "bold");
+      doc.text("Patient Comment / Question:", 110, rfY + 1.5);
+      doc.setFont("helvetica", "normal");
+      const commentWrap = doc.splitTextToSize(`"${activeIntake.patientComments}"`, 85);
+      doc.text(commentWrap.slice(0, 3), 110, rfY + 5.5);
+      rfY += commentWrap.length * 3.3 + 2;
+    } else {
+      doc.setFont("helvetica", "bold");
+      doc.text("Patient Guidance:", 110, rfY + 1.5);
+      doc.setFont("helvetica", "normal");
+      const actionWrap = doc.splitTextToSize("Bring this report and photo log to scheduled in-person visit.", 85);
+      doc.text(actionWrap.slice(0, 2), 110, rfY + 5.5);
+    }
 
     // 6. Provider In-Office Review & Action Checklist (184mm to 238mm)
     doc.setFillColor(248, 250, 252);
@@ -8606,7 +8251,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(15, 23, 42);
-    doc.text("DERMATOLOGY PROVIDER CLINICAL INTAKE (IN-OFFICE USE ONLY)", 14, 189);
+    doc.text("FOR CLINICIAN USE ONLY — IN-OFFICE CLINICAL DISPOSITION", 14, 189);
     
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.2);
@@ -8614,7 +8259,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     doc.text("[  ] In-Person Dermoscopy Performed", 14, 195);
     doc.text("[  ] Biopsy Ordered (Punch / Shave / Excision)", 95, 195);
     doc.text("[  ] Routine Photo Follow-up in 3-6 Months", 14, 200);
-    doc.text("[  ] Reassured / Benign Lesion", 95, 200);
+    doc.text("[  ] Routine Non-Urgent Periodic Follow-Up", 95, 200);
     
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7);
@@ -8637,7 +8282,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.2);
     doc.setTextColor(100, 116, 139);
-    const disclaimerText = "STATUTORY CLINICAL NOTICE: Skin Tight is an educational pre-visit intake and longitudinal photo comparison tool designed to save provider documentation time and organize patient symptom history. It is NOT a medical device, diagnostic test, or substitute for professional medical advice. Clinical diagnosis requires comprehensive in-person dermatoscopic and histopathological evaluation by a licensed healthcare provider.";
+    const disclaimerText = "SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.";
     const splitDisclaimer = doc.splitTextToSize(disclaimerText, pw - 20);
     doc.text(splitDisclaimer, 10, 241);
     
@@ -8647,7 +8292,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     doc.setFont("helvetica", "bold");
     doc.setFontSize(6.5);
     doc.setTextColor(71, 85, 105);
-    doc.text("Skin Tight Clinical Intake Engine  |  HIPAA-Aligned Technical Safeguards  |  Atlanta Innovation Cup Healthcare Pilot", 10, 254);
+    doc.text("Skin Tight Clinical Intake Engine  |  Standardized Pre-Visit Patient Brief", 10, 254);
     doc.text("Page 1 of 1", pw - 10, 254, { align: 'right' });
     
     doc.save(`SkinTight_Clinical_Report_${targetRegion.replace(/[^a-zA-Z0-9]/g, '_')}_${docIdStr}.pdf`);
@@ -8756,7 +8401,31 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
           Skin Tight
         </span>
 
-        <div style={{ marginLeft: 'auto' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={() => setActiveTab(activeTab === 'clinic_portal' ? 'home' : 'clinic_portal')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: activeTab === 'clinic_portal' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+              border: activeTab === 'clinic_portal' ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.12)',
+              color: activeTab === 'clinic_portal' ? '#38bdf8' : '#e2e8f0',
+              padding: '7px 12px',
+              borderRadius: '10px',
+              fontSize: '12px',
+              fontWeight: '800',
+              cursor: 'pointer',
+              letterSpacing: '0.02em',
+              transition: 'all 0.15s ease'
+            }}
+            title="Switch to B2B Clinic Staff Portal"
+          >
+            <Building2 size={15} color={activeTab === 'clinic_portal' ? '#38bdf8' : '#94a3b8'} />
+            <span className="hidden sm:inline">{activeTab === 'clinic_portal' ? 'Patient Mode' : 'Clinic Portal'}</span>
+            <span className="sm:hidden">{activeTab === 'clinic_portal' ? 'Exit' : 'Clinic'}</span>
+          </button>
+
           {currentUser ? (
             <div 
               id="headerAvatar"
@@ -8939,7 +8608,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                   </motion.div>
 
                   <div style={{ fontWeight: '950', fontSize: '26px', color: '#ffffff', letterSpacing: '-0.02em', textShadow: '0 2px 10px rgba(0,0,0,0.5)', marginBottom: '4px' }}>
-                    START NEW SCAN
+                    START SKIN PHOTO LOG
                   </div>
                   <div style={{ fontSize: '13.5px', color: '#e9d5ff', fontWeight: '800', letterSpacing: '0.4px' }}>
                     Track Skin Concerns & Prepare Doctor Pre-Visit Summary
@@ -8948,7 +8617,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               </motion.div>
             </div>
 
-            {/* Your Key Benefits Section - Transferred directly below Start New Scan button */}
+            {/* Your Key Benefits Section - Transferred directly below Start Skin Photo Log button */}
             <div style={{
               width: '100%',
               marginBottom: '20px',
@@ -9165,19 +8834,17 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                   }}
                 >
                   <Camera size={20} color="#ffffff" strokeWidth={2.5} />
-                  <span>Start Free AI Skin Scan Now</span>
+                  <span>Prepare for Your Visit</span>
                   <SparklesIcon size={18} color="#ffffff" />
                 </button>
               </div>
             </div>
 
-            <SkinShowcaseCarousel />
-
             <div id="scanReminderBanner" style={{ display: 'none', background: 'rgba(239, 159, 39, 0.1)', border: '1px solid rgba(239, 159, 39, 0.3)', borderRadius: '12px', padding: '12px 16px', marginBottom: '14px', alignItems: 'center', gap: '12px' }}>
               <span style={{ fontSize: '20px' }}>🔔</span>
               <div style={{ flex: 1 }}>
-                <div style={{ color: '#EF9F27', fontSize: '13px', fontWeight: '600', marginBottom: '2px' }}>Weekly scan not started</div>
-                <div style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>Complete at least one body area scan this week to stay on track.</div>
+                <div style={{ color: '#EF9F27', fontSize: '13px', fontWeight: '600', marginBottom: '2px' }}>Weekly photo log not started</div>
+                <div style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px' }}>Log at least one photo entry this week to stay on track.</div>
               </div>
               <button 
                 onClick={() => {
@@ -9196,7 +8863,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               <div className="glass-card p-8 rounded-3xl mb-6 border border-cyan-500/20 cursor-pointer hover:bg-white/5 transition-all text-center" onClick={() => { setSelectedScanId(recentScan.id); setActiveTab('timeline'); }}>
                 <div className="flex flex-col items-center mb-6">
                   <h3 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-2 mb-2">
-                    <History size={16} /> <span>MOST RECENT SCAN</span>
+                    <History size={16} /> <span>MOST RECENT PHOTO LOG</span>
                   </h3>
                   <span className="text-[10px] text-slate-500 font-bold">{new Date(recentScan.date).toLocaleDateString()}</span>
                 </div>
@@ -9214,12 +8881,8 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                   
                   <div className="w-full">
                     <div className="flex flex-col items-center gap-2 mb-3">
-                      <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                        recentScan.result.risk_level === 'high' ? 'bg-red-500/20 text-red-400' :
-                        recentScan.result.risk_level === 'moderate' ? 'bg-amber-500/20 text-amber-400' :
-                        'bg-emerald-500/20 text-emerald-400'
-                      }`}>
-                        {recentScan.result.risk_level} Risk
+                      <span className="px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-teal-500/20 text-teal-300">
+                        Photo Logged
                       </span>
                       <span className="text-lg font-black text-white">{recentScan.bodyRegion}</span>
                     </div>
@@ -9235,31 +8898,22 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               <div className="glass-card p-6 rounded-3xl mb-6 border border-white/5 text-center">
                 <div className="flex flex-col items-center mb-4">
                   <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-2">
-                    <History size={16} /> <span>Scan History</span>
+                    <History size={16} /> <span>Photo History</span>
                   </h3>
                 </div>
                 <div className="flex flex-col items-center gap-2">
-                  <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#f8fafc' }}>No Scans Completed Yet</h4>
+                  <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#f8fafc' }}>No Photo Logs Completed Yet</h4>
                   <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
-                    You haven't scanned any spots yet. Tap **Start New Scan** above to complete your first AI skin assessment.
+                    You haven't logged any spots yet. Tap **Start Skin Photo Log** above to complete your first photo log entry.
                   </p>
                 </div>
               </div>
             )}
 
-            <Reviews3DCarousel />
-
             <div style={styles.disclaimerBanner} className="glass-card shimmer-overlay">
               <AlertCircle size={20} color="#f59e0b" style={{ flexShrink: 0 }} />
-              <p>Skin Tight is NOT a medical device and does NOT provide medical diagnoses. Always consult a licensed dermatologist.</p>
+              <p>SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.</p>
             </div>
-
-            {showEduCard && result && (
-              <EducationCard 
-                result={result} 
-                onClose={() => setShowEduCard(false)} 
-              />
-            )}
           </div>
         )}
 
@@ -9281,7 +8935,8 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
             triggerFileInput={triggerFileInput}
             handleFileChange={handleFileChange}
             removePhoto={removePhoto}
-            analyzeSkin={analyzeSkin}
+            summarizeIntake={summarizeIntake}
+            analyzeSkin={summarizeIntake}
             retakePhoto={retakePhoto}
             downloadPDF={downloadPDF}
             openReportPreview={openReportPreview}
@@ -9310,6 +8965,27 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
         )}
         {activeTab === 'plans' && <PlansPage setActiveTab={setActiveTab} />}
         {activeTab === 'clinic' && <ClinicFinder />}
+
+        {activeTab === 'clinic_portal' && (
+          <div className="w-full">
+            <ClinicDashboard 
+              onExitToPatientApp={() => setActiveTab('home')}
+              onOpenPatientIntake={(clinicId) => {
+                setActiveClinicId(clinicId);
+                setActiveTab('clinic_intake');
+              }}
+            />
+          </div>
+        )}
+
+        {activeTab === 'clinic_intake' && (
+          <div className="w-full">
+            <ClinicIntakePage 
+              clinic={TEST_CLINIC}
+              onBackToApp={() => setActiveTab('home')}
+            />
+          </div>
+        )}
 
         {activeTab === 'welcome' && <AboutPage />}
         {activeTab === 'learn' && (
@@ -9378,42 +9054,10 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                   <span>Hello</span>, <span style={{ color: '#2dd4bf' }}>{currentUser ? (fullUserData?.fullName ? fullUserData.fullName.split(' ')[0] : fullUserData?.username || 'User') : 'Guest'}</span> 👋
                 </h2>
                 <p style={{ color: '#94a3b8', fontSize: '15px', marginTop: '4px' }}>
-                  {scans.length === 0 ? <span>Start your first scan to begin tracking your skin health.</span> : <span>Your skin health at a glance</span>}
+                  {scans.length === 0 ? <span>Start your first photo log to begin tracking skin changes.</span> : <span>Your skin photo tracking records</span>}
                 </p>
               </div>
             </div>
-
-            {/* Score Gauge and How to Improve button if active */}
-            {skinScore > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '28px', width: '100%' }}>
-                <SkinScoreGauge score={skinScore} />
-                
-                <div style={{ textAlign: 'center', marginTop: '16px', marginBottom: '16px' }}>
-                  <button 
-                    onClick={() => (window as any).loadHowToImprove()}
-                    style={{
-                      background: 'rgba(45, 212, 191, 0.1)',
-                      border: '1px solid rgba(45, 212, 191, 0.2)',
-                      color: '#2dd4bf',
-                      padding: '10px 24px',
-                      borderRadius: '14px',
-                      fontSize: '14px',
-                      fontWeight: '700',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      transition: 'all 0.2s ease',
-                      boxShadow: '0 4px 15px rgba(45, 212, 191, 0.1)'
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(45, 212, 191, 0.2)'}
-                    onMouseOut={(e) => e.currentTarget.style.background = 'rgba(45, 212, 191, 0.1)'}
-                  >
-                    <SparklesIcon size={16} /> How to Improve
-                  </button>
-                </div>
-              </div>
-            )}
             
             {/* Personal Info Card */}
             {currentUser ? (
@@ -9457,44 +9101,8 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                     {/* Stats Row */}
                     <div className="flex justify-center gap-4 mb-2">
                       <div className="flex-1 p-4 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
-                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Scans</div>
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Logged Photos</div>
                         <div className="text-2xl font-black text-white">{scans.length}</div>
-                      </div>
-                      <div className="flex-1 p-4 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
-                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Skin Score</div>
-                        <div className="text-2xl font-black text-teal-400">{skinScore}%</div>
-                      </div>
-                    </div>
-
-                    <div className="p-6 rounded-[32px] bg-white/5 border border-white/10 text-center w-full">
-                      <div className="text-[11px] font-black text-teal-500 uppercase tracking-[0.3em] mb-4">AI Analysis Profile</div>
-                      
-                      <div className="flex flex-col items-center gap-4">
-                        <div className="flex flex-wrap justify-center gap-3">
-                          <div className="px-5 py-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-black uppercase tracking-wider">
-                            Fitzpatrick Type {userProfile.fitzpatrick}
-                          </div>
-                          {fullUserData?.ethnicity && (
-                            <div className="px-5 py-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-black uppercase tracking-wider">
-                              {fullUserData.ethnicity}
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="mt-2 px-4 max-w-sm mx-auto">
-                          <p className="text-[13px] text-slate-400 leading-relaxed font-medium">
-                            {(() => {
-                              const type = Number(userProfile.fitzpatrick);
-                              if (type === 1) return "Very fair skin, highly sensitive. Always burns, never tans. Significant UV protection required.";
-                              if (type === 2) return "Fair skin, high sensitivity. Usually burns, tans minimally. Frequent self-checks recommended.";
-                              if (type === 3) return "Creamy white to light brown. Sometimes mild burn, tans uniformly. Balanced protection needed.";
-                              if (type === 4) return "Olive or moderate brown. Rarely burns, tans easily. Lower (but present) risk profile.";
-                              if (type === 5) return "Dark brown skin. Very rarely burns, tans very easily. Focus on early detection.";
-                              if (type === 6) return "Deeply pigmented skin. Never burns. Highly resistant to sun damage, but check palms and soles.";
-                              return "Your personalized skin profile based on AI dermatological standards.";
-                            })()}
-                          </p>
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -9531,7 +9139,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                   <p className="text-purple-400 font-extrabold text-xs mb-4 tracking-widest uppercase">Unregistered Device</p>
                   
                   <p className="text-sm text-slate-400 max-w-xs mb-6 leading-relaxed">
-                    Your diagnostic skin histories, custom UV safety score, and daily skincare tracking will be securely synced across your devices upon signup.
+                    Your photo history, custom UV safety score, and daily skincare tracking will be securely synced across your devices upon signup.
                   </p>
 
                   <button 
@@ -9556,30 +9164,8 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                     {/* Stats Row */}
                     <div className="flex justify-center gap-4 mb-2">
                       <div className="flex-1 p-4 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
-                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Scans</div>
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Logged Photos</div>
                         <div className="text-2xl font-black text-white">{scans.length}</div>
-                      </div>
-                      <div className="flex-1 p-4 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center">
-                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Skin Score</div>
-                        <div className="text-2xl font-black text-teal-400">{skinScore}%</div>
-                      </div>
-                    </div>
-
-                    <div className="p-6 rounded-[32px] bg-white/5 border border-white/10 text-center w-full">
-                      <div className="text-[11px] font-black text-teal-500 uppercase tracking-[0.3em] mb-4">AI Analysis Profile</div>
-                      
-                      <div className="flex flex-col items-center gap-4">
-                        <div className="flex flex-wrap justify-center gap-3">
-                          <div className="px-5 py-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-black uppercase tracking-wider">
-                            Fitzpatrick Type {userProfile.fitzpatrick}
-                          </div>
-                        </div>
-                        
-                        <div className="mt-2 px-4 max-w-sm mx-auto">
-                          <p className="text-[13px] text-slate-400 leading-relaxed font-medium">
-                            Fitzpatrick Type 2: Fair skin, high sensitivity. Usually burns, tans minimally. Frequent self-checks recommended.
-                          </p>
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -9608,30 +9194,6 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
         onClose={() => setShowLegalModal(null)} 
       />
 
-      {/* How to Improve Panel */}
-      <div 
-        id="howToImprovePanel" 
-        style={{display:'none', position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.7)', zIndex:1000, alignItems:'flex-end', justifyContent:'center'}}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            (e.currentTarget as HTMLElement).style.display = 'none';
-          }
-        }}
-      >
-        <div style={{background:'#0d1126', borderRadius:'24px 24px 0 0', border:'1px solid rgba(255,255,255,0.08)', width:'100%', maxHeight:'90vh', overflowY:'auto', padding:'24px'}}>
-          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px'}}>
-            <div>
-              <div style={{color:'#fff', fontSize:'18px', fontWeight:'600'}}>How to Improve</div>
-              <div style={{color:'rgba(255,255,255,0.4)', fontSize:'12px'}}>Personalized skin cancer prevention steps</div>
-            </div>
-            <button onClick={() => {
-              const panel = document.getElementById('howToImprovePanel');
-              if (panel) panel.style.display = 'none';
-            }} style={{background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', width:'32px', height:'32px', borderRadius:'50%', fontSize:'16px', cursor:'pointer'}}>×</button>
-          </div>
-          <div id="howToImproveContent"></div>
-        </div>
-      </div>
     </>
     </ErrorBoundary>
   );

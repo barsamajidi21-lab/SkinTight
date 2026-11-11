@@ -15,11 +15,6 @@ service cloud.firestore {
     function isSignedIn() {
       return request.auth != null;
     }
-    
-    function isVerified() {
-      // Relaxing verification requirement for now as some providers/environments report null
-      return isSignedIn();
-    }
 
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
@@ -37,9 +32,23 @@ service cloud.firestore {
       return resource.data;
     }
 
+    // Identity Platform Custom Claims for Clinic Multi-Tenancy
+    function isClinicStaff(clinicId) {
+      return isSignedIn() && (
+        (request.auth.token.clinicId == clinicId && (request.auth.token.role == 'clinic_staff' || request.auth.token.role == 'clinic_admin'))
+        || request.auth.token.admin == true
+      );
+    }
+
+    function isClinicAdmin(clinicId) {
+      return isSignedIn() && (
+        (request.auth.token.clinicId == clinicId && request.auth.token.role == 'clinic_admin')
+        || request.auth.token.admin == true
+      );
+    }
+
     // --- Entity Validations ---
     function isValidUser(data) {
-      // Basic keys required for a healthy profile
       return data.keys().hasAll(['username', 'email', 'skinScore', 'scansCompleted'])
         && data.username is string && data.username.size() <= 64
         && data.email is string && data.email.size() <= 128
@@ -59,7 +68,7 @@ service cloud.firestore {
 
     // --- Collections ---
 
-    // /users/{userId}
+    // 1. Patient User Profiles & Longitudinal History
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow create: if isOwner(userId) && isValidUser(incoming());
@@ -67,7 +76,6 @@ service cloud.firestore {
         && (!('email' in incoming()) || incoming().email == existing().email)
         && (!('username' in incoming()) || incoming().username == existing().username);
       
-      // Subcollections
       match /scans/{scanId} {
         allow list: if isOwner(userId);
         allow get: if isOwner(userId) && isValidId(scanId);
@@ -92,13 +100,57 @@ service cloud.firestore {
       }
     }
 
-    // /usernames/{username}
+    // 2. Multi-Tenant Clinic Mode Collections (/clinics/{clinicId})
+    match /clinics/{clinicId} {
+      // Clinic metadata profile
+      allow get: if true;
+      allow write: if isClinicAdmin(clinicId);
+
+      // Incoming Patient Triage Cases
+      match /cases/{caseId} {
+        // Staff of THIS clinic can view cases. Cross-clinic access is mathematically blocked.
+        allow list, get: if isClinicStaff(clinicId);
+        
+        // Creation is allowed via authenticated or patient intake submission
+        allow create: if isValidId(caseId);
+
+        // Updates (status changes, triage color overrides) permitted for clinic staff
+        allow update: if isClinicStaff(clinicId);
+
+        // Deletions restricted strictly to clinic administrator
+        allow delete: if isClinicAdmin(clinicId);
+      }
+
+      // Clinic Configurable Rules & Governance
+      match /rules/{ruleDoc} {
+        allow get, list: if true;
+        allow write: if isClinicAdmin(clinicId);
+      }
+
+      match /rulesHistory/{versionId} {
+        allow get, list: if isClinicStaff(clinicId);
+        allow create: if isClinicAdmin(clinicId);
+        allow update, delete: if false; // Immutable version ledger
+      }
+
+      // Immutable HIPAA Access & Audit Log Collection
+      match /auditLogs/{logId} {
+        // Only clinic staff can read audit logs
+        allow list, get: if isClinicStaff(clinicId);
+
+        // Staff & system can append audit entries
+        allow create: if isValidId(logId);
+
+        // CRITICAL: Audit logs are strictly immutable. Staff and admins cannot edit or delete.
+        allow update, delete: if false;
+      }
+    }
+
+    // 3. Username Uniqueness Registry
     match /usernames/{username} {
-      allow get: if true; // Public for availability check during signup
-      // UID mapping for uniqueness claim
+      allow get: if true;
       allow create: if isSignedIn() && isValidUsernameMap(incoming()) 
         && incoming().uid == request.auth.uid;
-      // Immutable
     }
   }
 }

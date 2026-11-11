@@ -90,6 +90,77 @@
         "zone3": { "type": "boolean" },
         "zone4": { "type": "boolean" }
       }
+    },
+    "Clinic": {
+      "title": "Clinic",
+      "description": "Clinic multi-tenant organization",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "zip": { "type": "string" },
+        "website": { "type": "string" },
+        "activeRulesVersion": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "ClinicCase": {
+      "title": "Clinic Case",
+      "description": "Incoming pre-visit patient case for clinic triage",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clinicId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "patientEmail": { "type": "string" },
+        "patientPhone": { "type": "string" },
+        "patientDob": { "type": "string" },
+        "submissionDate": { "type": "string" },
+        "triageColor": { "type": "string" },
+        "whyLine": { "type": "string" },
+        "triggeredRules": { "type": "array" },
+        "rulesVersion": { "type": "string" },
+        "answers": { "type": "object" },
+        "patientReportedSummary": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "clinicId", "patientName", "triageColor"]
+    },
+    "ClinicRule": {
+      "title": "Clinic Rule Set",
+      "description": "Configurable triage rules approved by clinic physician",
+      "type": "object",
+      "properties": {
+        "version": { "type": "string" },
+        "approvalStatus": { "type": "string" },
+        "approvedBy": { "type": "string" },
+        "approvedAt": { "type": "string" },
+        "rules": { "type": "array" }
+      }
+    },
+    "ClinicAuditLog": {
+      "title": "Clinic Audit Log",
+      "description": "Immutable audit record for HIPAA compliance and security logging",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clinicId": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "userRole": { "type": "string" },
+        "action": { "type": "string" },
+        "resourceType": { "type": "string" },
+        "resourceId": { "type": "string" },
+        "metadata": { "type": "object" }
+      },
+      "required": ["id", "clinicId", "timestamp", "userId", "action"]
     }
   },
   "firestore": {
@@ -116,6 +187,26 @@
     "/usernames/{username}": {
       "schema": "UsernameMap",
       "description": "Username registry"
+    },
+    "/clinics/{clinicId}": {
+      "schema": "Clinic",
+      "description": "Clinic profile and metadata"
+    },
+    "/clinics/{clinicId}/cases/{caseId}": {
+      "schema": "ClinicCase",
+      "description": "Clinic pre-visit triage cases"
+    },
+    "/clinics/{clinicId}/rules/{ruleDoc}": {
+      "schema": "ClinicRule",
+      "description": "Active clinic triage rules configuration"
+    },
+    "/clinics/{clinicId}/rulesHistory/{versionId}": {
+      "schema": "ClinicRule",
+      "description": "Immutable version history of physician rule approvals"
+    },
+    "/clinics/{clinicId}/auditLogs/{logId}": {
+      "schema": "ClinicAuditLog",
+      "description": "Immutable audit logs for compliance"
     }
   }
 }

@@ -78,27 +78,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="apple-touch-icon" href="/theone.jpg">
     <link rel="icon" type="image/jpeg" href="/theone.jpg">
-    <!-- Umami Analytics -->
-    <script defer src="https://cloud.umami.is/script.js" data-website-id="298956bd-05fb-4089-a397-d57829a2a52d"></script>
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
-        try {
-          await OneSignal.init({
-            appId: "9960c3dd-03ff-4220-8a73-77ff77838dad",
-            notifyButton: { enable: false },
-            allowLocalhostAsSecureOrigin: true,
-            welcomeNotification: {
-              title: "Skin Tight",
-              message: "Thanks for subscribing! We'll remind you when it's time to scan."
-            }
-          });
-        } catch (error) {
-          console.warn("OneSignal initialization failed (likely due to domain restriction):", error);
-        }
-      });
-    </script>
+    <!-- HIPAA Compliance: All third-party non-BAA trackers and analytics scripts removed -->
     <script>
       if ('serviceWorker' in navigator) {
         let refreshing = false;

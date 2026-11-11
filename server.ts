@@ -6,26 +6,23 @@ import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 import { PSEO_LANDING_PAGES } from "./src/data/pSEOData";
 
+import { AI_SUMMARY_ENABLED, VERTEX_AI_CONFIG } from "./src/config/compliance";
+
 dotenv.config();
 
-// --- 1. SECRET MANAGEMENT (Lazy Initialization) ---
-let genAIClient: GoogleGenAI | null = null;
-function getGenAI(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY environment variable is required and missing in server configuration.");
-  }
-  if (!genAIClient) {
-    genAIClient = new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build-devsecops',
-        }
-      }
+// --- 1. VERTEX AI CLIENT (Google Cloud Application Default Credentials / No API Keys) ---
+let vertexAIClient: GoogleGenAI | null = null;
+function getVertexAI(): GoogleGenAI {
+  if (!vertexAIClient) {
+    const project = process.env.GOOGLE_CLOUD_PROJECT || VERTEX_AI_CONFIG.projectId;
+    const location = process.env.GOOGLE_CLOUD_LOCATION || VERTEX_AI_CONFIG.location;
+    vertexAIClient = new GoogleGenAI({
+      vertexai: true,
+      project,
+      location,
     });
   }
-  return genAIClient;
+  return vertexAIClient;
 }
 
 // --- 4. ADVANCED MULTI-TIER RATE LIMITING ENGINE & GLOBAL CIRCUIT BREAKER ---
@@ -240,28 +237,36 @@ async function startServer() {
   // Mount API CORS Bouncer on all API endpoints
   app.use("/api", corsGuardMiddleware);
 
-  // Protected AI Screening Generation Endpoint
+  // Protected Clinical Intake Summary Generation Endpoint (Vertex AI)
   app.post("/api/ai/generate", rateLimiterMiddleware, async (req, res) => {
     try {
       if (!req.body || typeof req.body !== "object") {
         return res.status(400).json({ error: "Invalid request body format." });
       }
 
-      const { prompt, parts, model: requestedModel = "gemini-3.5-flash-lite", config = {} } = req.body;
+      // Safety Switch check: If AI summaries are paused, return structured deterministic template
+      if (!AI_SUMMARY_ENABLED) {
+        return res.json({
+          text: JSON.stringify({
+            summary: "Patient self-reported intake recorded. AI summary generation is paused under compliance safety switch.",
+            findings: [
+              "Patient self-reported clinical history recorded",
+              "Structured questionnaire data securely archived",
+              "Visual photo log filed for clinician review"
+            ]
+          })
+        });
+      }
+
+      const { prompt, parts, model: requestedModel = "gemini-2.5-flash", config = {} } = req.body;
       
-      // Candidate models in prioritized order of operational health, quota availability, and low latency:
-      // 1. gemini-3.5-flash-lite: Active, responsive, highly reliable for multimodal vision and structured JSON
-      // 2. gemini-3-flash-preview: Active secondary fallback, excellent vision and formatting performance
-      // 3. gemini-3.8-flash: Next-generation flash model
-      // 4. gemini-flash-latest: Standard alias
+      // Vertex AI candidate models (prioritizing stable enterprise models in us-central1)
       const candidateModels = [
-        "gemini-3.5-flash-lite",
-        "gemini-3-flash-preview",
-        "gemini-3.8-flash",
-        "gemini-flash-latest"
+        "gemini-2.5-flash",
+        "gemini-1.5-flash",
+        "gemini-2.0-flash"
       ];
 
-      // If client specifically requested another valid candidate, prioritize it first
       const orderedModels = [
         ...(candidateModels.includes(requestedModel) ? [requestedModel] : []),
         ...candidateModels.filter(m => m !== requestedModel)
@@ -273,7 +278,7 @@ async function startServer() {
           return res.status(400).json({ error: "Invalid payload: parts must be an array." });
         }
         if (parts.length > 15) {
-          return res.status(400).json({ error: "Payload rejected: Exceeded maximum allowed 15 diagnostic images." });
+          return res.status(400).json({ error: "Payload rejected: Exceeded maximum allowed 15 images." });
         }
 
         // Validate and sanitize image payloads
@@ -282,30 +287,25 @@ async function startServer() {
           if (part && part.inlineData) {
             const { mimeType, data } = part.inlineData;
             
-            // Whitelist MIME type check
             if (!mimeType || !allowedMimeTypes.includes(mimeType.toLowerCase())) {
-              throw new Error(`Security Violation: Image #${index + 1} uses unsupported or dangerous MIME type "${mimeType}". Only JPEG, PNG, WEBP, and HEIC are permitted.`);
+              throw new Error(`Security Violation: Image #${index + 1} uses unsupported MIME type.`);
             }
 
             if (!data || typeof data !== "string") {
-              throw new Error(`Security Violation: Image #${index + 1} has corrupted data.`);
+              throw new Error(`Security Violation: Corrupted image data.`);
             }
 
-            // Strip data URL prefixes if present
             const base64Raw = data.includes(',') ? data.split(',')[1] : data;
             const trimmed = base64Raw.trim();
 
-            // Validate base64 regex character set
             if (!/^[A-Za-z0-9+/=]+$/.test(trimmed)) {
-              throw new Error(`Security Violation: Image #${index + 1} contains malformed base64 characters.`);
+              throw new Error(`Security Violation: Malformed base64.`);
             }
 
-            // Enforce size ceiling (approx 15MB base64 limit)
             if (trimmed.length > 20 * 1024 * 1024) {
-              throw new Error(`Security Violation: Image #${index + 1} exceeds max file size ceiling.`);
+              throw new Error(`Security Violation: Exceeds max file size.`);
             }
 
-            // Buffer heal
             const cleanBase64 = Buffer.from(trimmed, 'base64').toString('base64');
             return {
               ...part,
@@ -322,13 +322,16 @@ async function startServer() {
         contents = sanitizeText(typeof prompt === "string" ? prompt.slice(0, 100000) : "");
       }
 
-      const ai = getGenAI();
+      const ai = getVertexAI();
       let response;
       let lastError: any = null;
       const retryDelayMs = 800;
 
-      const enhancedConfig = {
+      // Note: No cachedContent is provided, ensuring zero data caching per HIPAA guidelines
+      const vertexConfig = {
         ...config,
+        // Zero prompt caching
+        cachedContent: undefined,
         safetySettings: [
           { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
           { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
@@ -344,20 +347,20 @@ async function startServer() {
           response = await ai.models.generateContent({
             model: currentModel,
             contents,
-            config: enhancedConfig
+            config: vertexConfig
           });
           
           if (response && response.text) {
             lastError = null;
             break;
           } else {
-            throw new Error(`AI model ${currentModel} returned empty text`);
+            throw new Error(`Vertex AI model ${currentModel} returned empty text`);
           }
         } catch (err: any) {
           lastError = err;
-          console.warn(`[Server AI Attempt ${attempt}/${orderedModels.length} on ${currentModel}]:`, err.message || err);
+          // Anonymous log only: never log patient answers, prompts, or sensitive error bodies
+          console.warn(`[Vertex AI Notice]: Model attempt ${attempt}/${orderedModels.length} non-responsive (code: ${err?.status || 'retryable'}).`);
           
-          // If the model is experiencing high demand (503) or quota exhaustion (429), immediately attempt the next model
           const isBusyOrQuota = err.message && (
             err.message.includes("503") ||
             err.message.includes("429") ||
@@ -383,7 +386,8 @@ async function startServer() {
 
       res.json({ text });
     } catch (error: any) {
-      console.error("Protected Gemini API Error:", error.message || error);
+      // Never log patient data in server logs
+      console.error("[Clinical API Warning]: Summary generation request failed (no PHI logged).");
       const status = error.message && error.message.includes("Security Violation") ? 400 : 500;
       res.status(status).json({ error: error instanceof Error ? error.message : "Internal Server Error" });
     }

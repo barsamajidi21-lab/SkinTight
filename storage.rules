@@ -8,34 +8,55 @@ service firebase.storage {
     }
 
     // --- Helpers ---
-    // Checks if the user is authenticated in Firebase
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Checks if the authenticated user owns the specific folder path
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // --- Core Scan Image Rules ---
-    // Enforces hierarchical storage organization inside user-specific folders:
-    // Path model: users/{userId}/scans/{fileName} or any nested path under users/{userId}/
-    match /users/{userId}/{allPaths=**} {
-      
-      // Only authenticated owners can retrieve or list files.
-      // This enforces private access and instantly blocks deleted accounts once their auth token is revoked.
-      allow read, list: if isOwner(userId);
-      
-      // Only authenticated owners can write or upload files under their folder.
-      allow create, update: if isOwner(userId)
-        // Size Limits: Enforce a strict max limit of 15MB per upload for high-res mobile photos
-        && request.resource.size < 15 * 1024 * 1024
-        // File Type Restrictions: Only allow standard, safe image types commonly used on mobile & web
-        && request.resource.contentType.matches('image/(jpeg|jpg|png|webp)');
+    // Identity Platform Custom Claims for Clinic Staff and Admins
+    function isClinicStaff(clinicId) {
+      return isSignedIn() && (
+        (request.auth.token.clinicId == clinicId && (request.auth.token.role == 'clinic_staff' || request.auth.token.role == 'clinic_admin'))
+        || request.auth.token.admin == true
+      );
+    }
 
-      // Only the authenticated folder owner can remove files.
+    // --- 1. Private Patient Photo Storage ---
+    // Path: /users/{userId}/photos/{photoId}
+    match /users/{userId}/photos/{photoId} {
+      allow read, get: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && request.resource.size < 15 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|jpg|png|webp|heic)');
       allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/scans/{fileName} {
+      allow read, get: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && request.resource.size < 15 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|jpg|png|webp|heic)');
+      allow delete: if isOwner(userId);
+    }
+
+    // --- 2. Clinic Mode Multi-Tenant Case Photo Storage ---
+    // Path: /clinics/{clinicId}/cases/{caseId}/photos/{photoId}
+    match /clinics/{clinicId}/cases/{caseId}/photos/{photoId} {
+      // Clinic staff from this specific clinic can read photos
+      allow read, get: if isClinicStaff(clinicId);
+
+      // Photos can be uploaded during patient pre-visit intake or by staff
+      allow create, update: if (isClinicStaff(clinicId) || isSignedIn())
+        && request.resource.size < 15 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|jpg|png|webp|heic)');
+
+      // Clinic admin only can delete photos
+      allow delete: if isSignedIn() 
+        && request.auth.token.clinicId == clinicId 
+        && request.auth.token.role == 'clinic_admin';
     }
   }
 }

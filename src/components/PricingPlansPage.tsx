@@ -63,7 +63,7 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
     name: 'Premium Skin Journal & Tracking',
     badge: 'Individual (B2C)',
     price: '$7.99 / mo',
-    description: 'Unlimited AI scans, longitudinal mole tracking, and exportable clinical PDF reports.'
+    description: 'Unlimited photo logs, longitudinal mole tracking, and exportable clinical PDF reports.'
   });
 
   const [inquiryForm, setInquiryForm] = useState<InquiryData>({
@@ -122,19 +122,19 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
   const faqs = [
     {
       q: "How does the 7-day free trial for Premium work?",
-      a: "You receive instant full access to unlimited AI lesion scans, side-by-side photo comparisons, and clinical PDF exports. You can test the longitudinal tracking capabilities with zero commitment. During our current beta onboarding, no credit card or billing details are collected."
+      a: "You receive instant full access to unlimited photo log entries, side-by-side photo comparisons, and clinical PDF exports. You can test the longitudinal tracking capabilities with zero commitment. During our current beta onboarding, no credit card or billing details are collected."
     },
     {
       q: "How does the Clinic Triage & Intake Portal integrate into existing practices?",
-      a: "Clinics receive a dedicated QR code and pre-screening link to place in patient registration packets, waiting rooms, or website appointment request pages. Consenting patients complete a 90-second photo self-check that organizes ABCD criteria into a clean digital triage summary before the provider enters the exam room."
+      a: "Clinics receive a dedicated QR code and pre-screening link to place in patient registration packets, waiting rooms, or website appointment request pages. Consenting patients complete a 90-second photo self-log that organizes patient-reported history into a clean digital triage summary before the provider enters the exam room."
     },
     {
       q: "What is the B2B Patient Referral & Triage Partnership model?",
-      a: "When users in our app scan a lesion exhibiting rapid change or high-risk markers, our triage engine prompts them to find local accredited dermatologists or urgent care clinics. Partner practices receive priority placement and pre-screened referral notifications, helping patients get into clinic calendars before potential malignancies advance."
+      a: "When patients in our app track skin spots or prepare for a clinical visit, our pre-visit engine helps them connect with nearby dermatologists or urgent care clinics. Partner practices receive pre-visit summaries to streamline intake and prepare providers ahead of consultations."
     },
     {
       q: "Are the skincare brand recommendations unbiased?",
-      a: "Yes. Skin Tight strictly limits skincare affiliations to clinically tested, broad-spectrum UVA/UVB sunscreens, mineral blocks, and barrier-repair formulations vetted against American Academy of Dermatology (AAD) and Skin Cancer Foundation standards. Recommendations are non-intrusive and only displayed alongside wellness guidance."
+      a: "Yes. Skin Tight strictly limits skincare affiliations to clinically tested, broad-spectrum UVA/UVB sunscreens, mineral blocks, and barrier-repair formulations vetted against clinical skin health standards. Recommendations are non-intrusive and only displayed alongside wellness guidance."
     }
   ];
 
@@ -289,7 +289,7 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
                         <Check size={16} />
                       </div>
                       <span className="text-sm text-slate-200 font-medium leading-relaxed">
-                        <strong>1 Free Instant AI Skin Scan</strong> with instant vision analysis
+                        <strong>1 Free Pre-Visit Intake &amp; Photo Log</strong> with clinical summary
                       </span>
                     </div>
                     <div className="flex items-start gap-3">
@@ -297,7 +297,7 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
                         <Check size={16} />
                       </div>
                       <span className="text-sm text-slate-200 font-medium leading-relaxed">
-                        <strong>Basic Risk Breakdown</strong> (ABCD Criteria indicators: Asymmetry, Border, Color, Diameter)
+                        <strong>Basic Symptom Breakdown</strong> (Patient-reported evolution: size, color, sensation)
                       </span>
                     </div>
                     <div className="flex items-start gap-3">
@@ -328,7 +328,7 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
                     }}
                   >
                     <Camera size={18} />
-                    <span>Start Free Scan Now</span>
+                    <span>Prepare for Your Visit</span>
                   </button>
                 </div>
               </div>
@@ -385,7 +385,7 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
                         <Check size={16} />
                       </div>
                       <span className="text-sm text-slate-100 font-medium leading-relaxed">
-                        <strong>Unlimited AI Skin Scans</strong> &amp; Longitudinal Visual History
+                        <strong>Unlimited Photo Log Entries</strong> &amp; Longitudinal Visual History
                       </span>
                     </div>
                     <div className="flex items-start gap-3">
@@ -422,7 +422,7 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
                       'Premium Skin Journal & Tracking',
                       'Individual (B2C)',
                       billingCycle === 'annual' ? '$59 / year' : '$7.99 / mo',
-                      'Includes unlimited AI scans, private timeline photo tracking, and clinical PDF report downloads.'
+                      'Includes unlimited photo logs, private timeline photo tracking, and clinical PDF report downloads.'
                     )}
                     className="w-full py-4 rounded-2xl font-black text-sm tracking-wide transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 shadow-lg"
                     style={{
@@ -507,7 +507,7 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
                         <Check size={16} />
                       </div>
                       <span className="text-sm text-slate-200 font-medium leading-relaxed">
-                        <strong>Filters out low-risk benign visits</strong> to free up provider schedules for high-risk urgent procedures &amp; biopsies
+                        <strong>Streamlines intake documentation</strong> to free up clinical exam room minutes for patient care
                       </span>
                     </div>
                     <div className="flex items-start gap-3">
@@ -523,7 +523,7 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
                         <Check size={16} />
                       </div>
                       <span className="text-sm text-slate-200 font-medium leading-relaxed">
-                        <strong>Dedicated dashboard</strong> to view patient-consented scan histories, side-by-side mole comparisons &amp; timeline logs
+                        <strong>Dedicated dashboard</strong> to view patient-consented photo histories, side-by-side mole comparisons &amp; timeline logs
                       </span>
                     </div>
                   </div>
@@ -587,7 +587,7 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
                         <Check size={16} />
                       </div>
                       <span className="text-sm text-slate-200 font-medium leading-relaxed">
-                        <strong>Direct connection from high-risk AI app alerts</strong> to verified local clinic appointment queues
+                        <strong>Direct connection from pre-visit patient summaries</strong> to nearby clinic appointment queues
                       </span>
                     </div>
                     <div className="flex items-start gap-3">
@@ -611,7 +611,7 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
                         <Check size={16} />
                       </div>
                       <span className="text-sm text-slate-200 font-medium leading-relaxed">
-                        <strong>Priority care bridge</strong> ensuring high-risk or evolving lesions receive rapid medical evaluation
+                        <strong>Structured clinical bridge</strong> ensuring evolving lesions receive timely medical evaluation
                       </span>
                     </div>
                   </div>
@@ -624,7 +624,7 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
                       'B2B Patient Referral & Triage Partnership',
                       'Clinic Network Partner (B2B)',
                       'Performance / Referral Structure',
-                      'Connect high-risk app alerts directly to your clinic queue with preferred placement and GPS routing.'
+                      'Connect pre-visit intake briefs directly to your clinic queue with preferred placement and GPS routing.'
                     )}
                     className="w-full py-4 rounded-2xl font-black text-sm tracking-wide transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 border border-[#00E5B9]/40 text-teal-300 hover:bg-[#00E5B9]/15"
                     style={{
@@ -749,8 +749,8 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
                 </thead>
                 <tbody className="divide-y divide-white/5 text-slate-300">
                   <tr>
-                    <td className="py-3.5 px-3 font-medium">Instant AI Vision Lesion Check</td>
-                    <td className="py-3.5 px-3">1 Scan</td>
+                    <td className="py-3.5 px-3 font-medium">Pre-Visit Intake &amp; Photo Log</td>
+                    <td className="py-3.5 px-3">1 Log Entry</td>
                     <td className="py-3.5 px-3 text-[#00E5B9] font-bold">Unlimited</td>
                     <td className="py-3.5 px-3 text-purple-300 font-bold">Patient Included</td>
                     <td className="py-3.5 px-3 text-teal-300 font-bold">Patient Included</td>
@@ -877,13 +877,13 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
                   className="text-sm font-semibold leading-relaxed m-0"
                   style={{ color: '#ffffff' }}
                 >
-                  Skin Tight is an AI-powered wellness and educational monitoring tool, not a diagnostic medical device. It does not provide medical diagnoses, treatment plans, or prescriptions. Always consult a licensed dermatologist.
+                  SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.
                 </p>
                 <p 
                   className="text-xs leading-relaxed m-0"
                   style={{ color: '#fca5a5' }}
                 >
-                  Notice: If you detect a lesion that is rapidly enlarging, changing color, bleeding, itching, or failing to heal, schedule an in-person clinical exam with a certified healthcare provider immediately.
+                  Notice: If you detect a spot that is rapidly enlarging, changing color, bleeding, itching, or failing to heal, schedule an in-person clinical exam with a licensed healthcare provider immediately.
                 </p>
               </div>
             </div>
@@ -964,7 +964,7 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
                     className="w-full py-3.5 rounded-xl font-black text-sm tracking-wide bg-[#00E5B9] text-[#060B13] hover:scale-[1.01] transition-transform flex items-center justify-center gap-2"
                   >
                     <Camera size={16} />
-                    <span>Try Free AI Skin Scan Now</span>
+                    <span>Prepare for Your Visit</span>
                   </button>
 
                   <button
