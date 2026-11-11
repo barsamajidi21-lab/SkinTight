@@ -25,11 +25,11 @@ import { AI_SUMMARY_ENABLED } from '../config/compliance';
 
 // Standard Preloaded Fake Test Clinic
 export const TEST_CLINIC: Clinic = {
-  id: 'austin-derm-associates',
-  name: 'Austin Dermatology & Skin Surgery Center',
-  address: '1201 W 38th St, Suite 400, Austin, TX 78705',
-  phone: '(512) 555-0198',
-  email: 'triage@austindermsurgery.com',
+  id: 'clinic-a',
+  name: 'Dermatology Practice A',
+  address: 'Suite 100, Medical Plaza',
+  phone: '(555) 010-0198',
+  email: 'triage@clinic-a.example.com',
   urgentInstruction: 'Offer the next available urgent slot and notify the triage nurse immediately.',
   yellowInstruction: 'Schedule standard in-person consultation within 2–3 weeks.',
   greenInstruction: 'Schedule routine periodic preventive skin check.',
@@ -40,10 +40,10 @@ export const TEST_CLINIC: Clinic = {
 const INITIAL_SEED_CASES: ClinicCase[] = [
   {
     id: 'case_red_101',
-    clinicId: 'austin-derm-associates',
-    patientName: 'Robert Vance',
-    patientEmail: 'r.vance@example.com',
-    patientPhone: '(512) 555-2341',
+    clinicId: 'clinic-a',
+    patientName: 'Patient R.',
+    patientEmail: 'patient.r@example.com',
+    patientPhone: '(555) 010-2341',
     patientAgeRange: '60+',
     dateSubmitted: new Date(Date.now() - 45 * 60 * 1000).toISOString(), // 45 mins ago
     color: 'red',
@@ -75,10 +75,10 @@ const INITIAL_SEED_CASES: ClinicCase[] = [
   },
   {
     id: 'case_yel_102',
-    clinicId: 'austin-derm-associates',
-    patientName: 'Elena Rostova',
-    patientEmail: 'elena.rostova@example.com',
-    patientPhone: '(512) 555-8842',
+    clinicId: 'clinic-a',
+    patientName: 'Patient E.',
+    patientEmail: 'patient.e@example.com',
+    patientPhone: '(555) 010-8842',
     patientAgeRange: '40-59',
     dateSubmitted: new Date(Date.now() - 150 * 60 * 1000).toISOString(), // 2.5 hours ago
     color: 'yellow',
@@ -110,10 +110,10 @@ const INITIAL_SEED_CASES: ClinicCase[] = [
   },
   {
     id: 'case_grn_103',
-    clinicId: 'austin-derm-associates',
-    patientName: 'Marcus Chen',
-    patientEmail: 'm.chen@example.com',
-    patientPhone: '(512) 555-7123',
+    clinicId: 'clinic-a',
+    patientName: 'Patient M.',
+    patientEmail: 'patient.m@example.com',
+    patientPhone: '(555) 010-7123',
     patientAgeRange: '20-39',
     dateSubmitted: new Date(Date.now() - 360 * 60 * 1000).toISOString(), // 6 hours ago
     color: 'green',
@@ -148,20 +148,20 @@ let localCasesCache: ClinicCase[] = [...INITIAL_SEED_CASES];
 let localAuditLogs: ClinicAuditLog[] = [
   {
     id: 'log-seed-1',
-    clinicId: 'austin-derm-associates',
+    clinicId: 'clinic-a',
     action: 'rules_update',
-    staffEmail: 'admin@austindermsurgery.com',
-    staffName: 'Dr. Sarah Jenkins, MD',
+    staffEmail: 'admin@clinic-a.example.com',
+    staffName: 'Dr. J., MD',
     staffRole: 'clinic_admin',
     details: 'Initial starter rules loaded: v1.0-DRAFT (Pending physician review)',
     timestamp: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
   },
   {
     id: 'log-seed-2',
-    clinicId: 'austin-derm-associates',
+    clinicId: 'clinic-a',
     action: 'patient_intake_submit',
     caseId: 'case_red_101',
-    patientName: 'Robert Vance',
+    patientName: 'Patient R.',
     staffEmail: 'system@skintight.clinical',
     staffRole: 'system',
     details: 'Digital intake submitted by patient. Triage score assigned: RED (3 rules triggered).',
@@ -222,7 +222,7 @@ export async function getClinicAuditLogs(clinicId: string): Promise<ClinicAuditL
   } catch {
     // Fall back to local logs
   }
-  return localAuditLogs.filter(l => l.clinicId === clinicId);
+  return localAuditLogs.filter(l => l.clinicId === clinicId || (clinicId === 'austin-derm-associates' && l.clinicId === 'clinic-a') || (clinicId === 'clinic-a' && l.clinicId === 'austin-derm-associates'));
 }
 
 /**
@@ -245,7 +245,7 @@ export async function getClinicCases(clinicId: string): Promise<ClinicCase[]> {
   }
 
   if (cases.length === 0) {
-    cases = localCasesCache.filter(c => c.clinicId === clinicId);
+    cases = localCasesCache.filter(c => c.clinicId === clinicId || (clinicId === 'austin-derm-associates' && c.clinicId === 'clinic-a') || (clinicId === 'clinic-a' && c.clinicId === 'austin-derm-associates'));
   }
 
   // Sort Red -> Yellow -> Green, newest first

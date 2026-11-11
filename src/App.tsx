@@ -1442,10 +1442,10 @@ const styles = {
           parsedClinics = [
             {
               id: 'fallback-1',
-              name: 'Emory Dermatology Clinic & Skin Center',
-              address: '1365 Clifton Rd NE, Atlanta, GA 30322',
-              phone: '(404) 778-3376',
-              website: 'https://www.emoryhealthcare.org',
+              name: 'Dermatology Practice A',
+              address: 'Suite 100, Medical Plaza',
+              phone: '(555) 010-0101',
+              website: 'https://practice-a.example.com',
               hours: 'Mo-Fr 08:00-17:00',
               rating: '4.9',
               lat: latitude + 0.02,
@@ -1458,10 +1458,10 @@ const styles = {
             },
             {
               id: 'fallback-2',
-              name: 'Piedmont Physicians Dermatology',
-              address: '1800 Howell Mill Rd NW, Atlanta, GA 30318',
-              phone: '(404) 351-4600',
-              website: 'https://www.piedmont.org',
+              name: 'Dermatology Clinic B',
+              address: 'Suite 200, Health Center Way',
+              phone: '(555) 010-0102',
+              website: 'https://clinic-b.example.com',
               hours: 'Mo-Fr 08:30-16:30',
               rating: '4.8',
               lat: latitude - 0.015,
@@ -1474,10 +1474,10 @@ const styles = {
             },
             {
               id: 'fallback-3',
-              name: 'Atlanta Medical & Community Health Center',
-              address: '100 Peachtree St NW, Atlanta, GA 30303',
-              phone: '(404) 522-8800',
-              website: 'https://www.atlantamedical.org',
+              name: 'Community Care Center C',
+              address: 'Suite 300, Healthcare Blvd',
+              phone: '(555) 010-0103',
+              website: 'https://care-c.example.com',
               hours: 'Mo-Fr 08:00-18:00; Sa 09:00-13:00',
               rating: '4.7',
               lat: latitude + 0.01,
@@ -2864,7 +2864,7 @@ const ScanPage = ({
                       </label>
                       <input 
                         type="text"
-                        placeholder="e.g. Piedmont Dermatology Clinic, Dr. Sarah Collins"
+                        placeholder="e.g. Dermatology Practice A, Dr. C."
                         value={intakeForm.lastVisitLocation || ''}
                         onChange={(e) => updateIntake('lastVisitLocation', e.target.value)}
                         className="w-full bg-white/5 border border-white/10 rounded-2xl p-3.5 text-sm text-white placeholder-slate-500 outline-none focus:border-teal-400 transition-all"
@@ -4221,7 +4221,7 @@ const DoctorBridge = ({
                 style={styles.input} 
                 value={tempDoctor.name} 
                 onChange={e => setTempDoctor({...tempDoctor, name: e.target.value})}
-                placeholder="Dr. Smith"
+                placeholder="Dr. S."
               />
             </div>
             <div>
@@ -4231,7 +4231,7 @@ const DoctorBridge = ({
                 style={styles.input} 
                 value={tempDoctor.clinic} 
                 onChange={e => setTempDoctor({...tempDoctor, clinic: e.target.value})}
-                placeholder="City Dermatology"
+                placeholder="Dermatology Practice A"
               />
             </div>
             <div>
@@ -4391,7 +4391,7 @@ export interface IntakeForm {
 
   // Section 2: Clinical Encounters & In-Person Visits
   lastInPersonVisitDate: string; // e.g. "Within 6 months", "6-12 months ago", "Over 1 year ago", "Never had one"
-  lastVisitLocation: string;     // Clinic or doctor name e.g. "Atlanta Dermatology, Dr. Williams"
+  lastVisitLocation: string;     // Clinic or doctor name e.g. "Dermatology Practice A, Dr. W."
 
   // Section 3: Oncological & Disease History
   personalCancerHistory: string; // "Previous melanoma", "Non-melanoma skin cancer", "No personal history", "Unsure"
@@ -6482,7 +6482,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 function App() {
   // --- Navigation State ---
   const [activeTab, setActiveTab] = useState<'home' | 'scan' | 'timeline' | 'routine' | 'plans' | 'profile' | 'clinic' | 'welcome' | 'auth' | 'learn' | 'clinic_portal' | 'clinic_intake'>('home');
-  const [activeClinicId, setActiveClinicId] = useState<string>('austin-derm-associates');
+  const [activeClinicId, setActiveClinicId] = useState<string>('clinic-a');
   const [selectedArticleSlug, setSelectedArticleSlug] = useState<string | null>(null);
   const [activePseoPage, setActivePseoPage] = useState<PseoPage | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -6528,10 +6528,10 @@ function App() {
     }
     switch (activeTab) {
       case 'clinic_portal':
-        document.title = 'Clinic Portal | Austin Dermatology & Skin Surgery Center | Skin Tight';
+        document.title = 'Clinic Portal | Practice A | Skin Tight';
         break;
       case 'clinic_intake':
-        document.title = 'Pre-Visit Intake | Austin Dermatology & Skin Surgery Center';
+        document.title = 'Pre-Visit Intake | Practice A';
         break;
       case 'home':
         document.title = 'Skin Tight – AI Skin Monitoring & Skin Cancer Awareness Tool';
@@ -6584,7 +6584,7 @@ function App() {
       const path = window.location.pathname;
       if (path.startsWith('/intake/')) {
         const slug = path.replace('/intake/', '').replace(/\/$/, '');
-        setActiveClinicId(slug || 'austin-derm-associates');
+        setActiveClinicId(slug || 'clinic-a');
         setActiveTab('clinic_intake');
         return;
       }

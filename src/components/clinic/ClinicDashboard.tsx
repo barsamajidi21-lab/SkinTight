@@ -52,8 +52,8 @@ export const ClinicDashboard: React.FC<ClinicDashboardProps> = ({
   // Staff User Session
   const [clinic, setClinic] = useState<Clinic>(TEST_CLINIC);
   const [staffRole, setStaffRole] = useState<'clinic_staff' | 'clinic_admin'>('clinic_staff');
-  const [staffName, setStaffName] = useState('Nurse Angela Reyes, RN');
-  const [staffEmail, setStaffEmail] = useState('a.reyes@austindermsurgery.com');
+  const [staffName, setStaffName] = useState('Nurse R., RN');
+  const [staffEmail, setStaffEmail] = useState('staff.r@clinic-a.example.com');
   const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [sessionLocked, setSessionLocked] = useState(false);
   const [timeRemainingSec, setTimeRemainingSec] = useState(15 * 60);

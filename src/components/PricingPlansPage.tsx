@@ -985,7 +985,7 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Dr. Jordan Hayes or Alex Rivera"
+                    placeholder="e.g. Dr. H. or Practice Manager R."
                     value={inquiryForm.name}
                     onChange={(e) => setInquiryForm(prev => ({ ...prev, name: e.target.value }))}
                     className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#00E5B9]"
@@ -999,7 +999,7 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
                   <input
                     type="email"
                     required
-                    placeholder="you@practice.com or personal@gmail.com"
+                    placeholder="you@practice.example.com or personal@example.com"
                     value={inquiryForm.email}
                     onChange={(e) => setInquiryForm(prev => ({ ...prev, email: e.target.value }))}
                     className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#00E5B9]"
@@ -1014,7 +1014,7 @@ export const PricingPlansPage: React.FC<PricingPlansPageProps> = ({
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Atlanta Dermatology & Aesthetic Center"
+                      placeholder="e.g. Dermatology Practice A"
                       value={inquiryForm.organization}
                       onChange={(e) => setInquiryForm(prev => ({ ...prev, organization: e.target.value }))}
                       className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#00E5B9]"

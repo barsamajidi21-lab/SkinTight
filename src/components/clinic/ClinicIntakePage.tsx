@@ -245,7 +245,7 @@ export const ClinicIntakePage: React.FC<ClinicIntakePageProps> = ({ clinic, onBa
                         required
                         value={patientName}
                         onChange={(e) => setPatientName(e.target.value)}
-                        placeholder="e.g., Robert Vance"
+                        placeholder="e.g., Patient R."
                         className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-teal-500 text-white text-sm outline-none"
                       />
                     </div>

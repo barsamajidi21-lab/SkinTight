@@ -158,7 +158,7 @@ export const RulesAdminPage: React.FC<RulesAdminPageProps> = ({
                 type="text"
                 value={physicianName}
                 onChange={(e) => setPhysicianName(e.target.value)}
-                placeholder="e.g., Dr. Sarah Jenkins, MD, FAAD"
+                placeholder="e.g., Dr. J., MD"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none focus:border-teal-500"
               />
               <span className="text-[10px] text-slate-500 mt-1 block">
