@@ -1,24 +1,43 @@
 import { jsPDF } from 'jspdf';
-import { Clinic, ClinicCase } from '../types/clinic';
+import { Clinic, ClinicCase, RulesConfig } from '../types/clinic';
 import { resolvePhotoUrl } from '../App';
 
-export async function generateClinicCasePDF(clinicCase: ClinicCase, clinic: Clinic): Promise<void> {
+async function imageUrlToDataUrl(url: string): Promise<string> {
+  if (!url) return '';
+  if (url.startsWith('data:image')) return url;
+  try {
+    const resp = await fetch(url);
+    const blob = await resp.blob();
+    return await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve((reader.result as string) || '');
+      reader.onerror = () => resolve('');
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return url;
+  }
+}
+
+export async function generateClinicCasePDF(
+  clinicCase: ClinicCase,
+  clinic: Clinic,
+  rulesConfig?: RulesConfig | null
+): Promise<void> {
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
   const pw = doc.internal.pageSize.getWidth(); // 210mm
-  
+
   const rawPhotos = clinicCase.photos || [];
   const resolvedPhotos = await Promise.all(rawPhotos.map(p => resolvePhotoUrl(p)));
-  const photos = resolvedPhotos.filter(Boolean);
+  const firstPhotoData = resolvedPhotos[0] ? await imageUrlToDataUrl(resolvedPhotos[0]) : '';
 
   const activeColor = clinicCase.override?.overriddenColor || clinicCase.color;
   const isOverridden = !!clinicCase.override;
 
-  // Header Banner (Color-coded based on triage category)
-  // Navy background with prominent triage status indicator
-  doc.setFillColor(15, 23, 42); // #0f172a
+  // Header Banner
+  doc.setFillColor(15, 23, 42);
   doc.rect(10, 8, pw - 20, 22, 'F');
 
-  // Clinic Branding
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(255, 255, 255);
@@ -28,7 +47,7 @@ export async function generateClinicCasePDF(clinicCase: ClinicCase, clinic: Clin
   doc.setFontSize(7.5);
   doc.setTextColor(148, 163, 184);
   doc.text(`${clinic.address}  |  Tel: ${clinic.phone}`, 14, 20);
-  doc.text('CLINICAL PRE-VISIT INTAKE & TRIAGE BRIEF', 14, 25);
+  doc.text('PRE-VISIT INTAKE & TRIAGE BRIEF', 14, 25);
 
   // Triage Category Badge (Top Right of Header)
   const badgeWidth = 44;
@@ -37,11 +56,11 @@ export async function generateClinicCasePDF(clinicCase: ClinicCase, clinic: Clin
   const badgeY = 11;
 
   if (activeColor === 'red') {
-    doc.setFillColor(220, 38, 38); // Red
+    doc.setFillColor(220, 38, 38);
   } else if (activeColor === 'yellow') {
-    doc.setFillColor(217, 119, 6); // Amber / Yellow
+    doc.setFillColor(217, 119, 6);
   } else {
-    doc.setFillColor(16, 185, 129); // Green
+    doc.setFillColor(16, 185, 129);
   }
   doc.roundedRect(badgeX, badgeY, badgeWidth, badgeHeight, 1.5, 1.5, 'F');
 
@@ -53,10 +72,10 @@ export async function generateClinicCasePDF(clinicCase: ClinicCase, clinic: Clin
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
-  const subLabel = isOverridden ? 'OVERRIDDEN BY STAFF' : 'RULE-ASSIGNED';
+  const subLabel = isOverridden ? 'STAFF OVERRIDE' : 'RULE-ASSIGNED';
   doc.text(subLabel, badgeX + badgeWidth / 2, badgeY + 12, { align: 'center' });
 
-  // 1. Patient Demographics & Encounter Info Box (Y: 33 to 53mm)
+  // 1. Patient Demographics & Encounter Info Box
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.3);
@@ -65,7 +84,7 @@ export async function generateClinicCasePDF(clinicCase: ClinicCase, clinic: Clin
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
-  doc.text('1. PATIENT INTAKE & DEMOGRAPHIC RECORD', 14, 38);
+  doc.text('1. PATIENT INTAKE & VISIT RECORD', 14, 38);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
@@ -75,46 +94,52 @@ export async function generateClinicCasePDF(clinicCase: ClinicCase, clinic: Clin
   doc.text(`Submission Date: ${new Date(clinicCase.dateSubmitted).toLocaleString()}`, 14, 51);
 
   doc.text(`Case ID: #CASE-${clinicCase.id.slice(-8)}`, 110, 43);
-  doc.text(`Intake Method: ${clinicCase.isPhoneIntake ? `Phone Script (Staff: ${clinicCase.intakeStaffName || 'Staff'})` : 'Patient Digital Portal'}`, 110, 47.5);
-  doc.text(`Status: Pending In-Office Exam`, 110, 51);
+  doc.text(`Intake Method: ${clinicCase.isPhoneIntake ? `Phone Script (${clinicCase.intakeStaffName || 'Staff'})` : 'Patient Intake Link'}`, 110, 47.5);
+  doc.text(`Status: ${clinicCase.status.toUpperCase()}`, 110, 51);
 
-  // 2. Triage Rule Justification ("Why" Line) & Physician Approval (Y: 56 to 82mm)
+  // 2. Triage Rule Justification ("Why" Line) & Physician Approval
   doc.setFillColor(254, 242, 242);
   if (activeColor === 'yellow') doc.setFillColor(254, 252, 232);
   if (activeColor === 'green') doc.setFillColor(240, 253, 244);
-  
-  doc.setDrawColor(activeColor === 'red' ? 239 : (activeColor === 'yellow' ? 245 : 16), activeColor === 'red' ? 68 : (activeColor === 'yellow' ? 158 : 185), activeColor === 'red' ? 68 : (activeColor === 'yellow' ? 11 : 129));
+
+  doc.setDrawColor(
+    activeColor === 'red' ? 239 : (activeColor === 'yellow' ? 245 : 16),
+    activeColor === 'red' ? 68 : (activeColor === 'yellow' ? 158 : 185),
+    activeColor === 'red' ? 68 : (activeColor === 'yellow' ? 11 : 129)
+  );
   doc.setLineWidth(0.4);
   doc.roundedRect(10, 56, pw - 20, 24, 1.5, 1.5, 'FD');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
-  doc.text('2. TRIAGE CATEGORY JUSTIFICATION & AUDIT TRAIL', 14, 61);
+  doc.text('2. TRIAGE CATEGORY REASON ("WHY" LINE) & RULES VERSION', 14, 61);
 
-  // "Why" Line bullet points
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.2);
   doc.setTextColor(30, 41, 59);
-  
-  const whyText = clinicCase.why.length > 0 ? clinicCase.why.map(w => `• ${w}`).join('   ') : '• Standard intake completed without red-flag triggers';
-  const splitWhy = doc.splitTextToSize(`Triggered Rule(s): ${whyText}`, pw - 30);
+
+  const whyText = clinicCase.why.length > 0 ? clinicCase.why.map(w => `• ${w}`).join('   ') : '• Intake completed with no urgent flags';
+  const splitWhy = doc.splitTextToSize(`Rules Triggered: ${whyText}`, pw - 30);
   doc.text(splitWhy.slice(0, 2), 14, 66);
 
   if (clinicCase.override) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7);
     doc.setTextColor(185, 28, 28);
-    doc.text(`Staff Override Applied: Changed from ${clinicCase.override.originalColor.toUpperCase()} to ${clinicCase.override.overriddenColor.toUpperCase()} by ${clinicCase.override.overriddenBy}. Reason: "${clinicCase.override.reason}"`, 14, 73);
+    doc.text(`Staff Override: Changed from ${clinicCase.override.originalColor.toUpperCase()} to ${clinicCase.override.overriddenColor.toUpperCase()} by ${clinicCase.override.overriddenBy}. Reason: "${clinicCase.override.reason}"`, 14, 73);
   }
 
-  // Rules approval stamp
+  const approvalLine = rulesConfig?.approvedBy
+    ? `Rules ${clinicCase.rulesVersion} approved by ${rulesConfig.approvedBy}, ${rulesConfig.approvedDate || ''}`
+    : `Rules ${clinicCase.rulesVersion} — DRAFT — pending physician approval`;
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Scoring Rules Engine: ${clinicCase.rulesVersion} — DRAFT pending physician approval`, 14, 78);
+  doc.text(approvalLine, 14, 78);
 
-  // 3. Clinical Photos & Structured Lesion Details (Y: 83 to 138mm)
+  // 3. Attached Photo & Structured Answers
   const imgBoxW = 48;
   const imgBoxH = 46;
   doc.setFillColor(248, 250, 252);
@@ -124,24 +149,22 @@ export async function generateClinicCasePDF(clinicCase: ClinicCase, clinic: Clin
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
   doc.setTextColor(15, 23, 42);
-  doc.text('ENCOUNTER PHOTO', 10 + imgBoxW / 2, 87.5, { align: 'center' });
+  doc.text('ATTACHED PHOTO', 10 + imgBoxW / 2, 87.5, { align: 'center' });
 
   try {
-    if (photos[0] && (photos[0].startsWith('data:image') || photos[0].startsWith('http'))) {
-      doc.addImage(photos[0], 'JPEG', 12, 90, imgBoxW - 4, imgBoxH - 9);
+    if (firstPhotoData && firstPhotoData.startsWith('data:image')) {
+      doc.addImage(firstPhotoData, 'JPEG', 12, 90, imgBoxW - 4, imgBoxH - 9);
     } else {
       doc.setFontSize(7);
       doc.setTextColor(148, 163, 184);
-      doc.text('Photo File Archived in', 10 + imgBoxW / 2, 106, { align: 'center' });
-      doc.text('Cloud Storage', 10 + imgBoxW / 2, 110, { align: 'center' });
+      doc.text(rawPhotos.length > 0 ? `${rawPhotos.length} Photo(s) Attached` : 'No Photo Attached', 10 + imgBoxW / 2, 108, { align: 'center' });
     }
   } catch {
     doc.setFontSize(7);
     doc.setTextColor(148, 163, 184);
-    doc.text('Photo Attached in Storage', 10 + imgBoxW / 2, 108, { align: 'center' });
+    doc.text('Photo Stored in Clinic Case', 10 + imgBoxW / 2, 108, { align: 'center' });
   }
 
-  // Structured Lesion Questionnaire Details Box (Right of Photo)
   const detailBoxX = 10 + imgBoxW + 4;
   const detailBoxW = pw - 20 - imgBoxW - 4;
   doc.setFillColor(248, 250, 252);
@@ -151,16 +174,16 @@ export async function generateClinicCasePDF(clinicCase: ClinicCase, clinic: Clin
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(15, 23, 42);
-  doc.text('3. PATIENT-REPORTED CLINICAL SYMPTOMS & TIMELINE', detailBoxX + 4, 88);
+  doc.text('3. PATIENT-REPORTED SYMPTOMS & TIMELINE', detailBoxX + 4, 88);
 
   const ans = clinicCase.answers;
   const structuredItems = [
     { label: 'Body Site:', val: `${ans.bodyLocation || 'Not specified'} ${ans.exactBodyLocation ? `(${ans.exactBodyLocation})` : ''}` },
-    { label: 'Timeline:', val: `First noticed ${ans.lesionFirstNoticedDate || ans.duration || 'Not specified'} (${ans.newOrChanged || 'Status not specified'})` },
-    { label: 'Reported Changes:', val: [ans.colorChange, ans.sizeChange, ans.shapeChange].filter(Boolean).join('; ') || 'No size, shape, or color changes' },
-    { label: 'Bleeding / Sore:', val: `Bleeding: ${ans.bleeding || 'None'}  |  Non-healing (>3-4wks): ${ans.nonHealing || 'None'}` },
+    { label: 'Timeline:', val: `First noticed ${ans.lesionFirstNoticedDate || ans.duration || 'Not specified'} (${ans.newOrChanged || 'Not specified'})` },
+    { label: 'Changes:', val: [ans.colorChange, ans.sizeChange, ans.shapeChange].filter(Boolean).join('; ') || 'No size, shape, or color changes reported' },
+    { label: 'Bleeding / Sore:', val: `Bleeding: ${ans.bleeding || 'None'}  |  Non-healing (>3-4 wks): ${ans.nonHealing || 'None'}` },
     { label: 'Sensation:', val: ans.painOrSensation || 'None reported' },
-    { label: 'Oncological Hx:', val: `Personal: ${ans.personalCancerHistory || 'None'}  |  Family: ${ans.familyCancerHistory || 'None'}` },
+    { label: 'Skin Cancer History:', val: `Personal: ${ans.personalCancerHistory || 'None'}  |  Family: ${ans.familyCancerHistory || 'None'}` },
   ];
 
   structuredItems.forEach((item, idx) => {
@@ -172,11 +195,11 @@ export async function generateClinicCasePDF(clinicCase: ClinicCase, clinic: Clin
 
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(15, 23, 42);
-    const splitVal = doc.splitTextToSize(item.val, detailBoxW - 32);
-    doc.text(splitVal[0] || '', detailBoxX + 30, yPos);
+    const splitVal = doc.splitTextToSize(item.val, detailBoxW - 35);
+    doc.text(splitVal[0] || '', detailBoxX + 33, yPos);
   });
 
-  // 4. Pre-Visit Patient-Reported Summary (Y: 132 to 160mm)
+  // 4. Pre-Visit Patient Summary
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(226, 232, 240);
   doc.roundedRect(10, 132, pw - 20, 24, 1.5, 1.5, 'FD');
@@ -184,15 +207,15 @@ export async function generateClinicCasePDF(clinicCase: ClinicCase, clinic: Clin
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(15, 23, 42);
-  doc.text('4. PRE-VISIT PATIENT SUMMARY (NON-DIAGNOSTIC)', 14, 137);
+  doc.text('4. PRE-VISIT PATIENT-REPORTED SUMMARY', 14, 137);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(51, 65, 85);
-  const summaryWrap = doc.splitTextToSize(clinicCase.patientSummary || 'Patient submitted questionnaire and photos for clinical triage review.', pw - 28);
+  const summaryWrap = doc.splitTextToSize(clinicCase.patientSummary || 'Patient submitted pre-visit intake answers for clinic review.', pw - 28);
   doc.text(summaryWrap.slice(0, 3), 14, 142);
 
-  // 5. Provider In-Office Review & Checklist (Y: 160 to 235mm)
+  // 5. Provider In-Office Review
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(15, 23, 42);
   doc.setLineWidth(0.4);
@@ -201,24 +224,22 @@ export async function generateClinicCasePDF(clinicCase: ClinicCase, clinic: Clin
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
-  doc.text('5. FOR CLINICIAN USE ONLY — IN-OFFICE CLINICAL DISPOSITION', 14, 166);
+  doc.text('5. FOR CLINICIAN USE ONLY — IN-OFFICE VISIT NOTES', 14, 166);
 
-  // Clean un-checked boxes
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(30, 41, 59);
   doc.text('[  ] In-Person Dermoscopy Performed', 14, 172);
   doc.text('[  ] Biopsy Ordered (Punch / Shave / Excision)', 95, 172);
-  doc.text('[  ] Routine Photo Follow-up in 3–6 Months', 14, 178);
-  doc.text('[  ] Routine Non-Urgent Periodic Follow-Up', 95, 178);
-  doc.text('[  ] Referral to Mohs / Surgical Oncology', 14, 184);
-  doc.text('[  ] Cryotherapy / Topical Therapy Prescribed', 95, 184);
+  doc.text('[  ] Photo Follow-Up in 3–6 Months', 14, 178);
+  doc.text('[  ] Routine Periodic Skin Check', 95, 178);
+  doc.text('[  ] Referral to Surgical Specialist', 14, 184);
+  doc.text('[  ] Cryotherapy / Topical Treatment', 95, 184);
 
-  // Clinical notes lines
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.2);
   doc.setTextColor(71, 85, 105);
-  doc.text('Provider Clinical Assessment & Exam Findings:', 14, 192);
+  doc.text('Provider Exam Notes:', 14, 192);
 
   doc.setDrawColor(203, 213, 225);
   doc.setLineWidth(0.3);
@@ -227,19 +248,17 @@ export async function generateClinicCasePDF(clinicCase: ClinicCase, clinic: Clin
   doc.line(14, 210, pw - 14, 210);
   doc.line(14, 216, pw - 14, 216);
 
-  // Signatures
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(15, 23, 42);
   doc.text('Provider Signature: ____________________________________', 14, 224);
   doc.text('Date Examined: _______________', pw - 65, 224);
 
-  // 6. Mandatory Compliance Footer
+  // 6. Compliance Footer
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(100, 116, 139);
-  const footerDisclaimer = 'Triage category assigned by clinic-approved rules. Not a diagnosis. Requires clinician review. SkinTight is a clinical workflow and pre-visit documentation platform.';
-  doc.text(footerDisclaimer, 10, 240);
+  doc.text('Triage category assigned by clinic-approved rules. Not a diagnosis. Requires clinician review.', 10, 240);
 
   doc.setDrawColor(226, 232, 240);
   doc.line(10, 244, pw - 10, 244);
@@ -247,10 +266,9 @@ export async function generateClinicCasePDF(clinicCase: ClinicCase, clinic: Clin
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(6.5);
   doc.setTextColor(71, 85, 105);
-  doc.text(`${clinic.name}  |  Dermatology Triage Engine  |  Standardized Clinical Brief`, 10, 249);
+  doc.text(`${clinic.name}  |  Pre-Visit Triage Brief`, 10, 249);
   doc.text('Page 1 of 1', pw - 10, 249, { align: 'right' });
 
-  // Save PDF file
   const fileName = `Clinic_Triage_${clinic.id}_Case_${clinicCase.id.slice(-6)}_${activeColor.toUpperCase()}.pdf`;
   doc.save(fileName);
 }

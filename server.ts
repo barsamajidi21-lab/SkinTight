@@ -4,6 +4,7 @@ import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
+import nodemailer from "nodemailer";
 import { PSEO_LANDING_PAGES } from "./src/data/pSEOData";
 
 import { AI_SUMMARY_ENABLED, VERTEX_AI_CONFIG } from "./src/config/compliance";
@@ -327,7 +328,7 @@ async function startServer() {
       let lastError: any = null;
       const retryDelayMs = 800;
 
-      // Note: No cachedContent is provided, ensuring zero data caching per HIPAA guidelines
+      // Note: No cachedContent is provided, disabling prompt caching on Vertex AI
       const vertexConfig = {
         ...config,
         // Zero prompt caching
@@ -393,6 +394,68 @@ async function startServer() {
     }
   });
 
+  // B2B Clinic Demo Request Notification Endpoint
+  app.post("/api/demo-request", rateLimiterMiddleware, async (req, res) => {
+    try {
+      const { name, practiceName, role, workEmail, phone, message } = req.body || {};
+      const cleanName = sanitizeText(name).slice(0, 120);
+      const cleanPractice = sanitizeText(practiceName).slice(0, 160);
+      const cleanRole = sanitizeText(role).slice(0, 80);
+      const cleanEmail = sanitizeText(workEmail).slice(0, 160);
+      const cleanPhone = sanitizeText(phone).slice(0, 40);
+      const cleanMessage = sanitizeText(message).slice(0, 1500);
+
+      if (!cleanName || !cleanPractice || !cleanRole || !cleanEmail || !cleanPhone) {
+        return res.status(400).json({ error: "Please complete all required fields." });
+      }
+
+      const recipient = "barsamajidi25@gmail.com";
+      let emailSent = false;
+
+      if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST,
+          port: Number(process.env.SMTP_PORT || 587),
+          secure: Number(process.env.SMTP_PORT || 587) === 465,
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+          },
+        });
+
+        await transporter.sendMail({
+          from: process.env.SMTP_FROM || process.env.SMTP_USER,
+          to: recipient,
+          replyTo: cleanEmail,
+          subject: `SkinTight Clinic Demo Request — ${cleanPractice}`,
+          text: [
+            `New Clinic Demo Request`,
+            `Name: ${cleanName}`,
+            `Practice: ${cleanPractice}`,
+            `Role: ${cleanRole}`,
+            `Work Email: ${cleanEmail}`,
+            `Phone: ${cleanPhone}`,
+            `Message: ${cleanMessage || "(None)"}`,
+            `Submitted: ${new Date().toISOString()}`,
+          ].join("\n"),
+        });
+        emailSent = true;
+      }
+
+      return res.json({
+        ok: true,
+        emailSent,
+        recipient,
+        message: emailSent
+          ? "Demo request submitted and notification sent."
+          : "Demo request recorded. (Email relay awaits SMTP environment configuration.)",
+      });
+    } catch {
+      console.error("[Demo Request]: Notification processing failed.");
+      return res.status(500).json({ error: "Unable to process demo request." });
+    }
+  });
+
   // Dynamic Sitemap Route
   app.get("/sitemap.xml", (req, res) => {
     res.header("Content-Type", "application/xml");
@@ -413,7 +476,7 @@ async function startServer() {
 
     // Programmatic SEO landing pages
     PSEO_LANDING_PAGES.forEach(page => {
-      xml += `  <url>\n    <loc>https://aerobarrier.com/track/${page.slug}</loc>\n    <lastmod>${currentDate}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+      xml += `  <url>\n    <loc>${host}/track/${page.slug}</loc>\n    <lastmod>${currentDate}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
     });
 
     xml += `</urlset>`;

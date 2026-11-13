@@ -128,7 +128,10 @@
         "rulesVersion": { "type": "string" },
         "answers": { "type": "object" },
         "patientReportedSummary": { "type": "string" },
-        "status": { "type": "string" }
+        "status": { "type": "string" },
+        "reviewedAt": { "type": "string" },
+        "scheduledAt": { "type": "string" },
+        "closedAt": { "type": "string" }
       },
       "required": ["id", "clinicId", "patientName", "triageColor"]
     },
@@ -146,7 +149,7 @@
     },
     "ClinicAuditLog": {
       "title": "Clinic Audit Log",
-      "description": "Immutable audit record for HIPAA compliance and security logging",
+      "description": "Immutable access and security audit log",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
@@ -161,6 +164,21 @@
         "metadata": { "type": "object" }
       },
       "required": ["id", "clinicId", "timestamp", "userId", "action"]
+    },
+    "DemoRequest": {
+      "title": "Demo Request",
+      "description": "Clinic B2B demo inquiry submission",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "practiceName": { "type": "string" },
+        "role": { "type": "string" },
+        "workEmail": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "practiceName", "role", "workEmail", "phone", "createdAt"]
     }
   },
   "firestore": {
@@ -206,7 +224,11 @@
     },
     "/clinics/{clinicId}/auditLogs/{logId}": {
       "schema": "ClinicAuditLog",
-      "description": "Immutable audit logs for compliance"
+      "description": "Immutable audit logs for security and workflow accountability"
+    },
+    "/demoRequests/{requestId}": {
+      "schema": "DemoRequest",
+      "description": "Write-only clinic demo inquiry submissions"
     }
   }
 }

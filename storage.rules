@@ -1,7 +1,7 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    
+
     // Default-deny all paths by default to avoid accidental exposure
     match /{allPaths=**} {
       allow read, write: if false;
@@ -45,17 +45,22 @@ service firebase.storage {
     // --- 2. Clinic Mode Multi-Tenant Case Photo Storage ---
     // Path: /clinics/{clinicId}/cases/{caseId}/photos/{photoId}
     match /clinics/{clinicId}/cases/{caseId}/photos/{photoId} {
-      // Clinic staff from this specific clinic can read photos
-      allow read, get: if isClinicStaff(clinicId);
+      // Only authenticated clinic staff from this specific clinic can read photos
+      allow read, get: if clinicId != 'demo-practice' && isClinicStaff(clinicId);
 
-      // Photos can be uploaded during patient pre-visit intake or by staff
-      allow create, update: if (isClinicStaff(clinicId) || isSignedIn())
+      // Write-only upload permitted for patients submitting an intake form to this clinic or clinic staff
+      allow create: if clinicId != 'demo-practice'
+        && request.resource.size < 15 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|jpg|png|webp|heic)');
+
+      allow update: if clinicId != 'demo-practice' && isClinicStaff(clinicId)
         && request.resource.size < 15 * 1024 * 1024
         && request.resource.contentType.matches('image/(jpeg|jpg|png|webp|heic)');
 
       // Clinic admin only can delete photos
-      allow delete: if isSignedIn() 
-        && request.auth.token.clinicId == clinicId 
+      allow delete: if clinicId != 'demo-practice'
+        && isSignedIn()
+        && request.auth.token.clinicId == clinicId
         && request.auth.token.role == 'clinic_admin';
     }
   }

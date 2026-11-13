@@ -87,7 +87,8 @@ import { PseoLandingPage } from './components/PseoLandingPage';
 import { PricingPlansPage } from './components/PricingPlansPage';
 import { ClinicDashboard } from './components/clinic/ClinicDashboard';
 import { ClinicIntakePage } from './components/clinic/ClinicIntakePage';
-import { TEST_CLINIC } from './lib/clinicService';
+import { ClinicLandingSection } from './components/ClinicLandingSection';
+import { TEST_CLINIC, DEMO_CLINIC, isDemoClinic } from './lib/clinicService';
 import { ensureLeafletLoaded, ensureChartJsLoaded } from './lib/scriptLoader';
 
 import { db, auth, storage } from './lib/firebase';
@@ -98,7 +99,13 @@ import { AI_SUMMARY_ENABLED } from './config/compliance';
 const resolvedUrlCache: Record<string, string> = {};
 export async function resolvePhotoUrl(pathOrUrl: string): Promise<string> {
   if (!pathOrUrl) return '';
-  if (pathOrUrl.startsWith('data:') || pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://') || pathOrUrl.startsWith('blob:')) {
+  if (
+    pathOrUrl.startsWith('data:') ||
+    pathOrUrl.startsWith('http://') ||
+    pathOrUrl.startsWith('https://') ||
+    pathOrUrl.startsWith('blob:') ||
+    (pathOrUrl.startsWith('/') && !pathOrUrl.startsWith('/users/') && !pathOrUrl.startsWith('/clinics/'))
+  ) {
     return pathOrUrl;
   }
   if (resolvedUrlCache[pathOrUrl]) {
@@ -479,7 +486,7 @@ const executeAIFetch = async (payload: any, retries = 1, timeoutMs = 45000): Pro
       } catch (e) {
         throw new Error(
           `API Gateway returned an invalid response. Code: ${response.status}. ` +
-          `If you've just deployed to Vercel, please verify that you have added your GEMINI_API_KEY environment variable in your Vercel Dashboard, and check your Vercel deployment logs.`
+          `Please verify that your Vertex AI backend configuration and Google Cloud project permissions are active.`
         );
       }
       
@@ -3150,9 +3157,8 @@ const AboutPage = () => {
             We value your experience and safety. Our team is here to help with any questions or issues you may have.
           </p>
           
-          {/* TODO: Replace with finalized domain email once configured */}
           <div className="inline-flex items-center gap-3 px-6 py-3 bg-teal-500 text-slate-950 rounded-full font-black text-sm shadow-xl shadow-teal-500/20 hover:scale-105 transition-transform cursor-pointer">
-            <Mail size={16} /> support@[DOMAIN-TBD]
+            <Mail size={16} /> [MY-PROFESSIONAL-EMAIL]
           </div>
           
           <div className="mt-6 pt-6 border-t border-white/5">
@@ -3234,9 +3240,10 @@ const AboutPage = () => {
         </motion.div>
 
         {/* VERSION INFO */}
+        {/* TODO: Update to registered LLC name later */}
         <motion.div variants={itemVariants} className="text-center pt-8 opacity-40">
-          <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Skin Tight — Beta 1.0 — Built with Gemini AI</p>
-          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">© 2025 Skin Tight. All rights reserved.</p>
+          <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">SkinTight AI — Pre-Visit Clinical Triage</p>
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">© 2026 SkinTight AI. All rights reserved.</p>
         </motion.div>
       </motion.div>
     </div>
@@ -3849,10 +3856,10 @@ const RoutinePage = ({
 
 const ShopPage = () => {
   const products = [
-    { id: 1, name: 'Mineral Shield SPF 50', price: '$24.00', category: 'Sunscreen', rating: 4.8, image: 'https://picsum.photos/seed/spf/400/400' },
-    { id: 2, name: 'Derm-Grade UV Patch', price: '$18.00', category: 'Monitoring', rating: 4.9, image: 'https://picsum.photos/seed/uvpatch/400/400' },
-    { id: 3, name: 'After-Sun Recovery Gel', price: '$15.00', category: 'Care', rating: 4.7, image: 'https://picsum.photos/seed/gel/400/400' },
-    { id: 4, name: 'UPF 50+ Sun Hoodie', price: '$45.00', category: 'Apparel', rating: 4.9, image: 'https://picsum.photos/seed/hoodie/400/400' }
+    { id: 1, name: 'Mineral Shield SPF 50', price: '$24.00', category: 'Sunscreen', icon: Sun, accent: 'from-amber-500/20 to-orange-500/10' },
+    { id: 2, name: 'UV Exposure Patch', price: '$18.00', category: 'Monitoring', icon: Activity, accent: 'from-teal-500/20 to-cyan-500/10' },
+    { id: 3, name: 'After-Sun Recovery Gel', price: '$15.00', category: 'Care', icon: SparklesIcon, accent: 'from-sky-500/20 to-indigo-500/10' },
+    { id: 4, name: 'UPF 50+ Sun Hoodie', price: '$45.00', category: 'Apparel', icon: ShieldCheck, accent: 'from-emerald-500/20 to-teal-500/10' }
   ];
 
   return (
@@ -3860,9 +3867,13 @@ const ShopPage = () => {
       <h2 style={styles.sectionTitle} className="mb-6"><ShoppingBag size={24} color="#2dd4bf" /> <span>Prevention Shop</span></h2>
       
       <div className="grid grid-cols-2 gap-4">
-        {products.map(p => (
+        {products.map(p => {
+          const IconComp = p.icon;
+          return (
           <div key={p.id} className="glass-card overflow-hidden rounded-3xl flex flex-col">
-            <img src={p.image} alt={p.name} className="w-full aspect-square object-cover" referrerPolicy="no-referrer" />
+            <div className={`w-full aspect-square bg-gradient-to-br ${p.accent} flex items-center justify-center border-b border-white/5`}>
+              <IconComp size={42} className="text-teal-300" />
+            </div>
             <div className="p-4 flex-1 flex flex-col">
               <span className="text-[10px] font-bold text-teal-400 uppercase tracking-widest mb-1">{p.category}</span>
               <h3 className="text-sm font-bold text-white mb-2 line-clamp-1">{p.name}</h3>
@@ -3874,7 +3885,8 @@ const ShopPage = () => {
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="mt-8 p-6 glass-card rounded-3xl border-cyan-500/20 text-center">
@@ -4288,40 +4300,10 @@ const DoctorBridge = ({
   );
 
 const tagUserScanPending = () => {
-  if (window.location.hostname !== 'skintight.vercel.app' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    console.log("OneSignal: Skipping tagUserScanPending due to domain restriction");
-    return;
-  }
-  const OneSignalDeferred = (window as any).OneSignalDeferred || [];
-  OneSignalDeferred.push(function(OneSignal: any) {
-    try {
-      OneSignal.User.addTags({
-        "is_scan_completed": "false",
-        "user_id": auth.currentUser ? auth.currentUser.uid : ""
-      });
-      console.log("OneSignal: user tagged as scan pending");
-    } catch (e) {
-      console.warn("OneSignal: Failed to add tags", e);
-    }
-  });
+  // No-op stub retained for workflow hooks
 };
 
 const tagUserScanCompleted = () => {
-  if (window.location.hostname !== 'skintight.vercel.app' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    console.log("OneSignal: Skipping tagUserScanCompleted due to domain restriction");
-  } else {
-    const OneSignalDeferred = (window as any).OneSignalDeferred || [];
-    OneSignalDeferred.push(function(OneSignal: any) {
-      try {
-        OneSignal.User.addTags({
-          "is_scan_completed": "true"
-        });
-        console.log("OneSignal: user tagged as scan completed");
-      } catch (e) {
-        console.warn("OneSignal: Failed to add tags", e);
-      }
-    });
-  }
   
   if (auth.currentUser) {
     setDoc(doc(db, "users", auth.currentUser.uid), {
@@ -5492,141 +5474,61 @@ SkinTight does not provide medical verdicts or diagnoses. Always consult a licen
 
 If a spot is bleeding heavily, growing quickly, or you feel unwell, contact your doctor or seek care now. Call 911 for emergencies.`;
 
-const TERMS_AND_CONDITIONS = `TERMS & CONDITIONS
+const TERMS_AND_CONDITIONS = `TERMS & CONDITIONS (DRAFT — pending legal review)
 Last Updated: May 24, 2026
 
 1. Acceptance of Terms
-By accessing or using Skin Tight, you agree to comply with and be legally bound by these Terms & Conditions. If you do not agree with these terms, you must stop using the application immediately.
+By accessing or using SkinTight AI ("SkinTight"), you agree to comply with these Terms & Conditions. If you do not agree, stop using the application immediately.
 
-
-2. Description of Service
-Skin Tight provides AI-powered skin wellness monitoring and educational analysis tools intended for personal informational use only. The application does not provide medical diagnoses or professional healthcare services.
-
+2. Description of Service — Not Medical Care or Diagnosis
+SkinTight is a pre-visit documentation, photo-logging, and clinical intake workflow tool. It does NOT diagnose skin conditions, evaluate photos for malignancy, assign AI risk scores, or replace a licensed physician. For participating clinics, intake triage categories (Red, Yellow, Green) are determined exclusively by transparent rules configured and approved by the clinic's physicians.
 
 3. Eligibility
-You must be at least 18 years old to use Skin Tight independently.
+You must be at least 18 years old to use SkinTight independently. Users ages 13–17 may use the application only with parental or guardian consent. Children under 13 are prohibited from using the application.
 
-Users between 13 and 17 years old may only use the app with permission and supervision from a parent or legal guardian.
-
-Children under 13 are prohibited from using the application.
-
-
-4. Beta Software Notice
-You acknowledge that Skin Tight may still contain bugs, inaccuracies, interruptions, delays, or incomplete features. The service is provided on an “AS IS” and “AS AVAILABLE” basis without warranties of any kind.
-
-We do not guarantee uninterrupted operation, perfect accuracy, or error-free performance.
-
+4. Pre-Production / Pilot Notice
+SkinTight is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind. Do not use this application for medical emergencies. Call 911 or seek urgent medical attention immediately if a spot is bleeding heavily or you feel unwell.
 
 5. User Responsibilities
-You agree to use the application responsibly and only for lawful personal wellness purposes.
+You agree to submit accurate answers, upload only your own photos (or photos you have legal authority to submit), and seek evaluation from a licensed clinician for any medical concern.
 
-You are responsible for:
+6. Infrastructure & Text Summarization
+Account authentication, structured intake storage, and private photo storage run on Google Cloud / Firebase infrastructure. When optional text summarization is enabled, language models are used solely to format patient-reported questionnaire answers into a brief readable summary; uploaded photos are not submitted to AI models for diagnosis or risk classification.
 
-● Providing accurate information when using the app
-● Uploading clear and appropriate images
-● Reviewing AI-generated information carefully
-● Seeking professional medical advice when needed
+7. Limitation of Liability
+To the maximum extent permitted by law, SkinTight AI and its creators shall not be liable for any indirect, incidental, special, or consequential damages resulting from use of or inability to use the application.
 
-You agree not to:
+8. Contact
+Questions regarding these draft terms may be directed to [MY-PROFESSIONAL-EMAIL].`;
 
-● Upload explicit, illegal, harmful, or copyrighted content without permission
-● Upload photos of other individuals without their consent
-● Attempt to misuse, hack, disrupt, or reverse engineer the platform
-
-You retain responsibility for all images and content you upload through the application. By uploading content, you confirm that you have the legal right and permission to use and submit such content.
-
-
-6. Limitation of Liability
-To the maximum extent permitted by law, Skin Tight, its creators, developers, affiliates, and service providers shall not be liable for any direct, indirect, incidental, special, or consequential damages resulting from:
-
-● Use of the application
-● Inability to use the application
-● Reliance on AI-generated assessments
-● Delayed or missed medical treatment
-● Inaccurate or incomplete analysis results
-Use of the application is entirely at your own risk.
-
-
-7. Intellectual Property
-All branding, software, designs, graphics, logos, AI workflows, and platform content associated with Skin Tight are protected by intellectual property laws and may not be copied or redistributed without permission.
-
-
-8. Changes to Terms
-We reserve the right to update or modify these Terms & Conditions at any time. Continued use of the application after updates means you accept the revised terms.
-
-
-9. Governing Law and Dispute Resolution
-These Terms & Conditions and any dispute or claim arising out of or in connection with them shall be governed by, and construed in accordance with, the laws of the State of Georgia, United States, without regard to its conflict-of-law principles. 
-
-Any dispute, controversy, or claim arising out of, relating to, or in connection with this application, including the breach, termination, enforcement, interpretation, or validity of these Terms, shall be settled exclusively by binding, individual arbitration in the State of Georgia. 
-
-BY AGREEING TO THESE TERMS, YOU EXPLICITLY WAIVE YOUR RIGHT TO A TRIAL BY JURY. YOU AGREE THAT YOU MAY BRING CLAIMS AGAINST SKIN TIGHT AND ITS CREATORS ONLY IN YOUR INDIVIDUAL CAPACITY, AND NOT AS A PLAINTIFF OR CLASS MEMBER IN ANY PURPORTED CLASS, COLLECTIVE, OR REPRESENTATIVE PROCEEDING.
-
-10. Indemnification
-You agree to defend, indemnify, and hold harmless Skin Tight, its creators, developers, affiliates, contractors, and third-party service providers from and against any and all claims, damages, obligations, losses, liabilities, costs, debts, and expenses (including but not limited to reasonable attorneys' fees) arising from: 
-(i) your misuse of and access to the application; 
-(ii) your violation of any term of these Terms & Conditions; 
-(iii) your violation of any third-party right, including without limitation any copyright, property, privacy, or publicity right; or 
-(iv) any claim that the content or images you uploaded caused damage to a third party.
-
-11. Third-Party AI Services & System Limitations
-Skin Tight relies on third-party infrastructure and generative artificial intelligence systems, specifically Google Gemini, to process images and generate wellness indicators. You acknowledge and agree that Skin Tight does not control these third-party systems. Consequently, we are not liable for any service interruptions, data processing delays, algorithmic errors, or security vulnerabilities originating from these third-party platforms.
-
-12. Severability and Entire Agreement
-These Terms & Conditions, along with the Privacy Policy and Medical Disclaimer, constitute the entire agreement between you and Skin Tight. If any provision of these Terms is found to be unlawful, void, or for any reason unenforceable by a court of competent jurisdiction or arbitrator, then that provision shall be deemed severable from these Terms and shall not affect the validity and enforceability of any remaining provisions.`;
-
-const PRIVACY_POLICY = `PRIVACY POLICY
+const PRIVACY_POLICY = `PRIVACY POLICY (DRAFT — pending legal review)
 Last Updated: May 24, 2026
 
 1. Information We Collect
-When using Skin Tight, we may collect:
+Depending on whether you use personal tracking or a clinic's pre-visit intake link, SkinTight collects:
+● Account email and profile identifier (when you sign in)
+● Skin spot photos you voluntarily upload
+● Pre-visit questionnaire answers (spot location, symptom duration, history)
+● Staff review actions and status logs inside clinic portals
 
-● Account information such as email address and username
-● Images voluntarily uploaded for skin analysis
-● Skin wellness tracking information and scan history
-● Device and usage information necessary for app functionality
+2. Who Can See Your Data
+● Personal Tracking Account: Only your authenticated user account can access your private photo logs and records.
+● Clinic Pre-Visit Intake Link: When you submit an intake form through a clinic's unique link, your submitted answers and photos are isolated to that specific clinic and accessible only to authorized staff members signed into that clinic's account.
+● Interactive Demo Mode: Demo workspaces use fictional test data only and do not store real patient records.
 
+3. How We Process Data (Google Cloud & AI Summarization)
+● Infrastructure: Data is stored in Google Cloud (Firebase Authentication / Identity Platform, Cloud Firestore, and Cloud Storage) with tenant-isolated security rules.
+● Text-Only Summarization: When AI summary generation is enabled, only patient-reported questionnaire text (not photos) is formatted using Vertex AI on Google Cloud. Uploaded photos are not analyzed by AI for medical verdicts or risk colors.
+● No Sale of Data: We do NOT sell, rent, or broker personal information or uploaded photos to advertisers or third parties.
 
-2. How Your Information Is Used
-Your information is used only to:
+4. Data Retention & Deletion Requests
+You may request access to or deletion of your account and records at any time by contacting [MY-PROFESSIONAL-EMAIL]. Verified deletion requests are processed within thirty (30) days, subject to applicable legal or clinical recordkeeping requirements.
 
-● Provide AI-generated skin wellness assessments
-● Store scan history and progress tracking
-● Improve app functionality and user experience
-● Maintain account security and authentication
-We do not sell or rent your personal information or uploaded images to advertisers or data brokers.
+5. Children's Privacy
+SkinTight does not knowingly collect information from children under 13.
 
-
-3. AI Image Processing
-Uploaded images may be securely processed by third-party AI providers, including Google Gemini, in order to generate analysis results.
-
-Images are analyzed solely for visible skin-related features and are not used for facial recognition, identity verification, surveillance, or biometric identification purposes.
-
-
-4. Data Storage & Security
-User data and account information may be stored using secure cloud infrastructure providers such as Firebase.
-
-We use reasonable technical and organizational safeguards to help protect user information. However, no online service can guarantee absolute security.
-
-
-5. Children’s Privacy
-Skin Tight does not knowingly collect information from children under 13 years old.
-
-If we discover that a child under 13 has submitted personal information or images without verified parental consent, we will remove the data as quickly as reasonably possible.
-
-
-6. International Data Transfers
-By using Skin Tight, you understand that your data may be processed or stored on servers located in different countries through trusted third-party infrastructure providers.
-
-
-7. Your Rights & Data Deletion
-You retain the right to access, review, or request the permanent deletion of your account and associated data at any time. Upon receiving a verifiable deletion request via support@[DOMAIN-TBD] /* TODO: Replace with finalized domain email once configured */, we will permanently purge your personal data, profile info, and uploaded images from our active production databases within a reasonable timeframe, not to exceed thirty (30) days, subject to any legal data retention obligations. 
-
-Please note that while data is removed immediately from active systems, residual copies may temporarily persist in secure, encrypted cloud backups (such as Firebase backup cycles) for a limited duration before being completely overwritten.
-
-
-8. Changes to This Privacy Policy
-We may update this Privacy Policy periodically. Continued use of the application after updates means you accept the revised policy.`;
+6. Contact
+Privacy inquiries and deletion requests: [MY-PROFESSIONAL-EMAIL].`;
 
 const DISCLAIMER_TEXT = `SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.`;
 
@@ -5665,11 +5567,11 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
       >
         <div style={{ textAlign: 'center', marginBottom: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 14px', borderRadius: '20px', background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.3)', color: '#c084fc', fontSize: '11px', fontWeight: '800', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '16px' }}>
-            <SparklesIcon size={14} /> Unique Skin Tight Journey
+            <SparklesIcon size={14} /> Pre-Visit Skin Photo Log
           </div>
-          <h1 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '8px', letterSpacing: '-0.03em', color: '#ffffff' }}>More Than Just a Scan</h1>
+          <h1 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '8px', letterSpacing: '-0.03em', color: '#ffffff' }}>Pre-Visit Photo &amp; History Log</h1>
           <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0, lineHeight: '1.5', maxWidth: '400px' }}>
-            Experience an end-to-end preventative dermatological ecosystem tailored to your skin profile.
+            Track skin spot changes at home and prepare structured 1-page pre-visit summaries for your clinician.
           </p>
         </div>
 
@@ -5681,8 +5583,8 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
           {[
             {
               step: "01",
-              title: "AI Skin Checkup",
-              desc: "Snap or upload photos for instant clinical-grade ABCDE spot & lesion screening.",
+              title: "Photo & Symptom Log",
+              desc: "Capture photos and answer pre-visit questions about spot changes, symptoms, and history.",
               icon: Camera,
               color: "#2dd4bf",
               bg: "rgba(45, 212, 191, 0.15)"
@@ -5690,23 +5592,23 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
             {
               step: "02",
               title: "Timeline Tracking",
-              desc: "Store encrypted visual histories to track subtle spot developments over time.",
+              desc: "Store private visual histories to compare baseline and follow-up photos over time.",
               icon: History,
               color: "#a855f7",
               bg: "rgba(168, 85, 247, 0.15)"
             },
             {
               step: "03",
-              title: "Smart Care Suggestions",
-              desc: "Receive personalized daily advice and habits to improve your skin wellness score.",
+              title: "1-Page Pre-Visit Brief",
+              desc: "Export an organized summary of your answers and photos to bring to your appointment.",
               icon: SparklesIcon,
               color: "#8b5cf6",
               bg: "rgba(139, 92, 246, 0.15)"
             },
             {
               step: "04",
-              title: "Dermatologist Booking",
-              desc: "Locate nearby clinic specialists to schedule professional in-person exams.",
+              title: "Nearby Clinics",
+              desc: "Locate nearby dermatology practices to schedule an in-person clinical exam.",
               icon: MapPinned,
               color: "#3b82f6",
               bg: "rgba(59, 130, 246, 0.15)"
@@ -6419,27 +6321,19 @@ const Footer = ({ onShowLegal }: { onShowLegal: (type: 'terms' | 'privacy' | 'di
       <button onClick={() => onShowLegal('privacy')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Privacy</button>
       <button onClick={() => onShowLegal('disclaimer')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Disclaimer</button>
     </div>
+    {/* TODO: Update to registered LLC name later */}
     <p style={{ fontSize: '11px', color: '#64748b', width: '100%', maxWidth: '640px', margin: '0 auto', lineHeight: '1.6' }}>
-      Disclaimer: Skin Tight is an educational AI skin monitoring and photo-journaling tool, not a diagnostic medical device. It does not provide medical advice, diagnosis, or treatment. Always consult a licensed dermatologist or medical professional for any skin health concerns. © 2026 Skin Tight. <span style={{ opacity: 0.25, fontSize: '10px' }}>•</span>
+      Disclaimer: SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies. © 2026 SkinTight AI. <span style={{ opacity: 0.25, fontSize: '10px' }}>•</span>
     </p>
   </footer>
 );
 
-// --- OneSignal Helpers ---
-const OneSignalDeferred = (window as any).OneSignalDeferred || [];
-
 function requestNotificationPermission() {
-  if ((window as any).OneSignal) {
-    OneSignalDeferred.push(function(OneSignal: any) {
-      OneSignal.Notifications.requestPermission();
-    });
-  }
+  // No-op stub
 }
 
-function setOneSignalExternalId(userId: string) {
-  OneSignalDeferred.push(function(OneSignal: any) {
-    OneSignal.login(userId);
-  });
+function setOneSignalExternalId(_userId: string) {
+  // No-op stub
 }
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
@@ -6483,6 +6377,7 @@ function App() {
   // --- Navigation State ---
   const [activeTab, setActiveTab] = useState<'home' | 'scan' | 'timeline' | 'routine' | 'plans' | 'profile' | 'clinic' | 'welcome' | 'auth' | 'learn' | 'clinic_portal' | 'clinic_intake'>('home');
   const [activeClinicId, setActiveClinicId] = useState<string>('clinic-a');
+  const [isClinicDemo, setIsClinicDemo] = useState<boolean>(false);
   const [selectedArticleSlug, setSelectedArticleSlug] = useState<string | null>(null);
   const [activePseoPage, setActivePseoPage] = useState<PseoPage | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -6528,10 +6423,10 @@ function App() {
     }
     switch (activeTab) {
       case 'clinic_portal':
-        document.title = 'Clinic Portal | Practice A | Skin Tight';
+        document.title = isClinicDemo ? 'Interactive Clinic Demo | SkinTight AI' : 'Clinic Staff Portal | SkinTight AI';
         break;
       case 'clinic_intake':
-        document.title = 'Pre-Visit Intake | Practice A';
+        document.title = isDemoClinic(activeClinicId) ? 'Demo Pre-Visit Intake | SkinTight AI' : 'Pre-Visit Intake | SkinTight AI';
         break;
       case 'home':
         document.title = 'Skin Tight – AI Skin Monitoring & Skin Cancer Awareness Tool';
@@ -6582,13 +6477,21 @@ function App() {
   useEffect(() => {
     const handleUrlPath = () => {
       const path = window.location.pathname;
+      const params = new URLSearchParams(window.location.search);
       if (path.startsWith('/intake/')) {
         const slug = path.replace('/intake/', '').replace(/\/$/, '');
         setActiveClinicId(slug || 'clinic-a');
+        setIsClinicDemo(isDemoClinic(slug));
         setActiveTab('clinic_intake');
         return;
       }
+      if (path === '/demo' || params.get('demo') === '1') {
+        setIsClinicDemo(true);
+        setActiveTab('clinic_portal');
+        return;
+      }
       if (path === '/clinic-portal' || path === '/portal' || path === '/clinic/portal') {
+        setIsClinicDemo(false);
         setActiveTab('clinic_portal');
         return;
       }
@@ -6640,7 +6543,7 @@ function App() {
     const currentPath = window.location.pathname;
     let expectedPath = '/';
     if (activeTab === 'clinic_portal') {
-      expectedPath = '/clinic-portal';
+      expectedPath = isClinicDemo ? '/demo' : '/clinic-portal';
     } else if (activeTab === 'clinic_intake') {
       expectedPath = `/intake/${activeClinicId}`;
     } else if (activePseoPage) {
@@ -6662,7 +6565,7 @@ function App() {
     if (currentPath !== expectedPath) {
       window.history.pushState(null, '', expectedPath);
     }
-  }, [activeTab, activeClinicId, selectedArticleSlug, activePseoPage]);
+  }, [activeTab, activeClinicId, isClinicDemo, selectedArticleSlug, activePseoPage]);
 
   // --- Connectivity Check ---
   useEffect(() => {
@@ -7069,10 +6972,7 @@ function App() {
           loadUserData(user.uid),
           loadMostRecentScan(user.uid)
         ]);
-        
-        console.log("New session initialized for:", userData.username || userData.fullName);
       } else {
-        console.warn("User profile document NOT found for UID:", user.uid);
         if (activeTab !== 'auth') {
           setActiveTab('auth');
         }
@@ -7567,9 +7467,7 @@ function App() {
         generatedAt: getServerTimestamp(),
         basedOnScanId: scanId
       }
-    }, { merge: true }).then(function() {
-      console.log("Protocol saved for user:", user.uid);
-    }).catch(function(error: any) {
+    }, { merge: true }).catch(function(error: any) {
       handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}`);
     });
   };
@@ -8323,7 +8221,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     );
   }
 
-  if (!onboardingComplete) {
+  if (!onboardingComplete && (activeTab === 'scan' || activeTab === 'timeline' || activeTab === 'routine')) {
     return <OnboardingScreen onComplete={() => {
       setOnboardingComplete(true);
       localStorage.setItem('onboarding_complete', 'true');
@@ -8364,6 +8262,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
           You appear to be offline. Some features may be limited.
         </div>
       )}
+      {activeTab !== 'clinic_portal' && activeTab !== 'clinic_intake' && (
       <header 
         id="appHeader"
         style={{ 
@@ -8403,14 +8302,17 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
 
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
-            onClick={() => setActiveTab(activeTab === 'clinic_portal' ? 'home' : 'clinic_portal')}
+            onClick={() => {
+              setIsClinicDemo(false);
+              setActiveTab('clinic_portal');
+            }}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              background: activeTab === 'clinic_portal' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.06)',
-              border: activeTab === 'clinic_portal' ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.12)',
-              color: activeTab === 'clinic_portal' ? '#38bdf8' : '#e2e8f0',
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              color: '#e2e8f0',
               padding: '7px 12px',
               borderRadius: '10px',
               fontSize: '12px',
@@ -8421,9 +8323,9 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
             }}
             title="Switch to B2B Clinic Staff Portal"
           >
-            <Building2 size={15} color={activeTab === 'clinic_portal' ? '#38bdf8' : '#94a3b8'} />
-            <span className="hidden sm:inline">{activeTab === 'clinic_portal' ? 'Patient Mode' : 'Clinic Portal'}</span>
-            <span className="sm:hidden">{activeTab === 'clinic_portal' ? 'Exit' : 'Clinic'}</span>
+            <Building2 size={15} color="#94a3b8" />
+            <span className="hidden sm:inline">Clinic Portal</span>
+            <span className="sm:hidden">Clinic</span>
           </button>
 
           {currentUser ? (
@@ -8462,6 +8364,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
           )}
         </div>
       </header>
+      )}
 
       <SideMenu 
         isMenuOpen={isMenuOpen} 
@@ -8509,7 +8412,15 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               </div>
             )}
 
-            {/* Prominent 3D Pulsing Frequency Scan Button at Very Top */}
+            {/* Clinic B2B Triage Landing Section (Primary Above-The-Fold Entry) */}
+            <ClinicLandingSection
+              onTryDemo={() => {
+                setIsClinicDemo(true);
+                setActiveTab('clinic_portal');
+              }}
+            />
+
+            {/* Prominent 3D Pulsing Frequency Scan Button */}
             <div style={{ width: '100%', marginBottom: '24px', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '8px 0' }}>
               {/* 3D Frequency Sonar Depth Rings */}
               <motion.div
@@ -8968,8 +8879,13 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
 
         {activeTab === 'clinic_portal' && (
           <div className="w-full">
-            <ClinicDashboard 
-              onExitToPatientApp={() => setActiveTab('home')}
+            <ClinicDashboard
+              isDemoMode={isClinicDemo}
+              onToggleDemoMode={(demo) => setIsClinicDemo(demo)}
+              onExitToPatientApp={() => {
+                setIsClinicDemo(false);
+                setActiveTab('home');
+              }}
               onOpenPatientIntake={(clinicId) => {
                 setActiveClinicId(clinicId);
                 setActiveTab('clinic_intake');
@@ -8980,9 +8896,16 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
 
         {activeTab === 'clinic_intake' && (
           <div className="w-full">
-            <ClinicIntakePage 
-              clinic={TEST_CLINIC}
-              onBackToApp={() => setActiveTab('home')}
+            <ClinicIntakePage
+              clinic={isDemoClinic(activeClinicId) ? DEMO_CLINIC : TEST_CLINIC}
+              onBackToApp={() => {
+                if (isDemoClinic(activeClinicId)) {
+                  setIsClinicDemo(true);
+                  setActiveTab('clinic_portal');
+                } else {
+                  setActiveTab('home');
+                }
+              }}
             />
           </div>
         )}
@@ -9184,7 +9107,9 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
           </div>
         )}
         
-        <Footer onShowLegal={setShowLegalModal} />
+        {activeTab !== 'clinic_portal' && activeTab !== 'clinic_intake' && (
+          <Footer onShowLegal={setShowLegalModal} />
+        )}
       </div>
     </div>
 

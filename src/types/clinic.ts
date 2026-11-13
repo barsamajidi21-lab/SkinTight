@@ -2,6 +2,8 @@ import { IntakeForm } from '../App';
 
 export type TriageColor = 'red' | 'yellow' | 'green';
 
+export type CaseStatus = 'new' | 'reviewed' | 'scheduled' | 'closed';
+
 export interface TriageRule {
   id: string;
   color: TriageColor;
@@ -14,7 +16,7 @@ export interface TriageRule {
 
 export interface RulesConfig {
   version: string;
-  label: string; // "DRAFT — pending physician approval"
+  label: string; // "DRAFT — pending physician approval" or "Rules vX.Y approved by Dr. ..., YYYY-MM-DD"
   approvedBy: string | null;
   approvedDate: string | null;
   updatedAt: string;
@@ -32,6 +34,7 @@ export interface Clinic {
   yellowInstruction: string;   // For YELLOW cases
   greenInstruction: string;    // For GREEN cases
   activeRulesVersion: string;
+  isDemo?: boolean;
 }
 
 export interface CaseOverride {
@@ -53,20 +56,25 @@ export interface ClinicCase {
   color: TriageColor;
   why: string[];
   rulesVersion: string;
-  photos: string[]; // Private Cloud Storage paths (/clinics/{clinicId}/cases/{caseId}/photos/{photoId}.jpg)
+  photos: string[]; // Private Cloud Storage paths (/clinics/{clinicId}/cases/{caseId}/photos/{photoId}.jpg) or local demo asset paths
   answers: Partial<IntakeForm>;
   patientSummary: string;
   override?: CaseOverride;
   isPhoneIntake?: boolean;
   intakeStaffName?: string;
-  status: 'new' | 'reviewed' | 'scheduled' | 'archived';
+  status: CaseStatus;
+  reviewedAt?: string;
+  scheduledAt?: string;
+  closedAt?: string;
+  statusUpdatedBy?: string;
 }
 
-export type AuditAction = 
-  | 'case_view' 
-  | 'case_edit' 
-  | 'case_override' 
-  | 'case_pdf_download' 
+export type AuditAction =
+  | 'case_view'
+  | 'case_edit'
+  | 'case_status_change'
+  | 'case_override'
+  | 'case_pdf_download'
   | 'rules_update'
   | 'phone_intake_submit'
   | 'patient_intake_submit';
@@ -82,4 +90,13 @@ export interface ClinicAuditLog {
   staffRole: 'clinic_staff' | 'clinic_admin' | 'system';
   details: string;
   timestamp: string;
+}
+
+export interface DemoRequestPayload {
+  name: string;
+  practiceName: string;
+  role: string;
+  workEmail: string;
+  phone: string;
+  message?: string;
 }

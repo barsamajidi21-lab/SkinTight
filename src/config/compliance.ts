@@ -17,7 +17,7 @@ export const AI_SUMMARY_ENABLED = false;
 export const VERTEX_AI_CONFIG = {
   projectId: "gen-lang-client-0650598239",
   location: "us-central1",
-  model: "gemini-3.8-flash",
-  // Data caching disabled to comply with strict HIPAA BAA zero-cache guidelines
+  model: "gemini-2.5-flash",
+  // Prompt/context caching explicitly disabled
   disableDataCaching: true,
 };

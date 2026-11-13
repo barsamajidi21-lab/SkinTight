@@ -66,16 +66,26 @@ service cloud.firestore {
         && data.uid is string && data.uid.size() <= 128;
     }
 
+    function isValidDemoRequest(data) {
+      return data.keys().hasAll(['name', 'practiceName', 'role', 'workEmail', 'phone', 'createdAt'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 120
+        && data.practiceName is string && data.practiceName.size() > 0 && data.practiceName.size() <= 160
+        && data.role is string && data.role.size() > 0 && data.role.size() <= 80
+        && data.workEmail is string && data.workEmail.size() > 3 && data.workEmail.size() <= 160
+        && data.phone is string && data.phone.size() > 3 && data.phone.size() <= 40
+        && data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
     // --- Collections ---
 
     // 1. Patient User Profiles & Longitudinal History
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow create: if isOwner(userId) && isValidUser(incoming());
-      allow update: if isOwner(userId) 
+      allow update: if isOwner(userId)
         && (!('email' in incoming()) || incoming().email == existing().email)
         && (!('username' in incoming()) || incoming().username == existing().username);
-      
+
       match /scans/{scanId} {
         allow list: if isOwner(userId);
         allow get: if isOwner(userId) && isValidId(scanId);
@@ -102,46 +112,46 @@ service cloud.firestore {
 
     // 2. Multi-Tenant Clinic Mode Collections (/clinics/{clinicId})
     match /clinics/{clinicId} {
-      // Clinic metadata profile
-      allow get: if true;
-      allow write: if isClinicAdmin(clinicId);
+      // Clinic metadata profile (demo-practice is never persisted here)
+      allow get: if clinicId != 'demo-practice';
+      allow write: if clinicId != 'demo-practice' && isClinicAdmin(clinicId);
 
       // Incoming Patient Triage Cases
       match /cases/{caseId} {
-        // Staff of THIS clinic can view cases. Cross-clinic access is mathematically blocked.
-        allow list, get: if isClinicStaff(clinicId);
-        
-        // Creation is allowed via authenticated or patient intake submission
-        allow create: if isValidId(caseId);
+        // Only staff of THIS clinic can view or list cases
+        allow list, get: if clinicId != 'demo-practice' && isClinicStaff(clinicId);
 
-        // Updates (status changes, triage color overrides) permitted for clinic staff
-        allow update: if isClinicStaff(clinicId);
+        // Creation is allowed via clinic intake link (write-only dropbox for incoming submissions)
+        allow create: if clinicId != 'demo-practice' && isValidId(caseId);
+
+        // Updates (status changes, triage color overrides) permitted for clinic staff of THIS clinic
+        allow update: if clinicId != 'demo-practice' && isClinicStaff(clinicId);
 
         // Deletions restricted strictly to clinic administrator
-        allow delete: if isClinicAdmin(clinicId);
+        allow delete: if clinicId != 'demo-practice' && isClinicAdmin(clinicId);
       }
 
       // Clinic Configurable Rules & Governance
       match /rules/{ruleDoc} {
-        allow get, list: if true;
-        allow write: if isClinicAdmin(clinicId);
+        allow get, list: if clinicId != 'demo-practice';
+        allow write: if clinicId != 'demo-practice' && isClinicAdmin(clinicId);
       }
 
       match /rulesHistory/{versionId} {
-        allow get, list: if isClinicStaff(clinicId);
-        allow create: if isClinicAdmin(clinicId);
+        allow get, list: if clinicId != 'demo-practice' && isClinicStaff(clinicId);
+        allow create: if clinicId != 'demo-practice' && isClinicAdmin(clinicId);
         allow update, delete: if false; // Immutable version ledger
       }
 
-      // Immutable HIPAA Access & Audit Log Collection
+      // Immutable Access & Audit Log Collection
       match /auditLogs/{logId} {
-        // Only clinic staff can read audit logs
-        allow list, get: if isClinicStaff(clinicId);
+        // Only clinic staff of THIS clinic can read audit logs
+        allow list, get: if clinicId != 'demo-practice' && isClinicStaff(clinicId);
 
-        // Staff & system can append audit entries
-        allow create: if isValidId(logId);
+        // Staff & intake portal can append audit entries
+        allow create: if clinicId != 'demo-practice' && isValidId(logId);
 
-        // CRITICAL: Audit logs are strictly immutable. Staff and admins cannot edit or delete.
+        // Audit logs are strictly immutable. Staff and admins cannot edit or delete.
         allow update, delete: if false;
       }
     }
@@ -149,8 +159,14 @@ service cloud.firestore {
     // 3. Username Uniqueness Registry
     match /usernames/{username} {
       allow get: if true;
-      allow create: if isSignedIn() && isValidUsernameMap(incoming()) 
+      allow create: if isSignedIn() && isValidUsernameMap(incoming())
         && incoming().uid == request.auth.uid;
+    }
+
+    // 4. B2B Clinic Demo Requests (Write-only public submission, private storage)
+    match /demoRequests/{requestId} {
+      allow read, update, delete: if false;
+      allow create: if isValidId(requestId) && isValidDemoRequest(incoming());
     }
   }
 }

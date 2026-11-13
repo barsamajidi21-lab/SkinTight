@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Clinic } from '../../types/clinic';
-import { submitClinicCase } from '../../lib/clinicService';
+import { submitClinicCase, isDemoClinic } from '../../lib/clinicService';
 import { IntakeForm } from '../../App';
 
 interface ClinicIntakePageProps {
@@ -120,9 +120,16 @@ export const ClinicIntakePage: React.FC<ClinicIntakePageProps> = ({ clinic, onBa
     }
   };
 
+  const showDemoBanner = !!(clinic.isDemo || isDemoClinic(clinic.id));
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center p-4 sm:p-6 md:p-8 font-sans">
-      <div className="w-full max-w-3xl">
+    <div className="clinic-ui min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center font-sans">
+      {showDemoBanner && (
+        <div className="w-full sticky top-0 z-50 bg-amber-500 text-slate-950 px-4 py-2 text-xs font-black text-center shadow-md">
+          DEMO — all patients are fictional.
+        </div>
+      )}
+      <div className="w-full max-w-3xl p-4 sm:p-6 md:p-8">
         {/* Navigation & Clinic Header */}
         <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
           <div className="flex items-center gap-3">
@@ -245,7 +252,7 @@ export const ClinicIntakePage: React.FC<ClinicIntakePageProps> = ({ clinic, onBa
                         required
                         value={patientName}
                         onChange={(e) => setPatientName(e.target.value)}
-                        placeholder="e.g., Patient R."
+                        placeholder="e.g., Patient A."
                         className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-teal-500 text-white text-sm outline-none"
                       />
                     </div>
@@ -274,7 +281,7 @@ export const ClinicIntakePage: React.FC<ClinicIntakePageProps> = ({ clinic, onBa
                         type="tel"
                         value={patientPhone}
                         onChange={(e) => setPatientPhone(e.target.value)}
-                        placeholder="(512) 555-0199"
+                        placeholder="(555) 010-0199"
                         className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-teal-500 text-white text-sm outline-none"
                       />
                     </div>

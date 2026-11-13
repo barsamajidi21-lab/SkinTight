@@ -311,7 +311,7 @@ export const PseoLandingPage: React.FC<PseoLandingPageProps> = ({ page, onCtaCli
             <div className="flex items-center justify-center gap-6 pt-4 text-[11px] text-gray-400 font-mono uppercase tracking-wider">
               <span>🔒 Encrypted Vault</span>
               <span>•</span>
-              <span>📂 HIPAA Compliant</span>
+              <span>🔒 Private Cloud Storage</span>
               <span>•</span>
               <span>⚡ Instantly Activated</span>
             </div>
@@ -320,9 +320,10 @@ export const PseoLandingPage: React.FC<PseoLandingPageProps> = ({ page, onCtaCli
       </main>
 
       {/* Modern Footer */}
+      {/* TODO: Update to registered LLC name later */}
       <footer className="border-t py-8 mt-12 text-center text-xs text-gray-500" 
               style={{ borderColor: 'rgba(234, 224, 213, 0.05)', background: '#121212' }}>
-        <p>© 2026 Skin Tight Atmospheric Health Network. All rights reserved.</p>
+        <p>© 2026 SkinTight AI. All rights reserved.</p>
         <p className="mt-2 text-[10px] text-gray-500 max-w-lg mx-auto px-4 leading-relaxed">
           Disclaimer: SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.
         </p>

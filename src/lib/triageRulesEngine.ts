@@ -1,5 +1,5 @@
 import { IntakeForm } from '../App';
-import { RulesConfig, TriageColor, TriageRule } from '../types/clinic';
+import { RulesConfig, TriageColor } from '../types/clinic';
 
 export const DEFAULT_DRAFT_RULES_CONFIG: RulesConfig = {
   version: 'v1.0-DRAFT',
@@ -14,7 +14,7 @@ export const DEFAULT_DRAFT_RULES_CONFIG: RulesConfig = {
       id: 'rule-red-1',
       color: 'red',
       name: 'Bleeding Without Injury',
-      description: 'Patient reports lesion bleeding or oozing spontaneously without trauma.',
+      description: 'Patient reports the spot bled or oozed on its own without a scratch or bump.',
       whyText: 'Bleeding without injury reported',
       predicateKey: 'bleeding_no_injury',
       enabled: true,
@@ -22,8 +22,8 @@ export const DEFAULT_DRAFT_RULES_CONFIG: RulesConfig = {
     {
       id: 'rule-red-2',
       color: 'red',
-      name: 'Non-Healing Sore (> 3–4 Weeks)',
-      description: 'Persistent open sore, crusting, or lesion failing to heal after 3–4 weeks.',
+      name: 'Sore Not Healing (More Than 3–4 Weeks)',
+      description: 'Open sore or crusty spot that has not healed after 3 to 4 weeks.',
       whyText: 'Sore or spot not healing for more than 3–4 weeks',
       predicateKey: 'non_healing_3_4_wks',
       enabled: true,
@@ -31,8 +31,8 @@ export const DEFAULT_DRAFT_RULES_CONFIG: RulesConfig = {
     {
       id: 'rule-red-3',
       color: 'red',
-      name: 'Progressive Growth (Weeks to Months)',
-      description: 'Lesion growing in diameter or evolving over weeks to a few months.',
+      name: 'Spot Growing or Changing (Weeks to Months)',
+      description: 'Spot getting larger or changing shape over weeks to a few months.',
       whyText: 'Spot growing or changing over weeks to a few months',
       predicateKey: 'growing_weeks_months',
       enabled: true,
@@ -40,8 +40,8 @@ export const DEFAULT_DRAFT_RULES_CONFIG: RulesConfig = {
     {
       id: 'rule-red-4',
       color: 'red',
-      name: 'New Dark/Multicolored Spot (Age > 40)',
-      description: 'Newly developed black, dark brown, or multicolored spot in patient aged 40 or older.',
+      name: 'New Dark or Multicolored Spot (Age Over 40)',
+      description: 'New black, dark brown, or multi-colored spot in an adult aged 40 or older.',
       whyText: 'New dark or multicolored spot in an adult over 40',
       predicateKey: 'new_dark_multicolor_over_40',
       enabled: true,
@@ -49,18 +49,18 @@ export const DEFAULT_DRAFT_RULES_CONFIG: RulesConfig = {
     {
       id: 'rule-red-5',
       color: 'red',
-      name: 'Personal Melanoma Hx + New/Changing Spot',
-      description: 'Personal history of melanoma presenting with an evolving or newly appeared spot.',
-      whyText: 'Personal history of melanoma AND a new or changing spot',
+      name: 'Past Melanoma + New or Changing Spot',
+      description: 'Patient had melanoma before and now reports a new or changing spot.',
+      whyText: 'Personal history of melanoma and a new or changing spot',
       predicateKey: 'personal_melanoma_new_spot',
       enabled: true,
     },
     {
       id: 'rule-red-6',
       color: 'red',
-      name: 'Rapid Deterioration',
-      description: 'Patient explicitly notes the lesion is rapidly deteriorating or changing within days to weeks.',
-      whyText: 'Patient reports spot is rapidly getting worse',
+      name: 'Rapidly Getting Worse',
+      description: 'Patient reports the spot is getting worse quickly over days or weeks.',
+      whyText: 'Patient reports the spot is rapidly getting worse',
       predicateKey: 'rapidly_worse',
       enabled: true,
     },
@@ -69,8 +69,8 @@ export const DEFAULT_DRAFT_RULES_CONFIG: RulesConfig = {
     {
       id: 'rule-yel-1',
       color: 'yellow',
-      name: 'New Spot Reported',
-      description: 'Patient noticed a new mole or pigment spot without immediate acute red flags.',
+      name: 'New Spot',
+      description: 'Patient noticed a brand-new spot with no red-flag symptoms.',
       whyText: 'New spot reported by patient',
       predicateKey: 'new_spot',
       enabled: true,
@@ -78,8 +78,8 @@ export const DEFAULT_DRAFT_RULES_CONFIG: RulesConfig = {
     {
       id: 'rule-yel-2',
       color: 'yellow',
-      name: 'Changed Spot (Non-Acute)',
-      description: 'Pre-existing spot has experienced visible change without rapid growth or bleeding.',
+      name: 'Changed Spot (No Red-Flag Features)',
+      description: 'Existing spot has changed without bleeding or rapid growth.',
       whyText: 'Changed spot without red-flag features',
       predicateKey: 'changed_spot_no_red_flags',
       enabled: true,
@@ -87,17 +87,17 @@ export const DEFAULT_DRAFT_RULES_CONFIG: RulesConfig = {
     {
       id: 'rule-yel-3',
       color: 'yellow',
-      name: 'Sensation (Itch, Pain, Tenderness)',
-      description: 'Associated pruritus, localized aching, tenderness, or irritation.',
-      whyText: 'Itching, pain, or tenderness present',
+      name: 'Itching, Pain, or Tenderness',
+      description: 'Spot feels itchy, sore, painful, or tender to touch.',
+      whyText: 'Itching, pain, or tenderness reported',
       predicateKey: 'itching_pain_tenderness',
       enabled: true,
     },
     {
       id: 'rule-yel-4',
       color: 'yellow',
-      name: 'Personal or Family Cancer History',
-      description: 'Personal non-melanoma skin cancer history or first-degree family history of skin cancer.',
+      name: 'Personal or Family History of Skin Cancer',
+      description: 'Patient or a close family member has had skin cancer in the past.',
       whyText: 'Personal or family history of skin cancer',
       predicateKey: 'personal_or_family_cancer_hx',
       enabled: true,
@@ -105,8 +105,8 @@ export const DEFAULT_DRAFT_RULES_CONFIG: RulesConfig = {
     {
       id: 'rule-yel-5',
       color: 'yellow',
-      name: 'Immunocompromised Status',
-      description: 'Patient reports immune suppression, organ transplant, or immunosuppressive therapy.',
+      name: 'Weakened Immune System',
+      description: 'Patient takes immune-suppressing medicine or had an organ transplant.',
       whyText: 'Immune suppression reported',
       predicateKey: 'immune_suppression',
       enabled: true,
@@ -114,8 +114,8 @@ export const DEFAULT_DRAFT_RULES_CONFIG: RulesConfig = {
     {
       id: 'rule-yel-6',
       color: 'yellow',
-      name: 'Incomplete or Uncertain Response',
-      description: 'Patient was unsure or omitted answers to core clinical triage fields.',
+      name: 'Missing Answer or "Not Sure"',
+      description: 'Patient skipped a required question or answered "not sure".',
       whyText: 'Required answer missing or "not sure"',
       predicateKey: 'required_missing_or_not_sure',
       enabled: true,
@@ -132,7 +132,7 @@ export interface TriageEvaluationResult {
 }
 
 /**
- * Evaluates patient answers against transparent, configurable clinical triage rules.
+ * Evaluates patient answers against transparent, configurable triage rules.
  * Does NOT use any AI inference.
  * Safety Default: Always returns YELLOW if rules conflict or required information is missing.
  */
@@ -190,7 +190,7 @@ export function evaluateTriageRules(
         }
         break;
 
-      case 'new_dark_multicolor_over_40':
+      case 'new_dark_multicolor_over_40': {
         const isOver40 = ageRangeStr.includes('40') || ageRangeStr.includes('50') || ageRangeStr.includes('60') || ageRangeStr.includes('70') || ageRangeStr.includes('80');
         const isDarkOrMulticolor = colorChangeStr.includes('dark') || colorChangeStr.includes('black') || colorChangeStr.includes('multicolor') || colorChangeStr.includes('multiple colors');
         const isNewOrChanged = newOrChangedStr.includes('new') || newOrChangedStr.includes('changed');
@@ -198,14 +198,16 @@ export function evaluateTriageRules(
           triggeredRed.push(rule.whyText);
         }
         break;
+      }
 
-      case 'personal_melanoma_new_spot':
+      case 'personal_melanoma_new_spot': {
         const hasMelanomaHx = personalHxStr.includes('melanoma');
         const hasNewOrChangedSpot = newOrChangedStr.includes('new') || newOrChangedStr.includes('changed') || sizeChangeStr.includes('larger') || colorChangeStr.includes('changed');
         if (hasMelanomaHx && hasNewOrChangedSpot) {
           triggeredRed.push(rule.whyText);
         }
         break;
+      }
 
       case 'rapidly_worse':
         if (
@@ -243,13 +245,14 @@ export function evaluateTriageRules(
         }
         break;
 
-      case 'personal_or_family_cancer_hx':
+      case 'personal_or_family_cancer_hx': {
         const hasPersonalNonMel = personalHxStr && !personalHxStr.includes('no personal history') && personalHxStr !== 'none';
         const hasFamily = familyHxStr && !familyHxStr.includes('no family history') && familyHxStr !== 'none';
         if (hasPersonalNonMel || hasFamily) {
           triggeredYellow.push(rule.whyText);
         }
         break;
+      }
 
       case 'immune_suppression':
         if (immuneStr.includes('yes') && !immuneStr.includes('no')) {
@@ -283,7 +286,7 @@ export function evaluateTriageRules(
     whyLines = Array.from(new Set(triggeredYellow));
   } else {
     // Check if truly GREEN: No changes, no symptoms, no history, complete data
-    const isClean = 
+    const isClean =
       (newOrChangedStr.includes('unchanged') || newOrChangedStr.includes('existing') || newOrChangedStr === '') &&
       (bleedingStr === 'none' || bleedingStr.includes('no')) &&
       (nonHealingStr === 'none' || nonHealingStr.includes('no')) &&
@@ -296,11 +299,11 @@ export function evaluateTriageRules(
 
     if (isClean) {
       finalColor = 'green';
-      whyLines = ['No acute changes, no symptoms, negative oncology history, all fields complete'];
+      whyLines = ['No change, no symptoms, no personal or family history of skin cancer, and all required answers are complete'];
     } else {
       // Safety Default: Never assign green if uncertain or conflicting
       finalColor = 'yellow';
-      whyLines = ['Assigned Yellow per safety default: clinical review required to confirm baseline stability'];
+      whyLines = ['Safety default: staff review needed because answers are incomplete or unclear'];
     }
   }
 

@@ -78,10 +78,11 @@
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="apple-touch-icon" href="/theone.jpg">
     <link rel="icon" type="image/jpeg" href="/theone.jpg">
-    <!-- HIPAA Compliance: All third-party non-BAA trackers and analytics scripts removed -->
+    <!-- Privacy & Security: Third-party tracking and advertising scripts removed -->
     <script>
       if ('serviceWorker' in navigator) {
         let refreshing = false;
+        const hadController = Boolean(navigator.serviceWorker.controller);
 
         // Custom update banner styles and presentation logic
         function showRefreshBanner() {
@@ -149,7 +150,7 @@
           
           // Only auto-reload if the page was previously controlled by a service worker
           // (meaning it's an update, not the initial service worker registering)
-          if (navigator.serviceWorker.controller) {
+          if (hadController) {
             refreshing = true;
             showRefreshBanner();
             setTimeout(() => {

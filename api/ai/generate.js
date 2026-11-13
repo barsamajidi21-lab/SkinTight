@@ -1,21 +1,21 @@
 import { GoogleGenAI } from "@google/genai";
 
-// --- 1. SECRET MANAGEMENT (Lazy Singleton) ---
-let genAIClient = null;
-function getGenAIClient() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is missing. Please add your GEMINI_API_KEY in your server/Vercel environment variables.");
-  }
-  if (!genAIClient) {
-    genAIClient = new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: { 'User-Agent': 'aistudio-build-devsecops' }
-      }
+// Safety switch: matches src/config/compliance.ts (default false until AI summary is explicitly enabled)
+const AI_SUMMARY_ENABLED = process.env.AI_SUMMARY_ENABLED === "true";
+
+// --- 1. VERTEX AI CLIENT (Application Default Credentials / No API Key) ---
+let vertexAIClient = null;
+function getVertexAIClient() {
+  if (!vertexAIClient) {
+    const project = process.env.GOOGLE_CLOUD_PROJECT || "gen-lang-client-0650598239";
+    const location = process.env.GOOGLE_CLOUD_LOCATION || "us-central1";
+    vertexAIClient = new GoogleGenAI({
+      vertexai: true,
+      project,
+      location,
     });
   }
-  return genAIClient;
+  return vertexAIClient;
 }
 
 // --- 4. RATE LIMITING ENGINE (Serverless Sliding Window) ---
@@ -63,9 +63,8 @@ export default async function handler(req, res) {
   const referer = req.headers.referer;
   const requestDomain = origin || (referer ? new URL(referer).origin : "");
 
-  // Whitelist verified frontend domains
-  const isAllowedDomain = 
-    (!origin && !referer) || // same origin container call
+  const isAllowedDomain =
+    (!origin && !referer) ||
     requestDomain === "http://localhost:3000" ||
     requestDomain.endsWith(".run.app") ||
     requestDomain.endsWith(".vercel.app") ||
@@ -74,7 +73,7 @@ export default async function handler(req, res) {
 
   if (!isAllowedDomain) {
     return res.status(403).json({
-      error: "Access Forbidden: Unauthorized Cross-Origin Request. API rejects external scraper requests."
+      error: "Access Forbidden: Unauthorized Cross-Origin Request."
     });
   }
 
@@ -93,7 +92,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed. Only POST accepted." });
   }
 
-  // Enforce IP Rate Limiting
   const clientIp = req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "serverless-unknown";
   const rateStatus = checkRateLimit(clientIp);
   res.setHeader("X-RateLimit-Limit", MAX_REQUESTS_PER_WINDOW.toString());
@@ -102,7 +100,7 @@ export default async function handler(req, res) {
   if (rateStatus.exceeded) {
     res.setHeader("Retry-After", rateStatus.retryAfter.toString());
     return res.status(429).json({
-      error: "Too Many Requests. Rate limit exceeded. Please wait 60 seconds before submitting new scans."
+      error: "Too Many Requests. Rate limit exceeded. Please wait 60 seconds before retrying."
     });
   }
 
@@ -111,12 +109,21 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Invalid request payload." });
     }
 
-    const { prompt, parts, model = "gemini-3.5-flash", config = {} } = req.body;
-    
-    let mappedModel = model;
-    if (model === "gemini-3-flash-preview" || !model) {
-      mappedModel = "gemini-3.5-flash";
+    if (!AI_SUMMARY_ENABLED) {
+      return res.status(200).json({
+        text: JSON.stringify({
+          summary: "Patient self-reported intake recorded. AI summary generation is paused under compliance safety switch.",
+          findings: [
+            "Patient self-reported clinical history recorded",
+            "Structured questionnaire data securely archived",
+            "Visual photo log filed for clinician review"
+          ]
+        })
+      });
     }
+
+    const { prompt, parts, model = "gemini-2.5-flash", config = {} } = req.body;
+    const mappedModel = (!model || model === "gemini-3-flash-preview") ? "gemini-2.5-flash" : model;
 
     let contents;
     if (parts) {
@@ -132,12 +139,12 @@ export default async function handler(req, res) {
         if (part && part.inlineData) {
           const { mimeType, data } = part.inlineData;
           if (!mimeType || !allowedMimeTypes.includes(mimeType.toLowerCase())) {
-            throw new Error(`Security Violation: Image #${idx + 1} has forbidden MIME type "${mimeType}".`);
+            throw new Error(`Security Violation: Image #${idx + 1} has forbidden MIME type.`);
           }
           if (!data || typeof data !== "string") {
             throw new Error(`Security Violation: Image #${idx + 1} payload corrupted.`);
           }
-          const base64Raw = data.includes(',') ? data.split(',')[1] : data;
+          const base64Raw = data.includes(",") ? data.split(",")[1] : data;
           const trimmed = base64Raw.trim();
           if (!/^[A-Za-z0-9+/=]+$/.test(trimmed)) {
             throw new Error(`Security Violation: Image #${idx + 1} contains malformed base64.`);
@@ -145,7 +152,7 @@ export default async function handler(req, res) {
           if (trimmed.length > 20 * 1024 * 1024) {
             throw new Error(`Security Violation: Image #${idx + 1} exceeds file size limit.`);
           }
-          const cleanBase64 = Buffer.from(trimmed, 'base64').toString('base64');
+          const cleanBase64 = Buffer.from(trimmed, "base64").toString("base64");
           return {
             ...part,
             inlineData: { mimeType, data: cleanBase64 }
@@ -161,11 +168,14 @@ export default async function handler(req, res) {
       contents = sanitizeText(typeof prompt === "string" ? prompt.slice(0, 100000) : "");
     }
 
-    const aiClient = getGenAIClient();
+    const aiClient = getVertexAIClient();
     const response = await aiClient.models.generateContent({
       model: mappedModel,
       contents,
-      config
+      config: {
+        ...config,
+        cachedContent: undefined
+      }
     });
 
     const text = response.text;
@@ -175,7 +185,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ text });
   } catch (error) {
-    console.error("Protected Vercel Gemini API Error:", error);
+    console.error("[Clinical API Warning]: Summary generation failed (no patient data logged).");
     const status = error.message && error.message.includes("Security Violation") ? 400 : 500;
     return res.status(status).json({ error: error instanceof Error ? error.message : "Internal Server Error" });
   }
