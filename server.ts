@@ -409,7 +409,7 @@ async function startServer() {
         return res.status(400).json({ error: "Please complete all required fields." });
       }
 
-      const recipient = "barsamajidi25@gmail.com";
+      const recipient = process.env.DEMO_NOTIFICATION_EMAIL || "barsa@skintightai.com";
       let emailSent = false;
 
       if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
@@ -427,7 +427,7 @@ async function startServer() {
           from: process.env.SMTP_FROM || process.env.SMTP_USER,
           to: recipient,
           replyTo: cleanEmail,
-          subject: `SkinTight Clinic Demo Request — ${cleanPractice}`,
+          subject: `SkinTight AI Clinic Demo Request — ${cleanPractice}`,
           text: [
             `New Clinic Demo Request`,
             `Name: ${cleanName}`,
@@ -448,7 +448,7 @@ async function startServer() {
         recipient,
         message: emailSent
           ? "Demo request submitted and notification sent."
-          : "Demo request recorded. (Email relay awaits SMTP environment configuration.)",
+          : "Demo request saved. Email notifications require SMTP configuration on the server.",
       });
     } catch {
       console.error("[Demo Request]: Notification processing failed.");
@@ -460,10 +460,7 @@ async function startServer() {
   app.get("/sitemap.xml", (req, res) => {
     res.header("Content-Type", "application/xml");
     const publicPaths = [
-      "", "about", "clinic", "routine", "plans", "learn",
-      "learn/early-signs-of-skin-cancer", "learn/suspicious-mole-warning-signs",
-      "learn/when-to-see-a-dermatologist", "learn/abcde-rule-for-moles",
-      "learn/how-to-monitor-skin-changes"
+      "", "about", "demo", "clinic-portal"
     ];
     const host = "https://skintightai.com";
     const currentDate = new Date().toISOString().split('T')[0];
@@ -472,11 +469,6 @@ async function startServer() {
     publicPaths.forEach(p => {
       const pathSegment = p ? `/${p}` : "";
       xml += `  <url>\n    <loc>${host}${pathSegment}</loc>\n    <lastmod>${currentDate}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${p === "" ? "1.0" : "0.8"}</priority>\n  </url>\n`;
-    });
-
-    // Programmatic SEO landing pages
-    PSEO_LANDING_PAGES.forEach(page => {
-      xml += `  <url>\n    <loc>${host}/track/${page.slug}</loc>\n    <lastmod>${currentDate}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
     });
 
     xml += `</urlset>`;

@@ -1,7 +1,7 @@
 {
-  "name": "Skin Tight",
-  "short_name": "Skin Tight",
-  "description": "AI-powered skin cancer monitoring. Catch it early.",
+  "name": "SkinTight AI",
+  "short_name": "SkinTight AI",
+  "description": "Pre-visit photo and history intake with physician-approved triage rules for dermatology practices.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#060818",

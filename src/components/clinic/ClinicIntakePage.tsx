@@ -23,9 +23,10 @@ import { IntakeForm } from '../../App';
 interface ClinicIntakePageProps {
   clinic: Clinic;
   onBackToApp?: () => void;
+  onShowLegal?: (type: 'terms' | 'privacy' | 'disclaimer') => void;
 }
 
-export const ClinicIntakePage: React.FC<ClinicIntakePageProps> = ({ clinic, onBackToApp }) => {
+export const ClinicIntakePage: React.FC<ClinicIntakePageProps> = ({ clinic, onBackToApp, onShowLegal }) => {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [patientName, setPatientName] = useState('');
   const [patientEmail, setPatientEmail] = useState('');
@@ -591,11 +592,16 @@ export const ClinicIntakePage: React.FC<ClinicIntakePageProps> = ({ clinic, onBa
                     />
                   </div>
 
-                  <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2.5">
-                    <ShieldCheck size={18} className="text-teal-400 shrink-0 mt-0.5" />
-                    <span>
-                      SkinTight is a pre-visit documentation and clinical information tool. It does not diagnose conditions or give medical advice. Your information is delivered directly to {clinic.name}.
-                    </span>
+                  <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400 space-y-1.5">
+                    <div className="flex items-start gap-2.5">
+                      <ShieldCheck size={18} className="text-teal-400 shrink-0 mt-0.5" />
+                      <span>
+                        SkinTight AI is a pre-visit documentation and clinical information tool. It does not diagnose conditions or give medical advice. Your information is delivered directly to {clinic.name}.
+                      </span>
+                    </div>
+                    <p className="text-red-300/90 font-semibold pl-7">
+                      If a spot is bleeding heavily, growing quickly, or you feel unwell, contact your doctor or seek care now. Call 911 for emergencies.
+                    </p>
                   </div>
 
                   <div className="pt-4 flex justify-between items-center">
@@ -626,6 +632,29 @@ export const ClinicIntakePage: React.FC<ClinicIntakePageProps> = ({ clinic, onBa
           </div>
         )}
       </div>
+
+      {/* Unified Footer */}
+      <footer className="w-full mt-auto border-t border-slate-800/80 py-6 px-4 text-center text-xs text-slate-400">
+        <div className="flex flex-wrap items-center justify-center gap-4 mb-2">
+          {onShowLegal && (
+            <>
+              <button type="button" onClick={() => onShowLegal('privacy')} className="hover:text-white underline cursor-pointer">
+                Privacy Policy
+              </button>
+              <button type="button" onClick={() => onShowLegal('terms')} className="hover:text-white underline cursor-pointer">
+                Terms of Service
+              </button>
+              <button type="button" onClick={() => onShowLegal('disclaimer')} className="hover:text-white underline cursor-pointer">
+                Medical Disclaimer
+              </button>
+            </>
+          )}
+          <a href="mailto:barsa@skintightai.com" className="hover:text-white underline">
+            Contact
+          </a>
+        </div>
+        <p className="text-[11px] text-slate-500">© 2026 SkinTight AI. Pre-visit intake and triage workflow software.</p>
+      </footer>
     </div>
   );
 };

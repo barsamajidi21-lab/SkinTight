@@ -78,7 +78,8 @@ import {
   Maximize2,
   Minimize2,
   LogOut,
-  Heart
+  Heart,
+  Send
 } from 'lucide-react';
 
 import { BLOG_ARTICLES, BLOG_DISCLAIMER } from './data/blogData';
@@ -94,6 +95,7 @@ import { ensureLeafletLoaded, ensureChartJsLoaded } from './lib/scriptLoader';
 import { db, auth, storage } from './lib/firebase';
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { AI_SUMMARY_ENABLED } from './config/compliance';
+import { FEATURE_FLAGS, CONTACT_EMAIL } from './config/features';
 
 // Memory cache for private Cloud Storage authenticated URLs
 const resolvedUrlCache: Record<string, string> = {};
@@ -3060,7 +3062,7 @@ const WelcomePage = ({ onComplete }: { onComplete: () => void }) => {
           }}>
             <ShieldCheck size={22} color="#2dd4bf" />
           </div>
-          <span style={{ fontSize: '10px', fontWeight: '900', color: '#2dd4bf', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2px' }}>Skin Tight</span>
+          <span style={{ fontSize: '10px', fontWeight: '900', color: '#2dd4bf', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2px' }}>SkinTight AI</span>
           <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>Your Key Benefits</h2>
         </motion.div>
 
@@ -3068,8 +3070,8 @@ const WelcomePage = ({ onComplete }: { onComplete: () => void }) => {
         <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {[
             {
-              title: "100% Free & Fast",
-              desc: "Instant clinical screening in under 60 seconds (vs. $150+ clinic visits).",
+              title: "Fast Pre-Visit Intake",
+              desc: "Organize skin concern photos and history in under 60 seconds before clinic visits.",
               icon: Zap,
               color: "#0ea5e9"
             },
@@ -3133,117 +3135,116 @@ const WelcomePage = ({ onComplete }: { onComplete: () => void }) => {
 const AboutPage = () => {
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+    visible: { opacity: 1, transition: { staggerChildren: 0.08 } }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 16 },
     visible: { opacity: 1, y: 0 }
   };
 
   return (
-    <div className="page-container" style={styles.tabContent}>
+    <div className="page-container clinic-ui" style={styles.tabContent}>
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="w-full space-y-8 pb-32"
+        className="w-full space-y-6 pb-20"
       >
-        {/* CONTACT SECTION (Starts the page) */}
-        <motion.div variants={itemVariants} className="p-6 text-center bg-teal-500/5 rounded-3xl border border-teal-500/10 mt-4 overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/10 blur-3xl -mr-16 -mt-16 rounded-full" />
-          <h2 className="text-base font-black text-white mb-2">Questions or Feedback?</h2>
-          <p className="text-sm text-slate-400 mb-6 max-w-sm mx-auto leading-relaxed">
-            We value your experience and safety. Our team is here to help with any questions or issues you may have.
-          </p>
-          
-          <div className="inline-flex items-center gap-3 px-6 py-3 bg-teal-500 text-slate-950 rounded-full font-black text-sm shadow-xl shadow-teal-500/20 hover:scale-105 transition-transform cursor-pointer">
-            <Mail size={16} /> [MY-PROFESSIONAL-EMAIL]
-          </div>
-          
-          <div className="mt-6 pt-6 border-t border-white/5">
-            <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest leading-loose">
-              Always call emergency services for immediate medical concerns.
-            </p>
-          </div>
-        </motion.div>
-
         {/* HEADER */}
         <motion.div variants={itemVariants} className="flex flex-col items-center text-center pt-4">
-          <div className="w-20 h-20 rounded-2xl bg-teal-500/10 flex items-center justify-center mb-6 border border-teal-500/20 shadow-2xl shadow-teal-500/10">
-            <Dna size={40} color="#2dd4bf" />
+          <div className="w-16 h-16 rounded-2xl bg-teal-500/10 flex items-center justify-center mb-5 border border-teal-500/20 shadow-xl shadow-teal-500/10">
+            <Dna size={34} color="#2dd4bf" />
           </div>
-          <h1 className="text-2xl font-black text-white mb-2">Skin Tight</h1>
-          <p className="text-base text-teal-400 font-medium">Pre-visit clinical intake and longitudinal tracking bridge.</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-white mb-2 tracking-tight">About SkinTight AI</h1>
+          <p className="text-sm sm:text-base text-teal-400 font-semibold max-w-lg">
+            Pre-visit triage and intake for dermatology practices.
+          </p>
         </motion.div>
 
         {/* MISSION SECTION */}
-        <motion.div variants={itemVariants} className="glass-card p-6 rounded-2xl border border-white/5">
-          <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+        <motion.div variants={itemVariants} className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800">
+          <h2 className="text-base font-bold text-white mb-3 flex items-center gap-2">
             <SparklesIcon size={18} className="text-teal-400" /> Our Mission
           </h2>
-          <p className="text-sm text-slate-400 leading-relaxed">
-            We help patients monitor suspicious skin changes over time and help dermatology providers receive better organized information before a patient ever walks into the office. By structuring symptom onset, lesion history, and longitudinal photographic comparisons, we bring actionable information directly into the clinical encounter.
+          <p className="text-sm text-slate-300 leading-relaxed">
+            SkinTight AI helps dermatology practices identify urgent patients first. Patients send photos and a short history before their visit, physician-approved rules flag urgent cases for staff, and providers receive a one-page brief — so every staff member triages the same way, even on their first week.
           </p>
         </motion.div>
 
-        {/* WHY SKIN TIGHT EXISTS SECTION */}
-        <motion.div variants={itemVariants} className="glass-card p-6 rounded-2xl border border-white/5">
-          <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <Dna size={18} className="text-teal-400" /> Why Skin Tight Exists
+        {/* WHY SKINTIGHT AI EXISTS */}
+        <motion.div variants={itemVariants} className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800">
+          <h2 className="text-base font-bold text-white mb-3 flex items-center gap-2">
+            <Dna size={18} className="text-teal-400" /> Why SkinTight AI exists
           </h2>
-          <p className="text-sm text-slate-400 leading-relaxed">
-            Dermatologists and primary care teams spend valuable exam room minutes piecing together verbal patient recollections. Skin Tight bridges this gap by letting patients track concerns at home, generating an objective 1-page clinical summary so clinics can streamline intake and make faster, better-informed decisions.
+          <p className="text-sm text-slate-300 leading-relaxed">
+            New staff often struggle to tell urgent skin concerns from routine ones, and intake details get pieced together during the visit. SkinTight AI gives staff a consistent, rule-based process and gives providers organized information before the patient walks in.
           </p>
         </motion.div>
 
-        {/* IMPACT STATS */}
-        <motion.div variants={itemVariants} className="grid grid-cols-1 gap-4">
-          {[
-            { label: '1-Page Doctor Brief', sub: 'Standardized EHR pre-visit intake' },
-            { label: 'Longitudinal Tracking', sub: 'Side-by-side baseline vs. current photos' },
-            { label: '60 Seconds', sub: 'Fast, non-pushy patient questionnaire' }
-          ].map((stat, i) => (
-            <div key={i} className="glass-card p-4 rounded-xl flex justify-between items-center bg-white/5 border border-white/5">
-              <span className="text-sm font-black text-teal-400">{stat.label}</span>
-              <span className="text-xs text-slate-500 font-medium">{stat.sub}</span>
-            </div>
-          ))}
-        </motion.div>
-
-        {/* SECTIONS */}
+        {/* WHAT IT DOES / DOES NOT DO */}
         {[
-          { title: 'What Skin Tight does', points: ['Monitor suspicious skin changes over time', 'Structure pre-visit symptom onset & care history', 'Compare baseline vs. current photos side-by-side', 'Generate 1-page clinical summaries for doctors'], icon: <CheckCircle2 size={16} className="text-teal-400" /> },
-          { title: 'What we do NOT do', points: ['Provide medical diagnoses or replace doctor care', 'Prescribe medications or treatment regimens', 'Perform biopsies or histopathological evaluation'], icon: <X size={16} className="text-red-400" /> }
+          {
+            title: 'What SkinTight AI does',
+            points: [
+              'Collects patient photos and structured history before visits',
+              'Flags urgent cases using your physician-approved rules, with the exact reason shown',
+              'Guides front-desk staff through the same questions by phone',
+              'Produces a one-page brief for the provider',
+            ],
+            icon: <CheckCircle2 size={16} className="text-teal-400 shrink-0" />,
+          },
+          {
+            title: 'What we do NOT do',
+            points: [
+              'Does not diagnose or replace clinician judgment',
+              'Does not analyze photos with AI',
+              'Does not prescribe or recommend treatment',
+            ],
+            icon: <X size={16} className="text-red-400 shrink-0" />,
+          },
         ].map((sec, i) => (
-          <motion.div key={i} variants={itemVariants} className="space-y-4">
-            <h2 className="text-base font-bold text-white pl-2">{sec.title}</h2>
-            <div className="space-y-3">
+          <motion.div key={i} variants={itemVariants} className="space-y-3">
+            <h2 className="text-base font-bold text-white pl-1">{sec.title}</h2>
+            <div className="space-y-2.5">
               {sec.points.map((p, j) => (
-                <div key={j} className="glass-card p-4 rounded-xl flex items-center gap-4 bg-white/5 border border-white/5">
+                <div key={j} className="p-4 rounded-xl flex items-center gap-3.5 bg-slate-900/90 border border-slate-800">
                   {sec.icon}
-                  <span className="text-sm text-slate-300">{p}</span>
+                  <span className="text-sm text-slate-200">{p}</span>
                 </div>
               ))}
             </div>
           </motion.div>
         ))}
 
-        {/* IMPORTANT DISCLAIMER */}
-        <motion.div variants={itemVariants} className="p-6 rounded-2xl bg-amber-500/5 border border-amber-500/10">
-          <h2 className="text-sm font-bold text-amber-500 mb-3 flex items-center gap-2">
-            <AlertTriangle size={18} /> Medical Disclaimer
+        {/* CONTACT CARD */}
+        <motion.div variants={itemVariants} className="p-6 text-center bg-teal-500/5 rounded-2xl border border-teal-500/20">
+          <h2 className="text-base font-black text-white mb-2">Contact SkinTight AI</h2>
+          <p className="text-sm text-slate-300 mb-5 max-w-md mx-auto leading-relaxed">
+            Interested in running a pre-visit triage pilot at your dermatology practice? Reach out directly.
+          </p>
+          <a
+            href={`mailto:${CONTACT_EMAIL}`}
+            className="inline-flex items-center gap-2.5 px-6 py-3 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl font-black text-sm shadow-lg shadow-teal-500/20 transition-colors"
+          >
+            <Mail size={16} />
+            <span>{CONTACT_EMAIL}</span>
+          </a>
+          <p className="text-xs text-slate-400 mt-4">Built in Atlanta, Georgia.</p>
+        </motion.div>
+
+        {/* MEDICAL DISCLAIMER */}
+        <motion.div variants={itemVariants} className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+          <h2 className="text-sm font-bold text-amber-400 mb-2 flex items-center gap-2">
+            <AlertTriangle size={16} /> Medical Disclaimer
           </h2>
-          <p className="text-xs text-amber-200/60 leading-relaxed text-left">
-            SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.
+          <p className="text-xs text-amber-100/75 leading-relaxed text-left">
+            SkinTight AI is a pre-visit intake and triage workflow tool for dermatology practices. It does not diagnose, evaluate photos with AI, or replace licensed clinician judgment.
           </p>
         </motion.div>
 
-        {/* VERSION INFO */}
-        {/* TODO: Update to registered LLC name later */}
-        <motion.div variants={itemVariants} className="text-center pt-8 opacity-40">
-          <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">SkinTight AI — Pre-Visit Clinical Triage</p>
-          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">© 2026 SkinTight AI. All rights reserved.</p>
+        <motion.div variants={itemVariants} className="text-center pt-2 text-[11px] text-slate-500 font-semibold">
+          © 2026 SkinTight AI. All rights reserved.
         </motion.div>
       </motion.div>
     </div>
@@ -3856,10 +3857,10 @@ const RoutinePage = ({
 
 const ShopPage = () => {
   const products = [
-    { id: 1, name: 'Mineral Shield SPF 50', price: '$24.00', category: 'Sunscreen', icon: Sun, accent: 'from-amber-500/20 to-orange-500/10' },
-    { id: 2, name: 'UV Exposure Patch', price: '$18.00', category: 'Monitoring', icon: Activity, accent: 'from-teal-500/20 to-cyan-500/10' },
-    { id: 3, name: 'After-Sun Recovery Gel', price: '$15.00', category: 'Care', icon: SparklesIcon, accent: 'from-sky-500/20 to-indigo-500/10' },
-    { id: 4, name: 'UPF 50+ Sun Hoodie', price: '$45.00', category: 'Apparel', icon: ShieldCheck, accent: 'from-emerald-500/20 to-teal-500/10' }
+    { id: 1, name: 'Mineral Shield SPF 50', price: 'Catalog', category: 'Sunscreen', icon: Sun, accent: 'from-amber-500/20 to-orange-500/10' },
+    { id: 2, name: 'UV Exposure Patch', price: 'Catalog', category: 'Monitoring', icon: Activity, accent: 'from-teal-500/20 to-cyan-500/10' },
+    { id: 3, name: 'After-Sun Recovery Gel', price: 'Catalog', category: 'Care', icon: SparklesIcon, accent: 'from-sky-500/20 to-indigo-500/10' },
+    { id: 4, name: 'UPF 50+ Sun Hoodie', price: 'Catalog', category: 'Apparel', icon: ShieldCheck, accent: 'from-emerald-500/20 to-teal-500/10' }
   ];
 
   return (
@@ -3997,9 +3998,13 @@ const SideMenu = ({
   isMenuOpen, 
   setIsMenuOpen, 
   currentUser, 
-  fullUserData, 
-  activeTab, 
-  setActiveTab, 
+  activeTab,
+  isClinicDemo,
+  onSelectHome,
+  onSelectDemo,
+  onSelectAbout,
+  onSelectRequestDemo,
+  onSelectClinicSignIn,
   handleLogout 
 }: {
   isMenuOpen: boolean;
@@ -4007,23 +4012,21 @@ const SideMenu = ({
   currentUser: any;
   fullUserData: any;
   activeTab: string;
+  isClinicDemo: boolean;
   setActiveTab: (tab: any) => void;
+  onSelectHome: () => void;
+  onSelectDemo: () => void;
+  onSelectAbout: () => void;
+  onSelectRequestDemo: () => void;
+  onSelectClinicSignIn: () => void;
   handleLogout: () => void;
 }) => {
   const menuItems = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'clinic_portal', label: 'Clinic Staff Portal (B2B)', icon: Building2 },
-    { id: 'profile', label: 'My Profile', icon: UserCircle },
-    ...(currentUser ? [
-      { id: 'timeline', label: 'Timeline and Schedule', icon: Calendar },
-    ] : []),
-    { id: 'clinic', label: 'Find Dermatologists', icon: MapPinned },
-    { id: 'plans', label: 'Pricing & Plans', icon: CreditCard },
-    { id: 'learn', label: 'Skin Health Academy', icon: BookOpen },
-    { id: 'welcome', label: 'About Skin Tight', icon: Info },
-    ...(!currentUser ? [
-      { id: 'auth', label: 'Sign In / Join', icon: UserPlus },
-    ] : [])
+    { id: 'home', label: 'Home', icon: Home, isActive: activeTab === 'home', onClick: onSelectHome },
+    { id: 'demo', label: 'Interactive Demo', icon: LayoutDashboard, isActive: activeTab === 'clinic_portal' && isClinicDemo, onClick: onSelectDemo },
+    { id: 'about', label: 'About', icon: Info, isActive: activeTab === 'welcome', onClick: onSelectAbout },
+    { id: 'request_demo', label: 'Request a Demo', icon: Send, isActive: false, onClick: onSelectRequestDemo },
+    { id: 'clinic_signin', label: 'Clinic Sign-In', icon: Building2, isActive: activeTab === 'clinic_portal' && !isClinicDemo, onClick: onSelectClinicSignIn },
   ];
 
   return (
@@ -4044,23 +4047,31 @@ const SideMenu = ({
       />
       
       {/* Menu Panel */}
-      <div style={{
-        ...styles.sideMenu,
-        transform: isMenuOpen ? 'translateX(0)' : 'translateX(100%)'
-      }}>
+      <div
+        id="sideMenu"
+        role="dialog"
+        aria-label="Navigation Menu"
+        style={{
+          ...styles.sideMenu,
+          transform: isMenuOpen ? 'translateX(0)' : 'translateX(100%)'
+        }}
+      >
         <button 
+          className="mini-btn"
           style={{ 
             position: 'absolute', 
             top: '20px', 
-            left: '20px', 
+            right: '20px', 
             background: 'transparent', 
             border: 'none', 
             cursor: 'pointer',
-            color: '#94a3b8'
+            color: '#94a3b8',
+            padding: '4px'
           }}
+          aria-label="Close menu"
           onClick={() => setIsMenuOpen(false)}
         >
-          <X size={32} />
+          <X size={28} />
         </button>
 
         {/* Brand Header */}
@@ -4073,7 +4084,7 @@ const SideMenu = ({
           }}>
             <Dna size={18} color="#2dd4bf" />
           </div>
-          <span style={{ fontSize: '18px', fontWeight: '900', color: '#f8fafc', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Skin Tight</span>
+          <span style={{ fontSize: '18px', fontWeight: '900', color: '#f8fafc', letterSpacing: '0.02em' }}>SkinTight AI</span>
         </div>
 
         <nav aria-label="Main Navigation" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '0 8px' }}>
@@ -4081,7 +4092,7 @@ const SideMenu = ({
             <button 
               key={item.id}
               onClick={() => {
-                setActiveTab(item.id);
+                item.onClick();
                 setIsMenuOpen(false);
               }}
               className="mini-btn"
@@ -4091,9 +4102,9 @@ const SideMenu = ({
                 gap: '16px',
                 padding: '16px 20px',
                 borderRadius: '16px',
-                background: activeTab === item.id ? 'rgba(45, 212, 191, 0.1)' : 'transparent',
-                border: activeTab === item.id ? '1px solid rgba(45, 212, 191, 0.2)' : '1px solid transparent',
-                color: activeTab === item.id ? '#2dd4bf' : '#94a3b8',
+                background: item.isActive ? 'rgba(45, 212, 191, 0.1)' : 'transparent',
+                border: item.isActive ? '1px solid rgba(45, 212, 191, 0.2)' : '1px solid transparent',
+                color: item.isActive ? '#2dd4bf' : '#94a3b8',
                 fontSize: '16px',
                 fontWeight: '700',
                 cursor: 'pointer',
@@ -4103,13 +4114,13 @@ const SideMenu = ({
                 boxSizing: 'border-box'
               }}
               onMouseEnter={(e) => {
-                if (activeTab !== item.id) {
+                if (!item.isActive) {
                   e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
                   e.currentTarget.style.color = '#f8fafc';
                 }
               }}
               onMouseLeave={(e) => {
-                if (activeTab !== item.id) {
+                if (!item.isActive) {
                   e.currentTarget.style.background = 'transparent';
                   e.currentTarget.style.color = '#94a3b8';
                 }
@@ -4141,7 +4152,7 @@ const SideMenu = ({
         </nav>
 
         <div style={{ marginTop: 'auto', padding: '20px' }}>
-          {currentUser ? (
+          {currentUser && FEATURE_FLAGS.ENABLE_CONSUMER_AUTH && (
             <button 
               onClick={handleLogout}
               style={{
@@ -4161,31 +4172,6 @@ const SideMenu = ({
             >
               <LogOut size={24} />
               Logout
-            </button>
-          ) : (
-            <button 
-              onClick={() => {
-                setActiveTab('auth');
-                setIsMenuOpen(false);
-              }}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px',
-                padding: '16px 20px',
-                borderRadius: '20px',
-                background: 'linear-gradient(135deg, #2dd4bf 0%, #0ea5e9 100%)',
-                border: 'none',
-                color: '#020617',
-                fontSize: '16px',
-                fontWeight: '900',
-                cursor: 'pointer',
-                boxShadow: '0 10px 20px rgba(45, 212, 191, 0.2)'
-              }}
-            >
-              <UserPlus size={24} />
-              Sign In / Join
             </button>
           )}
         </div>
@@ -4923,7 +4909,7 @@ async function loadHowToImprove() {}
             <div style={{ background: '#0f172a', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#ffffff' }}>
               <div>
                 <div style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>SKIN TIGHT</span>
+                  <span>SKINTIGHT AI</span>
                   <span style={{ fontSize: '10px', background: 'rgba(45,212,191,0.2)', color: '#2dd4bf', padding: '2px 8px', borderRadius: '6px', fontWeight: '800', border: '1px solid rgba(45,212,191,0.4)' }}>CLINICAL TRIAGE</span>
                 </div>
                 <div style={{ fontSize: '11px', color: '#2dd4bf', fontWeight: '800', marginTop: '2px' }}>
@@ -5088,10 +5074,10 @@ async function loadHowToImprove() {}
               {/* Footer Notice */}
               <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '8px', fontSize: '8.5px', color: '#64748b', lineHeight: '1.4' }}>
                 <p style={{ margin: '0 0 4px 0' }}>
-                  SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.
+                  SkinTight AI is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.
                 </p>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '800', color: '#475569' }}>
-                  <span>Skin Tight Clinical Intake Engine  |  Standardized Pre-Visit Patient Brief</span>
+                  <span>SkinTight AI Clinical Intake Engine  |  Pre-Visit Patient Brief</span>
                   <span>Page 1 of 1</span>
                 </div>
               </div>
@@ -5298,7 +5284,7 @@ async function loadHowToImprove() {}
                     <CheckCircle2 size={16} /> This week's check is complete.
                   </div>
                   <p className="text-xs text-slate-400">
-                    Next check: {nextScanDate ? new Date(nextScanDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'TBD'} ({nextWeek.label})
+                    Next check: {nextScanDate ? new Date(nextScanDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Not scheduled'} ({nextWeek.label})
                   </p>
                   <p className="text-xs text-slate-500 mt-2">Scan anytime if you notice a new or changing spot.</p>
                 </div>
@@ -5466,11 +5452,11 @@ async function loadHowToImprove() {}
 const MEDICAL_DISCLAIMER_TEXT = `MEDICAL DISCLAIMER
 Last Updated: May 24, 2026
 
-SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.
+SkinTight AI is a pre-visit information and triage workflow tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.
 
 The photo logs and intake notes are informational only. Image records can be affected by factors such as camera resolution, lighting conditions, and user technique.
 
-SkinTight does not provide medical verdicts or diagnoses. Always consult a licensed clinician or qualified healthcare professional for any medical concerns regarding your skin. Never ignore, delay, or replace professional medical advice because of information stored in this application.
+SkinTight AI does not provide medical verdicts or diagnoses. Always consult a licensed clinician or qualified healthcare professional for any medical concerns regarding your skin. Never ignore, delay, or replace professional medical advice because of information stored in this application.
 
 If a spot is bleeding heavily, growing quickly, or you feel unwell, contact your doctor or seek care now. Call 911 for emergencies.`;
 
@@ -5478,16 +5464,16 @@ const TERMS_AND_CONDITIONS = `TERMS & CONDITIONS (DRAFT — pending legal review
 Last Updated: May 24, 2026
 
 1. Acceptance of Terms
-By accessing or using SkinTight AI ("SkinTight"), you agree to comply with these Terms & Conditions. If you do not agree, stop using the application immediately.
+By accessing or using SkinTight AI, you agree to comply with these Terms & Conditions. If you do not agree, stop using the application immediately.
 
 2. Description of Service — Not Medical Care or Diagnosis
-SkinTight is a pre-visit documentation, photo-logging, and clinical intake workflow tool. It does NOT diagnose skin conditions, evaluate photos for malignancy, assign AI risk scores, or replace a licensed physician. For participating clinics, intake triage categories (Red, Yellow, Green) are determined exclusively by transparent rules configured and approved by the clinic's physicians.
+SkinTight AI is a pre-visit documentation, photo-logging, and clinical intake workflow tool. It does NOT diagnose skin conditions, evaluate photos for malignancy, assign AI risk scores, or replace a licensed physician. For participating clinics, intake triage categories (Red, Yellow, Green) are determined exclusively by transparent rules configured and approved by the clinic's physicians.
 
 3. Eligibility
-You must be at least 18 years old to use SkinTight independently. Users ages 13–17 may use the application only with parental or guardian consent. Children under 13 are prohibited from using the application.
+You must be at least 18 years old to use SkinTight AI independently. Users ages 13–17 may use the application only with parental or guardian consent. Children under 13 are prohibited from using the application.
 
 4. Pre-Production / Pilot Notice
-SkinTight is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind. Do not use this application for medical emergencies. Call 911 or seek urgent medical attention immediately if a spot is bleeding heavily or you feel unwell.
+SkinTight AI is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind. Do not use this application for medical emergencies. Call 911 or seek urgent medical attention immediately if a spot is bleeding heavily or you feel unwell.
 
 5. User Responsibilities
 You agree to submit accurate answers, upload only your own photos (or photos you have legal authority to submit), and seek evaluation from a licensed clinician for any medical concern.
@@ -5499,13 +5485,13 @@ Account authentication, structured intake storage, and private photo storage run
 To the maximum extent permitted by law, SkinTight AI and its creators shall not be liable for any indirect, incidental, special, or consequential damages resulting from use of or inability to use the application.
 
 8. Contact
-Questions regarding these draft terms may be directed to [MY-PROFESSIONAL-EMAIL].`;
+Questions regarding these draft terms may be directed to barsa@skintightai.com.`;
 
 const PRIVACY_POLICY = `PRIVACY POLICY (DRAFT — pending legal review)
 Last Updated: May 24, 2026
 
 1. Information We Collect
-Depending on whether you use personal tracking or a clinic's pre-visit intake link, SkinTight collects:
+Depending on whether you use personal tracking or a clinic's pre-visit intake link, SkinTight AI collects:
 ● Account email and profile identifier (when you sign in)
 ● Skin spot photos you voluntarily upload
 ● Pre-visit questionnaire answers (spot location, symptom duration, history)
@@ -5522,15 +5508,15 @@ Depending on whether you use personal tracking or a clinic's pre-visit intake li
 ● No Sale of Data: We do NOT sell, rent, or broker personal information or uploaded photos to advertisers or third parties.
 
 4. Data Retention & Deletion Requests
-You may request access to or deletion of your account and records at any time by contacting [MY-PROFESSIONAL-EMAIL]. Verified deletion requests are processed within thirty (30) days, subject to applicable legal or clinical recordkeeping requirements.
+You may request access to or deletion of your account and records at any time by contacting barsa@skintightai.com. Verified deletion requests are processed within thirty (30) days, subject to applicable legal or clinical recordkeeping requirements.
 
 5. Children's Privacy
-SkinTight does not knowingly collect information from children under 13.
+SkinTight AI does not knowingly collect information from children under 13.
 
 6. Contact
-Privacy inquiries and deletion requests: [MY-PROFESSIONAL-EMAIL].`;
+Privacy inquiries and deletion requests: barsa@skintightai.com.`;
 
-const DISCLAIMER_TEXT = `SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.`;
+const DISCLAIMER_TEXT = `SkinTight AI is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.`;
 
 // --- Onboarding Screen Component ---
 const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
@@ -6072,8 +6058,8 @@ const AuthPage = ({ onAuthSuccess, onSkip }: { onAuthSuccess: (user: any) => voi
               }}>
                 <Dna size={32} color="#2dd4bf" />
               </div>
-              <h1 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>Skin Tight</h1>
-              <p style={{ color: '#94a3b8', fontSize: '14px' }}>Catch It Early.</p>
+              <h1 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>SkinTight AI</h1>
+              <p style={{ color: '#94a3b8', fontSize: '14px' }}>Pre-Visit Intake &amp; Triage</p>
             </div>
 
             <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', marginBottom: '24px' }}>
@@ -6312,18 +6298,18 @@ const AuthPage = ({ onAuthSuccess, onSkip }: { onAuthSuccess: (user: any) => voi
 const Footer = ({ onShowLegal }: { onShowLegal: (type: 'terms' | 'privacy' | 'disclaimer') => void }) => (
   <footer style={{
     padding: '32px 24px',
-    borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+    borderTop: '1px solid rgba(255, 255, 255, 0.08)',
     marginTop: 'auto',
     textAlign: 'center'
   }}>
-    <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', marginBottom: '16px', fontSize: '12px', fontWeight: '600', color: '#94a3b8' }}>
-      <button onClick={() => onShowLegal('terms')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Terms</button>
-      <button onClick={() => onShowLegal('privacy')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Privacy</button>
-      <button onClick={() => onShowLegal('disclaimer')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Disclaimer</button>
+    <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', marginBottom: '14px', fontSize: '12px', fontWeight: '600', color: '#94a3b8' }}>
+      <button onClick={() => onShowLegal('privacy')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Privacy Policy</button>
+      <button onClick={() => onShowLegal('terms')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Terms of Service</button>
+      <button onClick={() => onShowLegal('disclaimer')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Medical Disclaimer</button>
+      <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: 'inherit', textDecoration: 'underline' }}>Contact</a>
     </div>
-    {/* TODO: Update to registered LLC name later */}
     <p style={{ fontSize: '11px', color: '#64748b', width: '100%', maxWidth: '640px', margin: '0 auto', lineHeight: '1.6' }}>
-      Disclaimer: SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies. © 2026 SkinTight AI. <span style={{ opacity: 0.25, fontSize: '10px' }}>•</span>
+      SkinTight AI is a pre-visit intake and triage workflow tool for dermatology practices. It does not diagnose or provide medical advice. © 2026 SkinTight AI.
     </p>
   </footer>
 );
@@ -6377,6 +6363,7 @@ function App() {
   // --- Navigation State ---
   const [activeTab, setActiveTab] = useState<'home' | 'scan' | 'timeline' | 'routine' | 'plans' | 'profile' | 'clinic' | 'welcome' | 'auth' | 'learn' | 'clinic_portal' | 'clinic_intake'>('home');
   const [activeClinicId, setActiveClinicId] = useState<string>('clinic-a');
+  const [clinicNameOverride, setClinicNameOverride] = useState<string | null>(null);
   const [isClinicDemo, setIsClinicDemo] = useState<boolean>(false);
   const [selectedArticleSlug, setSelectedArticleSlug] = useState<string | null>(null);
   const [activePseoPage, setActivePseoPage] = useState<PseoPage | null>(null);
@@ -6406,9 +6393,50 @@ function App() {
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // --- Unified B2B Navigation Helpers ---
+  const navigateToHome = () => {
+    setActivePseoPage(null);
+    setIsClinicDemo(false);
+    setActiveTab('home');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const navigateToInteractiveDemo = () => {
+    setActivePseoPage(null);
+    setIsClinicDemo(true);
+    setActiveTab('clinic_portal');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const navigateToAbout = () => {
+    setActivePseoPage(null);
+    setIsClinicDemo(false);
+    setActiveTab('welcome');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const navigateToRequestDemo = () => {
+    setActivePseoPage(null);
+    setIsClinicDemo(false);
+    setActiveTab('home');
+    setTimeout(() => {
+      const formEl = document.getElementById('clinicDemoRequestForm');
+      if (formEl) {
+        formEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 80);
+  };
+
+  const navigateToClinicSignIn = () => {
+    setActivePseoPage(null);
+    setIsClinicDemo(false);
+    setActiveTab('clinic_portal');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // --- Dynamic SEO Page Title Effect ---
   useEffect(() => {
-    if (activePseoPage) {
+    if (activePseoPage && FEATURE_FLAGS.ENABLE_PSEO_PAGES) {
       document.title = activePseoPage.seoTitle;
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) {
@@ -6423,55 +6451,20 @@ function App() {
     }
     switch (activeTab) {
       case 'clinic_portal':
-        document.title = isClinicDemo ? 'Interactive Clinic Demo | SkinTight AI' : 'Clinic Staff Portal | SkinTight AI';
+        document.title = isClinicDemo ? 'Interactive Demo | SkinTight AI' : 'Clinic Staff Sign-In | SkinTight AI';
         break;
       case 'clinic_intake':
         document.title = isDemoClinic(activeClinicId) ? 'Demo Pre-Visit Intake | SkinTight AI' : 'Pre-Visit Intake | SkinTight AI';
         break;
-      case 'home':
-        document.title = 'Skin Tight – AI Skin Monitoring & Skin Cancer Awareness Tool';
-        break;
-      case 'scan':
-        document.title = 'AI Skin Analysis & Skin Screening | Skin Tight';
-        break;
-      case 'timeline':
-        document.title = 'Timeline & Schedule | Skin Tight';
-        break;
-      case 'routine':
-        document.title = 'Skin Self-Check & Prevention Habits | Skin Tight';
-        break;
-      case 'plans':
-        document.title = 'Pricing & Plans – Individual Monitoring & Clinic Partnerships | Skin Tight';
-        break;
-      case 'profile':
-        document.title = 'Profile | Skin Tight';
-        break;
-      case 'clinic':
-        document.title = 'Find Dermatologists | Skin Tight';
-        break;
       case 'welcome':
-        document.title = 'About Skin Tight – Early Skin Awareness & Mole Tracking';
+        document.title = 'About SkinTight AI — Pre-Visit Triage for Dermatology Practices';
         break;
-      case 'auth':
-        document.title = 'Sign In or Join | Skin Tight';
-        break;
-      case 'learn':
-        if (selectedArticleSlug) {
-          const article = BLOG_ARTICLES.find(a => a.slug === selectedArticleSlug);
-          if (article) {
-            document.title = `${article.title} | Skin Tight Academy`;
-          } else {
-            document.title = 'Skin Health Academy – Skin Screening & Mole Tracking | Skin Tight';
-          }
-        } else {
-          document.title = 'Skin Health Academy – Skin Screening & Mole Tracking | Skin Tight';
-        }
-        break;
+      case 'home':
       default:
-        document.title = 'Skin Tight – AI Skin Monitoring & Skin Cancer Awareness Tool';
+        document.title = 'SkinTight AI — Triage for Dermatology Practices';
         break;
     }
-  }, [activeTab, selectedArticleSlug, activePseoPage]);
+  }, [activeTab, selectedArticleSlug, activePseoPage, isClinicDemo, activeClinicId]);
  
   // --- Deep Linking & Path Parsing on Mount ---
   useEffect(() => {
@@ -6491,11 +6484,32 @@ function App() {
         return;
       }
       if (path === '/clinic-portal' || path === '/portal' || path === '/clinic/portal') {
+        setClinicNameOverride(params.get('clinic'));
         setIsClinicDemo(false);
         setActiveTab('clinic_portal');
         return;
       }
+      if (path === '/about') {
+        setActivePseoPage(null);
+        setActiveTab('welcome');
+        return;
+      }
+      if (path === '/request-demo') {
+        setActivePseoPage(null);
+        setActiveTab('home');
+        setTimeout(() => {
+          document.getElementById('clinicDemoRequestForm')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 120);
+        return;
+      }
+
       if (path.startsWith('/track/')) {
+        if (!FEATURE_FLAGS.ENABLE_PSEO_PAGES) {
+          setActivePseoPage(null);
+          setActiveTab('home');
+          window.history.replaceState(null, '', '/');
+          return;
+        }
         const slug = path.replace('/track/', '');
         const found = PSEO_LANDING_PAGES.find(p => p.slug === slug);
         if (found) {
@@ -6509,27 +6523,51 @@ function App() {
       }
 
       if (path.startsWith('/learn') || path.startsWith('/blog')) {
+        if (!FEATURE_FLAGS.ENABLE_SKIN_ACADEMY) {
+          setActiveTab('home');
+          window.history.replaceState(null, '', '/');
+          return;
+        }
         setActiveTab('learn');
         const parts = path.split('/');
         const slug = parts[parts.length - 1];
         if (slug && slug !== 'learn' && slug !== 'blog') {
           const exists = BLOG_ARTICLES.some(a => a.slug === slug);
-          if (exists) {
-            setSelectedArticleSlug(slug);
-          } else {
-            setSelectedArticleSlug(null);
-          }
+          setSelectedArticleSlug(exists ? slug : null);
         } else {
           setSelectedArticleSlug(null);
         }
       } else if (path === '/clinic') {
-        setActiveTab('clinic');
-      } else if (path === '/about') {
-        setActiveTab('welcome');
-      } else if (path === '/routine') {
-        setActiveTab('routine');
-      } else if (path === '/plans') {
-        setActiveTab('plans');
+        if (!FEATURE_FLAGS.ENABLE_DERMATOLOGIST_FINDER) {
+          setActiveTab('home');
+          window.history.replaceState(null, '', '/');
+        } else {
+          setActiveTab('clinic');
+        }
+      } else if (path === '/routine' || path === '/timeline') {
+        if (!FEATURE_FLAGS.ENABLE_TIMELINE_AND_ROUTINE) {
+          setActiveTab('home');
+          window.history.replaceState(null, '', '/');
+        } else {
+          setActiveTab(path === '/routine' ? 'routine' : 'timeline');
+        }
+      } else if (path === '/plans' || path === '/pricing') {
+        if (!FEATURE_FLAGS.ENABLE_PRICING_PAGE) {
+          setActiveTab('home');
+          window.history.replaceState(null, '', '/');
+        } else {
+          setActiveTab('plans');
+        }
+      } else if (path === '/profile') {
+        if (!FEATURE_FLAGS.ENABLE_CONSUMER_PROFILE) {
+          setActiveTab('home');
+          window.history.replaceState(null, '', '/');
+        } else {
+          setActiveTab('profile');
+        }
+      } else if (path === '/auth' || path === '/signin' || path === '/login' || path === '/scan') {
+        setActiveTab('home');
+        window.history.replaceState(null, '', '/');
       }
     };
  
@@ -6546,17 +6584,17 @@ function App() {
       expectedPath = isClinicDemo ? '/demo' : '/clinic-portal';
     } else if (activeTab === 'clinic_intake') {
       expectedPath = `/intake/${activeClinicId}`;
-    } else if (activePseoPage) {
+    } else if (activePseoPage && FEATURE_FLAGS.ENABLE_PSEO_PAGES) {
       expectedPath = `/track/${activePseoPage.slug}`;
-    } else if (activeTab === 'learn') {
+    } else if (activeTab === 'learn' && FEATURE_FLAGS.ENABLE_SKIN_ACADEMY) {
       expectedPath = selectedArticleSlug ? `/learn/${selectedArticleSlug}` : '/learn';
-    } else if (activeTab === 'clinic') {
+    } else if (activeTab === 'clinic' && FEATURE_FLAGS.ENABLE_DERMATOLOGIST_FINDER) {
       expectedPath = '/clinic';
     } else if (activeTab === 'welcome') {
       expectedPath = '/about';
-    } else if (activeTab === 'routine') {
+    } else if (activeTab === 'routine' && FEATURE_FLAGS.ENABLE_TIMELINE_AND_ROUTINE) {
       expectedPath = '/routine';
-    } else if (activeTab === 'plans') {
+    } else if (activeTab === 'plans' && FEATURE_FLAGS.ENABLE_PRICING_PAGE) {
       expectedPath = '/plans';
     } else if (activeTab === 'home') {
       expectedPath = '/';
@@ -7862,7 +7900,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(13);
-    doc.text("SKIN TIGHT", 14, 16);
+    doc.text("SKINTIGHT AI", 14, 16);
     doc.setFontSize(8.5);
     doc.setTextColor(45, 212, 191);
     doc.text("CLINICAL TRIAGE & LONGITUDINAL INTAKE REPORT", 14, 21);
@@ -8190,7 +8228,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     doc.setFont("helvetica", "bold");
     doc.setFontSize(6.5);
     doc.setTextColor(71, 85, 105);
-    doc.text("Skin Tight Clinical Intake Engine  |  Standardized Pre-Visit Patient Brief", 10, 254);
+    doc.text("SkinTight AI Clinical Intake Engine  |  Pre-Visit Patient Brief", 10, 254);
     doc.text("Page 1 of 1", pw - 10, 254, { align: 'right' });
     
     doc.save(`SkinTight_Clinical_Report_${targetRegion.replace(/[^a-zA-Z0-9]/g, '_')}_${docIdStr}.pdf`);
@@ -8208,7 +8246,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     );
   }
 
-  if (activePseoPage) {
+  if (activePseoPage && FEATURE_FLAGS.ENABLE_PSEO_PAGES) {
     return (
       <PseoLandingPage 
         page={activePseoPage} 
@@ -8221,7 +8259,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     );
   }
 
-  if (!onboardingComplete && (activeTab === 'scan' || activeTab === 'timeline' || activeTab === 'routine')) {
+  if (FEATURE_FLAGS.ENABLE_CONSUMER_HOME && !onboardingComplete && (activeTab === 'scan' || activeTab === 'timeline' || activeTab === 'routine')) {
     return <OnboardingScreen onComplete={() => {
       setOnboardingComplete(true);
       localStorage.setItem('onboarding_complete', 'true');
@@ -8230,14 +8268,12 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
     }} />;
   }
 
-  if (!currentUser && activeTab === 'auth') {
+  if (FEATURE_FLAGS.ENABLE_CONSUMER_AUTH && !currentUser && activeTab === 'auth') {
     return <AuthPage onAuthSuccess={(user) => {
       initializeNewSession(user);
       setActiveTab('home');
     }} onSkip={() => setActiveTab('home')} />;
   }
-
-
 
   return (
     <ErrorBoundary>
@@ -8272,7 +8308,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'flex-start', 
-          gap: '18px',
+          gap: '12px',
           width: '100%'
         }}
       >
@@ -8281,87 +8317,113 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
             setIsMenuOpen(true);
             updateAllAvatars();
           }}
+          aria-label="Open navigation menu"
           style={{ background: 'none', border: 'none', color: '#f8fafc', cursor: 'pointer', padding: '0', display: 'flex', alignItems: 'center', width: 'auto', flexShrink: 0 }}
         >
-          <Menu size={30} />
+          <Menu size={26} />
         </button>
         
-        <Dna size={30} color="#2dd4bf" style={{ flexShrink: 0 }} />
-        
-        <span style={{ 
-          fontWeight: '950', 
-          fontSize: '21px', 
-          color: '#f8fafc', 
-          letterSpacing: '-0.02em', 
-          whiteSpace: 'nowrap',
-          flexShrink: 0,
-          lineHeight: 1
-        }}>
-          Skin Tight
-        </span>
+        <button
+          type="button"
+          onClick={navigateToHome}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            cursor: 'pointer',
+            flexShrink: 0,
+          }}
+        >
+          <Dna size={26} color="#2dd4bf" style={{ flexShrink: 0 }} />
+          <span style={{ 
+            fontWeight: '900', 
+            fontSize: '19px', 
+            color: '#f8fafc', 
+            letterSpacing: '-0.02em', 
+            whiteSpace: 'nowrap',
+            lineHeight: 1
+          }}>
+            SkinTight AI
+          </span>
+        </button>
 
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Desktop Nav: Home · Interactive Demo · About · Request a Demo · Clinic Sign-In */}
+        <nav aria-label="Header Navigation" className="hidden lg:flex items-center gap-1 ml-auto">
+          {[
+            { label: 'Home', isActive: activeTab === 'home', onClick: navigateToHome },
+            { label: 'Interactive Demo', isActive: false, onClick: navigateToInteractiveDemo },
+            { label: 'About', isActive: activeTab === 'welcome', onClick: navigateToAbout },
+            { label: 'Request a Demo', isActive: false, onClick: navigateToRequestDemo },
+          ].map((navItem) => (
+            <button
+              key={navItem.label}
+              type="button"
+              onClick={navItem.onClick}
+              style={{
+                background: navItem.isActive ? 'rgba(45, 212, 191, 0.12)' : 'transparent',
+                border: 'none',
+                color: navItem.isActive ? '#2dd4bf' : '#cbd5e1',
+                padding: '7px 12px',
+                borderRadius: '10px',
+                fontSize: '13px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {navItem.label}
+            </button>
+          ))}
           <button
-            onClick={() => {
-              setIsClinicDemo(false);
-              setActiveTab('clinic_portal');
-            }}
+            type="button"
+            onClick={navigateToClinicSignIn}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              color: '#e2e8f0',
-              padding: '7px 12px',
+              background: '#2dd4bf',
+              border: 'none',
+              color: '#020617',
+              padding: '8px 14px',
+              borderRadius: '10px',
+              fontSize: '13px',
+              fontWeight: '900',
+              cursor: 'pointer',
+              marginLeft: '6px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Building2 size={14} />
+            <span>Clinic Sign-In</span>
+          </button>
+        </nav>
+
+        {/* Mobile/Tablet Quick Clinic Sign-In CTA */}
+        <div className="flex lg:hidden items-center gap-2 ml-auto">
+          <button
+            type="button"
+            onClick={navigateToClinicSignIn}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(45, 212, 191, 0.14)',
+              border: '1px solid rgba(45, 212, 191, 0.35)',
+              color: '#2dd4bf',
+              padding: '7px 11px',
               borderRadius: '10px',
               fontSize: '12px',
               fontWeight: '800',
               cursor: 'pointer',
-              letterSpacing: '0.02em',
-              transition: 'all 0.15s ease'
+              whiteSpace: 'nowrap',
             }}
-            title="Switch to B2B Clinic Staff Portal"
           >
-            <Building2 size={15} color="#94a3b8" />
-            <span className="hidden sm:inline">Clinic Portal</span>
-            <span className="sm:hidden">Clinic</span>
+            <Building2 size={14} />
+            <span>Clinic Sign-In</span>
           </button>
-
-          {currentUser ? (
-            <div 
-              id="headerAvatar"
-              onClick={() => setActiveTab('profile')}
-              style={{ 
-                width: '43px', height: '43px', borderRadius: '50%', 
-                background: fullUserData?.profileColor || '#2dd4bf',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '16px', fontWeight: '900', color: '#020617',
-                cursor: 'pointer',
-                flexShrink: 0,
-                boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
-                border: '2px solid rgba(255,255,255,0.1)'
-              }}
-            >
-              {fullUserData?.fullName ? fullUserData.fullName.split(' ').map((n: any) => n?.[0] || '').join('').toUpperCase().slice(0, 2) : (fullUserData?.username?.[0]?.toUpperCase() || 'U')}
-            </div>
-          ) : (
-            <button 
-              onClick={() => setActiveTab('auth')}
-              style={{
-                background: 'rgba(45, 212, 191, 0.1)',
-                border: '1px solid rgba(45, 212, 191, 0.2)',
-                color: '#2dd4bf',
-                padding: '6px 14px',
-                borderRadius: '12px',
-                fontSize: '12px',
-                fontWeight: '800',
-                cursor: 'pointer'
-              }}
-            >
-              Sign In
-            </button>
-          )}
         </div>
       </header>
       )}
@@ -8371,15 +8433,26 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
         setIsMenuOpen={setIsMenuOpen} 
         currentUser={currentUser} 
         fullUserData={fullUserData} 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
+        activeTab={activeTab}
+        isClinicDemo={isClinicDemo}
+        setActiveTab={setActiveTab}
+        onSelectHome={navigateToHome}
+        onSelectDemo={navigateToInteractiveDemo}
+        onSelectAbout={navigateToAbout}
+        onSelectRequestDemo={navigateToRequestDemo}
+        onSelectClinicSignIn={navigateToClinicSignIn}
         handleLogout={handleLogout} 
       />
 
       <div className="main-content" style={{ ...styles.wrapper }}>
         {activeTab === 'home' && (
-          <div className="page-container" style={{ ...styles.tabContent, paddingBottom: '100px' }}>
-            {showInstallPrompt && (
+          <div className="page-container" style={{ ...styles.tabContent, paddingBottom: '64px' }}>
+            {/* Clinic B2B Triage Landing Section (Primary Entry) */}
+            <ClinicLandingSection
+              onTryDemo={navigateToInteractiveDemo}
+            />
+
+            {FEATURE_FLAGS.ENABLE_CONSUMER_HOME && showInstallPrompt && (
               <div style={{
                 marginBottom: '20px',
                 padding: '16px',
@@ -8392,7 +8465,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 width: '100%'
               }}>
                 <div style={{ fontSize: '14px', color: '#f8fafc', fontWeight: '700' }}>
-                  Install Skin Tight
+                  Install SkinTight AI
                 </div>
                 <button 
                   onClick={handleInstallClick}
@@ -8412,13 +8485,8 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
               </div>
             )}
 
-            {/* Clinic B2B Triage Landing Section (Primary Above-The-Fold Entry) */}
-            <ClinicLandingSection
-              onTryDemo={() => {
-                setIsClinicDemo(true);
-                setActiveTab('clinic_portal');
-              }}
-            />
+            {FEATURE_FLAGS.ENABLE_CONSUMER_HOME && (
+              <>
 
             {/* Prominent 3D Pulsing Frequency Scan Button */}
             <div style={{ width: '100%', marginBottom: '24px', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '8px 0' }}>
@@ -8823,8 +8891,10 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
 
             <div style={styles.disclaimerBanner} className="glass-card shimmer-overlay">
               <AlertCircle size={20} color="#f59e0b" style={{ flexShrink: 0 }} />
-              <p>SkinTight is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.</p>
+              <p>SkinTight AI is a pre-visit information and photo-logging tool. It does not diagnose, assess risk, or provide medical advice. Always consult a licensed clinician. Call 911 for emergencies.</p>
             </div>
+              </>
+            )}
           </div>
         )}
 
@@ -8863,8 +8933,10 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
             loading={loading}
           />
         )}
-        {activeTab === 'timeline' && <Timeline scans={scans} setSelectedScanId={setSelectedScanId} setActiveTab={setActiveTab} styles={styles} streakData={streakData} nextScanDate={nextScanDate} cycleProgress={cycleProgress} lastFullWeekCompletionDate={lastFullWeekCompletionDate} />}
-        {activeTab === 'routine' && (
+        {activeTab === 'timeline' && FEATURE_FLAGS.ENABLE_TIMELINE_AND_ROUTINE && (
+          <Timeline scans={scans} setSelectedScanId={setSelectedScanId} setActiveTab={setActiveTab} styles={styles} streakData={streakData} nextScanDate={nextScanDate} cycleProgress={cycleProgress} lastFullWeekCompletionDate={lastFullWeekCompletionDate} />
+        )}
+        {activeTab === 'routine' && FEATURE_FLAGS.ENABLE_TIMELINE_AND_ROUTINE && (
           <RoutinePage 
             protocol={protocol}
             loadingProtocol={loadingProtocol}
@@ -8874,13 +8946,14 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
             currentUser={currentUser}
           />
         )}
-        {activeTab === 'plans' && <PlansPage setActiveTab={setActiveTab} />}
-        {activeTab === 'clinic' && <ClinicFinder />}
+        {activeTab === 'plans' && FEATURE_FLAGS.ENABLE_PRICING_PAGE && <PlansPage setActiveTab={setActiveTab} />}
+        {activeTab === 'clinic' && FEATURE_FLAGS.ENABLE_DERMATOLOGIST_FINDER && <ClinicFinder />}
 
         {activeTab === 'clinic_portal' && (
           <div className="w-full">
             <ClinicDashboard
               isDemoMode={isClinicDemo}
+              clinicNameOverride={clinicNameOverride}
               onToggleDemoMode={(demo) => setIsClinicDemo(demo)}
               onExitToPatientApp={() => {
                 setIsClinicDemo(false);
@@ -8890,6 +8963,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                 setActiveClinicId(clinicId);
                 setActiveTab('clinic_intake');
               }}
+              onShowLegal={setShowLegalModal}
             />
           </div>
         )}
@@ -8906,12 +8980,13 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
                   setActiveTab('home');
                 }
               }}
+              onShowLegal={setShowLegalModal}
             />
           </div>
         )}
 
         {activeTab === 'welcome' && <AboutPage />}
-        {activeTab === 'learn' && (
+        {activeTab === 'learn' && FEATURE_FLAGS.ENABLE_SKIN_ACADEMY && (
           <LearnPage 
             selectedArticleSlug={selectedArticleSlug}
             setSelectedArticleSlug={setSelectedArticleSlug}
@@ -8961,7 +9036,7 @@ Format as JSON: { "dailyUVProtection": ["string"], "monthlySelfExam": ["string"]
         )}
       </AnimatePresence>
 
-        {activeTab === 'profile' && (
+        {activeTab === 'profile' && FEATURE_FLAGS.ENABLE_CONSUMER_PROFILE && (
           <div className="page-container" style={{ ...styles.tabContent, paddingBottom: '100px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', marginBottom: '30px', width: '100%' }}>
               <h2 style={{ fontSize: '24px', fontWeight: '900', margin: 0, color: '#f8fafc', whiteSpace: 'nowrap', textAlign: 'center' }}>My Profile</h2>

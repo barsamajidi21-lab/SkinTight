@@ -99,7 +99,7 @@ svg *,
 }
 
 /* BUTTONS - PREVENT FULL WIDTH IN HEADERS, NAV, AND CLINIC UI */
-button:not(header button):not(nav button):not([class*="mini"]):not(.clinic-ui button),
+button:not(header button):not(nav button):not(footer button):not([class*="mini"]):not(.clinic-ui button),
 .btn:not([class*="mini"]):not(.clinic-ui *),
 [class*="button"]:not(header [class*="button"]):not([class*="mini"]):not(.clinic-ui *) {
   width: 100% !important;
@@ -117,6 +117,7 @@ button:not(header button):not(nav button):not([class*="mini"]):not(.clinic-ui bu
 
 header button,
 nav button,
+footer button,
 button[class*="mini"] {
   width: auto !important;
   min-height: 0 !important;

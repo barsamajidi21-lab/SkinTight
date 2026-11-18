@@ -331,6 +331,37 @@ export const ClinicLandingSection: React.FC<ClinicLandingSectionProps> = ({ onTr
           </form>
         )}
       </div>
+
+      {/* Security & Privacy Section */}
+      <div className="rounded-3xl bg-slate-900/95 border border-slate-800 p-5 sm:p-7 shadow-xl">
+        <div className="flex items-center gap-2.5 mb-4">
+          <ShieldCheck size={18} className="text-teal-400 shrink-0" />
+          <h2 className="text-base sm:text-lg font-black text-white">Security &amp; privacy</h2>
+        </div>
+
+        <ul className="space-y-2.5 text-xs sm:text-sm text-slate-300">
+          <li className="flex items-start gap-2.5">
+            <CheckCircle2 size={15} className="text-teal-400 shrink-0 mt-0.5" />
+            <span>Built on HIPAA-eligible Google Cloud services.</span>
+          </li>
+          <li className="flex items-start gap-2.5">
+            <CheckCircle2 size={15} className="text-teal-400 shrink-0 mt-0.5" />
+            <span>We sign a Business Associate Agreement (BAA) with every clinic.</span>
+          </li>
+          <li className="flex items-start gap-2.5">
+            <CheckCircle2 size={15} className="text-teal-400 shrink-0 mt-0.5" />
+            <span>Staff accounts with automatic session lock and a full audit trail.</span>
+          </li>
+          <li className="flex items-start gap-2.5">
+            <CheckCircle2 size={15} className="text-teal-400 shrink-0 mt-0.5" />
+            <span>AI never analyzes photos or diagnoses. Urgency flags come from rules your physicians approve.</span>
+          </li>
+        </ul>
+
+        <p className="mt-5 pt-4 border-t border-slate-800 text-xs text-slate-400 font-medium">
+          Built in Atlanta, Georgia.
+        </p>
+      </div>
     </section>
   );
 };

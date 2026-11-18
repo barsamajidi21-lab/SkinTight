@@ -62,9 +62,11 @@ import { resolvePhotoUrl } from '../../App';
 
 interface ClinicDashboardProps {
   isDemoMode?: boolean;
+  clinicNameOverride?: string | null;
   onToggleDemoMode?: (demo: boolean) => void;
   onExitToPatientApp: () => void;
   onOpenPatientIntake: (clinicId: string) => void;
+  onShowLegal?: (type: 'terms' | 'privacy' | 'disclaimer') => void;
 }
 
 const STATUS_LABELS: Record<CaseStatus, string> = {
@@ -96,9 +98,11 @@ function formatWaitingDuration(dateSubmittedIso: string, nowMs: number): string 
 
 export const ClinicDashboard: React.FC<ClinicDashboardProps> = ({
   isDemoMode = false,
+  clinicNameOverride = null,
   onToggleDemoMode,
   onExitToPatientApp,
   onOpenPatientIntake,
+  onShowLegal,
 }) => {
   const clinic: Clinic = isDemoMode ? DEMO_CLINIC : TEST_CLINIC;
 
@@ -503,6 +507,30 @@ export const ClinicDashboard: React.FC<ClinicDashboardProps> = ({
     );
   };
 
+  const renderPortalFooter = () => (
+    <footer className="w-full mt-auto border-t border-slate-800/80 py-6 px-4 text-center text-xs text-slate-400">
+      <div className="flex flex-wrap items-center justify-center gap-4 mb-2">
+        {onShowLegal && (
+          <>
+            <button type="button" onClick={() => onShowLegal('privacy')} className="hover:text-white underline cursor-pointer">
+              Privacy Policy
+            </button>
+            <button type="button" onClick={() => onShowLegal('terms')} className="hover:text-white underline cursor-pointer">
+              Terms of Service
+            </button>
+            <button type="button" onClick={() => onShowLegal('disclaimer')} className="hover:text-white underline cursor-pointer">
+              Medical Disclaimer
+            </button>
+          </>
+        )}
+        <a href="mailto:barsa@skintightai.com" className="hover:text-white underline">
+          Contact
+        </a>
+      </div>
+      <p className="text-[11px] text-slate-500">© 2026 SkinTight AI. Pre-visit triage workflow software for dermatology practices.</p>
+    </footer>
+  );
+
   // Real Clinic Mode Authentication Gate
   if (!isDemoMode) {
     if (!authReady) {
@@ -518,108 +546,115 @@ export const ClinicDashboard: React.FC<ClinicDashboardProps> = ({
 
     if (!firebaseUser) {
       return (
-        <div className="clinic-ui min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-4 font-sans">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/40 flex items-center justify-center text-teal-400">
-                  <Building2 size={20} />
+        <div className="clinic-ui min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 font-sans">
+          <div className="flex-1 flex items-center justify-center py-8">
+            <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/40 flex items-center justify-center text-teal-400">
+                    <Building2 size={20} />
+                  </div>
+                  <div>
+                    <h1 className="text-base font-bold text-white">
+                      {clinicNameOverride || 'Clinic Staff Sign-In'}
+                    </h1>
+                    <p className="text-[11px] text-slate-400">
+                      {clinicNameOverride ? 'Staff Authentication Required' : 'SkinTight AI Practice Portal'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h1 className="text-base font-bold text-white">{TEST_CLINIC.name}</h1>
-                  <p className="text-[11px] text-slate-400">Staff Authentication Required</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={onExitToPatientApp}
-                className="text-xs text-slate-400 hover:text-white cursor-pointer"
-              >
-                Back
-              </button>
-            </div>
-
-            {loginError && (
-              <div className="p-3 rounded-xl bg-red-950/60 border border-red-700/50 text-red-200 text-xs">
-                {loginError}
-              </div>
-            )}
-
-            <form onSubmit={handleEmailSignIn} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Staff Email
-                </label>
-                <div className="relative">
-                  <Mail size={14} className="absolute left-3 top-3 text-slate-500" />
-                  <input
-                    type="email"
-                    required
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="staff@clinic-a.example.com"
-                    className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-teal-500 text-white text-sm outline-none"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Password
-                </label>
-                <div className="relative">
-                  <KeyRound size={14} className="absolute left-3 top-3 text-slate-500" />
-                  <input
-                    type="password"
-                    required
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-teal-500 text-white text-sm outline-none"
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                disabled={isLoggingIn}
-                className="w-full py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-slate-950 text-xs font-black cursor-pointer"
-              >
-                {isLoggingIn ? 'Signing in...' : 'Sign In to Clinic Dashboard'}
-              </button>
-            </form>
-
-            <div className="relative py-1 flex items-center justify-center">
-              <span className="border-t border-slate-800 w-full" />
-              <span className="px-3 text-[10px] uppercase text-slate-500 bg-slate-900 shrink-0">
-                or
-              </span>
-              <span className="border-t border-slate-800 w-full" />
-            </div>
-
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={isLoggingIn}
-              className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 cursor-pointer"
-            >
-              Sign In with Google Workspace
-            </button>
-
-            {onToggleDemoMode && (
-              <div className="pt-3 border-t border-slate-800 text-center space-y-2">
-                <p className="text-[11px] text-slate-400">
-                  Evaluating the workflow without clinic credentials?
-                </p>
                 <button
                   type="button"
-                  onClick={() => onToggleDemoMode(true)}
-                  className="w-full py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                  onClick={onExitToPatientApp}
+                  className="text-xs text-slate-400 hover:text-white cursor-pointer"
                 >
-                  <span>Explore Interactive Demo (Fictional Data)</span>
-                  <ArrowRight size={14} />
+                  Back
                 </button>
               </div>
-            )}
+
+              {loginError && (
+                <div className="p-3 rounded-xl bg-red-950/60 border border-red-700/50 text-red-200 text-xs">
+                  {loginError}
+                </div>
+              )}
+
+              <form onSubmit={handleEmailSignIn} className="space-y-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Staff Email
+                  </label>
+                  <div className="relative">
+                    <Mail size={14} className="absolute left-3 top-3 text-slate-500" />
+                    <input
+                      type="email"
+                      required
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      placeholder="you@yourpractice.com"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-teal-500 text-white text-sm outline-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <KeyRound size={14} className="absolute left-3 top-3 text-slate-500" />
+                    <input
+                      type="password"
+                      required
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-teal-500 text-white text-sm outline-none"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={isLoggingIn}
+                  className="w-full py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-slate-950 text-xs font-black cursor-pointer"
+                >
+                  {isLoggingIn ? 'Signing in...' : 'Sign In to Clinic Dashboard'}
+                </button>
+              </form>
+
+              <div className="relative py-1 flex items-center justify-center">
+                <span className="border-t border-slate-800 w-full" />
+                <span className="px-3 text-[10px] uppercase text-slate-500 bg-slate-900 shrink-0">
+                  or
+                </span>
+                <span className="border-t border-slate-800 w-full" />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={isLoggingIn}
+                className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 cursor-pointer"
+              >
+                Sign In with Google Workspace
+              </button>
+
+              {onToggleDemoMode && (
+                <div className="pt-3 border-t border-slate-800 text-center space-y-2">
+                  <p className="text-[11px] text-slate-400">
+                    Evaluating the workflow without clinic credentials?
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => onToggleDemoMode(true)}
+                    className="w-full py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>Explore Interactive Demo (Fictional Data)</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
+          {renderPortalFooter()}
         </div>
       );
     }
@@ -628,34 +663,37 @@ export const ClinicDashboard: React.FC<ClinicDashboardProps> = ({
   // Inactivity Screen Lock (Real Clinic Mode)
   if (sessionLocked && !isDemoMode) {
     return (
-      <div className="clinic-ui min-h-screen bg-slate-950 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 text-center shadow-2xl">
-          <div className="w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto mb-4">
-            <Lock size={26} />
-          </div>
-          <h2 className="text-xl font-bold text-white mb-2">Staff Session Locked</h2>
-          <p className="text-xs text-slate-400 mb-6 leading-relaxed">
-            For patient privacy, clinic staff dashboards automatically lock after 15 minutes of inactivity.
-          </p>
-          <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 mb-6 text-xs text-left">
-            <div className="text-slate-400">Signed-In Staff Member:</div>
-            <div className="font-semibold text-white mt-0.5">
-              {staffName} ({staffEmail})
+      <div className="clinic-ui min-h-screen bg-slate-950 flex flex-col justify-between p-4">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 text-center shadow-2xl">
+            <div className="w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto mb-4">
+              <Lock size={26} />
             </div>
-            <div className="text-teal-400 text-[11px] mt-0.5">{clinic.name}</div>
+            <h2 className="text-xl font-bold text-white mb-2">Staff Session Locked</h2>
+            <p className="text-xs text-slate-400 mb-6 leading-relaxed">
+              For patient privacy, clinic staff dashboards automatically lock after 15 minutes of inactivity.
+            </p>
+            <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 mb-6 text-xs text-left">
+              <div className="text-slate-400">Signed-In Staff Member:</div>
+              <div className="font-semibold text-white mt-0.5">
+                {staffName} ({staffEmail})
+              </div>
+              <div className="text-teal-400 text-[11px] mt-0.5">{clinic.name}</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                lastActivityRef.current = Date.now();
+                setTimeRemainingSec(15 * 60);
+                setSessionLocked(false);
+              }}
+              className="w-full py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-black transition-colors cursor-pointer"
+            >
+              Unlock Session &amp; Resume Dashboard
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              lastActivityRef.current = Date.now();
-              setTimeRemainingSec(15 * 60);
-              setSessionLocked(false);
-            }}
-            className="w-full py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-black transition-colors cursor-pointer"
-          >
-            Unlock Session &amp; Resume Dashboard
-          </button>
         </div>
+        {renderPortalFooter()}
       </div>
     );
   }
@@ -1527,6 +1565,8 @@ export const ClinicDashboard: React.FC<ClinicDashboardProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {renderPortalFooter()}
     </div>
   );
 };

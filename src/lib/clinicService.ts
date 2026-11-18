@@ -907,7 +907,9 @@ export async function saveClinicRules(
 /**
  * Submit Clinic B2B Demo Request to Firestore /demoRequests and backend email relay
  */
-export async function submitDemoRequest(payload: DemoRequestPayload): Promise<{ emailSent: boolean; message: string }> {
+export async function submitDemoRequest(
+  payload: DemoRequestPayload
+): Promise<{ emailSent: boolean; firestoreSaved: boolean; requestId: string; message: string }> {
   const requestId = `demo_req_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
   const docPayload = {
     name: payload.name.trim(),
@@ -919,11 +921,16 @@ export async function submitDemoRequest(payload: DemoRequestPayload): Promise<{ 
     createdAt: new Date().toISOString(),
   };
 
+  let firestoreSaved = false;
   const firestorePromise = db
     ? Promise.race([
-        setDoc(doc(db, 'demoRequests', requestId), docPayload),
-        new Promise((resolve) => setTimeout(resolve, 2500)),
-      ]).catch(() => undefined)
+        setDoc(doc(db, 'demoRequests', requestId), docPayload).then(() => {
+          firestoreSaved = true;
+        }),
+        new Promise<void>((resolve) => setTimeout(resolve, 6000)),
+      ]).catch((err) => {
+        console.error('[Demo Request] Firestore write failed:', err);
+      })
     : Promise.resolve();
 
   const apiPromise = fetch('/api/demo-request', {
@@ -941,9 +948,28 @@ export async function submitDemoRequest(payload: DemoRequestPayload): Promise<{ 
     .catch(() => null);
 
   const [, apiResult] = await Promise.all([firestorePromise, apiPromise]);
-  if (apiResult) {
-    return apiResult;
+
+  if (!firestoreSaved && !apiResult) {
+    throw new Error('Unable to save your demo request right now. Please email barsa@skintightai.com.');
   }
 
-  return { emailSent: false, message: 'Thank you. Your demo request has been saved for follow-up.' };
+  if (apiResult) {
+    return {
+      emailSent: apiResult.emailSent,
+      firestoreSaved,
+      requestId,
+      message: firestoreSaved
+        ? apiResult.emailSent
+          ? 'Demo request saved and notification sent.'
+          : 'Demo request saved for follow-up.'
+        : apiResult.message,
+    };
+  }
+
+  return {
+    emailSent: false,
+    firestoreSaved,
+    requestId,
+    message: 'Demo request saved for follow-up.',
+  };
 }

@@ -47,7 +47,7 @@ export async function generateClinicCasePDF(
   doc.setFontSize(7.5);
   doc.setTextColor(148, 163, 184);
   doc.text(`${clinic.address}  |  Tel: ${clinic.phone}`, 14, 20);
-  doc.text('PRE-VISIT INTAKE & TRIAGE BRIEF', 14, 25);
+  doc.text('SKINTIGHT AI  •  PRE-VISIT INTAKE & TRIAGE BRIEF', 14, 25);
 
   // Triage Category Badge (Top Right of Header)
   const badgeWidth = 44;
@@ -266,7 +266,7 @@ export async function generateClinicCasePDF(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(6.5);
   doc.setTextColor(71, 85, 105);
-  doc.text(`${clinic.name}  |  Pre-Visit Triage Brief`, 10, 249);
+  doc.text(`${clinic.name}  |  SkinTight AI Pre-Visit Triage Brief`, 10, 249);
   doc.text('Page 1 of 1', pw - 10, 249, { align: 'right' });
 
   const fileName = `Clinic_Triage_${clinic.id}_Case_${clinicCase.id.slice(-6)}_${activeColor.toUpperCase()}.pdf`;
